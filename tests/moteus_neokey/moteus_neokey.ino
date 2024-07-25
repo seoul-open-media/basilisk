@@ -34,6 +34,7 @@ class SerialPrintReplySender {
  public:
   void snd() {
     if (!metro_.check()) return;
+
     Serial.print(F("time "));
     Serial.print(millis());
 
