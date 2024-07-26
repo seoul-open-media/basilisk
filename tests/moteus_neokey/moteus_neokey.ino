@@ -7,28 +7,34 @@
 #include <Moteus.h>
 #include <Wire.h>
 
-#define MCP2517_CS 10
-#define MCP2517_INT 41
-ACAN2517FD can(MCP2517_CS, SPI, MCP2517_INT);
+namespace mm = mjbots::moteus;
+using PmCmd = mm::PositionMode::Command;
+using PmFmt = mm::PositionMode::Format;
+using QRpl = mm::Query::Result;
+using QFmt = mm::Query::Format;
+using Res = mm::Resolution;
 
-Moteus moteus1(can, []() {
+#define MCP2518FD_CS 10
+#define MCP2518FD_INT 41
+ACAN2517FD canfd_driver(MCP2518FD_CS, SPI, MCP2518FD_INT);
+
+Moteus mot1(canfd_driver, []() {
   Moteus::Options options;
   options.id = 1;
   options.query_format = [] {
-    Moteus::Query::Format fmt;
-    fmt.abs_position = mjbots::moteus::Resolution::kFloat;
-    fmt.motor_temperature = mjbots::moteus::Resolution::kInt16;
-    fmt.trajectory_complete = mjbots::moteus::Resolution::kInt8;
+    QFmt fmt;
+    fmt.abs_position = Res::kFloat;
+    fmt.motor_temperature = Res::kInt16;
+    fmt.trajectory_complete = Res::kInt8;
     return fmt;
   }();
   return options;
 }());
 
-Moteus::PositionMode::Format cmd_fmt{
-    .velocity = mjbots::moteus::Resolution::kIgnore,
-    .maximum_torque = mjbots::moteus::Resolution::kFloat,
-    .velocity_limit = mjbots::moteus::Resolution::kFloat,
-    .accel_limit = mjbots::moteus::Resolution::kFloat};
+PmFmt pm_fmt{.velocity = Res::kIgnore,
+             .maximum_torque = Res::kFloat,
+             .velocity_limit = Res::kFloat,
+             .accel_limit = Res::kFloat};
 
 class SerialPrintReplySender {
  public:
@@ -39,8 +45,8 @@ class SerialPrintReplySender {
     Serial.print(millis());
 
     const auto& reply = [&] {
-      moteus1.SetQuery();
-      return moteus1.last_result().values;
+      mot1.SetQuery();
+      return mot1.last_result().values;
     }();
 
     Serial.print(F("  mode "));
@@ -77,8 +83,11 @@ class NeoKeyCommandReceiver {
         Serial.print("NeoKey #");
         Serial.print(i);
         Serial.println(" pressed");
-        moteus1.SetPosition(Moteus::PositionMode::Command{.position = 0.25 * i},
-                            &cmd_fmt);
+        mot1.SetPosition({.position = 0.25 * i,
+                          .maximum_torque = 16.0,
+                          .velocity_limit = 16.0,
+                          .accel_limit = 4.0},
+                         &pm_fmt);
       }
     }
   }
@@ -102,28 +111,32 @@ void setup() {
   SPI.begin();
   Serial.println(F("SPI started"));
 
-  ACAN2517FDSettings settings(ACAN2517FDSettings::OSC_40MHz, 1000ll * 1000ll,
-                              DataBitRateFactor::x1);
-  settings.mArbitrationSJW = 2;
-  settings.mDriverTransmitFIFOSize = 1;
-  settings.mDriverReceiveFIFOSize = 2;
-  const uint32_t errorCode = can.begin(settings, [] { can.isr(); });
-  while (errorCode != 0) {
-    Serial.print(F("CAN error 0x"));
-    Serial.println(errorCode, HEX);
+  while (1) {
+    auto err_code = canfd_driver.begin(
+        [] {
+          ACAN2517FDSettings settings{ACAN2517FDSettings::OSC_40MHz,
+                                      1000ll * 1000ll, DataBitRateFactor::x1};
+          settings.mArbitrationSJW = 2;
+          settings.mDriverTransmitFIFOSize = 1;
+          settings.mDriverReceiveFIFOSize = 2;
+          return settings;
+        }(),
+        [] { canfd_driver.isr(); });
+    if (!err_code) {
+      Serial.println("CAN FD driver started");
+      break;
+    }
+    Serial.print(F("CAN FD driver begin failed, error code 0x"));
+    Serial.println(err_code, HEX);
     delay(1000);
   }
-  Serial.println(F("CAN FD started"));
 
-  moteus1.SetStop();
-  Serial.println(F("All moteus stopped"));
-  moteus1.SetPositionWaitComplete(Moteus::PositionMode::Command{.position = 0},
-                                  0.1, &cmd_fmt);
-  Serial.println(F("moteus1 sent to position 0"));
+  mot1.SetStop();
+  Serial.println(F("moteus1 stopped"));
 }
 
 void loop() {
-  delay(10);
+  delay(4);
 
   cmd_rcvr_neokey.rcv();
   rpl_sndr_serial_print.snd();

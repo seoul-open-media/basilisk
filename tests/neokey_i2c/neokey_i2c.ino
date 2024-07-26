@@ -11,12 +11,13 @@ Adafruit_NeoKey_1x4 neokey{NEOKEY_I2C_ADDRESS,
 void setup() {
   Serial.begin(115200);
   while (!Serial) {
-    Serial.println(F("Serial failed"));
+    Serial.println(F("Serial begin failed"));
     delay(1000);
   }
   Serial.println(F("Serial started"));
 
   Wire.begin();
+  Serial.println(F("I2C0 started"));
 
   while (!neokey.begin()) {
     Serial.println(F("NeoKey begin failed"));
@@ -29,7 +30,7 @@ void setup() {
 void loop() {
   auto reading = neokey.read();
 
-  Serial.print(F("Reading: "));
+  Serial.print(F("Reading in binary: "));
   Serial.println(reading, BIN);
   for (uint8_t i = 0; i < 4; i++) {
     Serial.print(F("Button "));
