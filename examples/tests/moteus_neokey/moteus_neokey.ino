@@ -76,6 +76,7 @@ void setup() {
   SpiInitializer.init();
   Neokey0Initializer.init();
   CanFdInitializer.init();
+
   CommandAll([](Servo* servo) { servo->SetStop(); });
 }
 
