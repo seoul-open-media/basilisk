@@ -49,7 +49,9 @@ class Basilisk {
           CommandLR([](Moteus* m) {
             m->DiagnosticCommand(F("tel stop"));
             m->DiagnosticCommand(F("d exact 0"));
+            m->SetPosition({.position = 0});
           });
+          cmd_.zero.waiting = false;
         }
         break;
       }
