@@ -1,5 +1,4 @@
-// Drive moteus of ID 1 and 2 in sine wave motion.
-// Wiggle wiggle.
+// Drive moteus of ID 1 and 2 in sine wave motion. Wiggle wiggle.
 
 #include <ACAN2517FD.h>
 #include <Metro.h>
@@ -26,9 +25,6 @@ void setup() {
     servo->SetStop();
     delay(10);
     servo->SetBasePosition();
-    Serial.print(F("Servo "));
-    Serial.print(servo->id_);
-    Serial.println(F(" stopped and base position set"));
   });
 }
 

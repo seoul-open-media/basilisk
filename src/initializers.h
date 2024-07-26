@@ -63,7 +63,7 @@ Initializer Neokey1Initializer{[] {
   delay(1000);
 }};
 
-Initializer CanFdInitializer{[] {
+Initializer CanFdInitializer{[] {  // Caution: Only for Bus 1 (JC1 port)
   while (1) {
     auto err_code = canfd_driver.begin(
         [] {
