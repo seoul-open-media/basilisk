@@ -45,10 +45,10 @@ class Basilisk {
         break;
       }
       case Command::Mode::Zero: {
-        if (cmd_.stop.waiting) {
+        if (cmd_.zero.waiting) {
           CommandLR([](Moteus* m) {
             m->DiagnosticCommand(F("tel stop"));
-            Serial.println(m->DiagnosticCommand(F("d exact 0")));
+            m->DiagnosticCommand(F("d exact 0"));
           });
         }
         break;
