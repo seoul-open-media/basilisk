@@ -8,12 +8,6 @@ class NeokeyServoUnit {
                  CommandPositionRelativeTo::Absolute, &q_fmt}} {}
 
 
-  template <typename ServoCommand>
-  void CommandAll(ServoCommand c) {
-    for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++) {
-      c(&servos_[i]);
-    }
-  }
 
   void Executer(const uint32_t& interval = 10) {
     Metro metro{interval};

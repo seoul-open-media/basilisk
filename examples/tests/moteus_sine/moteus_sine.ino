@@ -12,7 +12,7 @@ class SineServoUnit {
   SineServoUnit() : servos_{{1}, {2}} {}
 
   template <typename ServoCommand>
-  void CommandAll(ServoCommand c) {
+  void CommandUnit(ServoCommand c) {
     c(&servos_[0]);
     c(&servos_[1]);
   }
@@ -23,7 +23,7 @@ class SineServoUnit {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        CommandAll([](Servo* servo) { servo->Print(); });
+        CommandUnit([](Servo* servo) { servo->Print(); });
       }
     }
   }
@@ -37,7 +37,7 @@ class SineServoUnit {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        CommandAll([](Servo* servo) { servo->Query(); });
+        CommandUnit([](Servo* servo) { servo->Query(); });
 
         servos_[0].Position({.position = 0.25 * ::sin(millis() / 250.0)});
         servos_[1].Position({.position = 0.5 * ::sin(millis() / 125.0)});
@@ -54,7 +54,7 @@ void setup() {
   CanFdInitializer.init();  // Setup the CAN FD driver.
 
   // Clear all faults by sending Stop commands, and save the initial positions.
-  sine_su.CommandAll([](Servo* servo) { servo->Stop(); });
+  sine_su.CommandUnit([](Servo* servo) { servo->Stop(); });
 
   threads.addThread([] { sine_su.Executer(); });
   threads.addThread([] { sine_su.SerialPrintReplySender(); });

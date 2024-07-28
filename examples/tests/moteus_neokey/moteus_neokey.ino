@@ -1,5 +1,6 @@
-// For unknown reason, Querying and Commanding in the same thread freezes the thread,
-// `threads.getState()` returning weird numbers.
+// For unknown reason, Querying and Commanding in the same thread freezes the
+// thread, `threads.getState()` returning weird numbers.
+// Make sure to Stop all Servos in `setup()` or the threads will get messy.
 
 #include <ACAN2517FD.h>
 #include <Adafruit_NeoKey_1x4.h>
@@ -12,9 +13,23 @@
 
 Servo servos[]{{1}, {2}};
 
+// template <typename ServoCommand>
+// void CommandAll(ServoCommand c) {
+//   for (size_t i = 0; i < num_servos_; i++) {
+//     c(servos_ + i);
+//   }
+// }
+
 class NeokeyServoUnit {
  public:
   NeokeyServoUnit() : servos_{servos}, num_servos_{2} {}
+
+  // template <typename ServoCommand>
+  // void CommandUnit(ServoCommand c) {
+  //   for (size_t i = 0; i < num_servos_; i++) {
+  //     c(servos_ + i);
+  //   }
+  // }
 
   struct Command {
     Threads::Mutex mutex;
@@ -91,23 +106,19 @@ class NeokeyServoUnit {
   }
 
   void ExecuteStop() {
-    Serial.println(cmd_.stop.init ? "init == true" : "init==false");
+    // Serial.println(cmd_.stop.init ? "init == true" : "init==false");
     if (cmd_.stop.init) {
       servos_[0].Stop();
       servos_[1].Stop();
+      // CommandUnit([](Servo* s) { s->Stop(); });
       cmd_.stop.init = false;
     }
-    Serial.print(threads.id());
-    Serial.print(", ");
-    Serial.println(threads.getState(threads.id()), HEX);
-    // if (cmd_.stop.init) {
+    // Serial.print(threads.id());
+    // Serial.print(", ");
+    // Serial.println(threads.getState(threads.id()), HEX);
     //   Serial.println("init");
-    //   // CommandAll([](Servo* servo) { servo->Stop(); });
-    //   servos_[1].Stop();
     //   Serial.println("init processed");
-    //   cmd_.stop.init = false;
     //   Serial.println("set stop.init = false");
-    // }
   }
 
   void ExecuteDZero() {
@@ -142,14 +153,14 @@ class NeokeyServoUnit {
       Serial.println(threads.getState(threads.id()), HEX);
 
       servos_[0].Position(0);
-      servos_[1].Position(0);
+      servos_[1].Position(1);
+      //      CommandUnit([](Servo* s) { s->Position(0); });
+      cmd_.set_position.progress = Command::SetPosition::Progress::moving;
 
       Serial.println("ExecuteSetPosition Actual work DONE");
       Serial.print(threads.id());
       Serial.print(", ");
       Serial.println(threads.getState(threads.id()), HEX);
-
-      cmd_.set_position.progress = Command::SetPosition::Progress::moving;
     }
     // servos_[0].cmd_.set_position.progress) {
     //   temp_ser. Command::SetPosition::Progress::init: {
@@ -284,8 +295,8 @@ void setup() {
 
   // neokey_su.CommandAll([](Servo* servo) { servo->Stop(); });
 
-  // temp_servo.Position(0);
   servos[0].Stop();
+  servos[1].Stop();
 
   threads.addThread([] { neokey_su.CommandExecuter(500); });
   threads.addThread([] { neokey_su.QueryExecuter(500); });

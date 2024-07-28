@@ -41,8 +41,9 @@ class Servo : public Moteus {
                    options.query_format = *q_fmt;
                  }
                  options.default_query =
-                     false;  // Query is Executer's job, which should be
-                             // continuous even when some Servos are idle.
+                     false;  // Query is Executer's job, which should run
+                             // continuously even when some Servos
+                             // are idle on the Command side.
                  return options;
                }()},
         pm_fmt_{pm_fmt},
@@ -63,19 +64,19 @@ class Servo : public Moteus {
     sys_rpl_ = last_result().values;
   }
 
-  bool Query() {
+  bool Query(const QFmt* q_fmt_override = nullptr) {
     bool success;
     {
       Threads::Scope lock{mutex_};
-      success = SetQuery();
+      success = SetQuery(q_fmt_override);
     }
     SetReply(/* Mutex lock inside. */);
     return success;
   }
 
-  bool Stop() {
+  bool Stop(const QFmt* q_fmt_override = nullptr) {
     Threads::Scope lock{mutex_};
-    return SetStop();
+    return SetStop(q_fmt_override);
   }
 
   bool Position(const PmCmd& usr_cmd) {
