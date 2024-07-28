@@ -64,19 +64,19 @@ class Servo : public Moteus {
     sys_rpl_ = last_result().values;
   }
 
-  bool Query(const QFmt* q_fmt_override = nullptr) {
+  bool Query() {
     bool success;
     {
       Threads::Scope lock{mutex_};
-      success = SetQuery(q_fmt_override);
+      success = SetQuery();
     }
     SetReply(/* Mutex lock inside. */);
     return success;
   }
 
-  bool Stop(const QFmt* q_fmt_override = nullptr) {
+  bool Stop() {
     Threads::Scope lock{mutex_};
-    return SetStop(q_fmt_override);
+    return SetStop();
   }
 
   bool Position(const PmCmd& usr_cmd) {
