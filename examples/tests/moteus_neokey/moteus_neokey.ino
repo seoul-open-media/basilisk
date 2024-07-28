@@ -13,12 +13,12 @@
 
 Servo servos_bus1[]{{1}, {2}};
 
-template <typename ServoCommand>
-void CommandBus1(ServoCommand c) {
-  for (size_t i = 0; i < sizeof(servos_bus1) / sizeof(servos_bus1[0]); i++) {
-    c(servos_bus1 + i);
-  }
-}
+// template <typename ServoCommand>
+// void CommandBus1(ServoCommand c) {
+//   for (size_t i = 0; i < sizeof(servos_bus1) / sizeof(servos_bus1[0]); i++) {
+//     c(servos_bus1 + i);
+//   }
+// }
 
 class NeokeyServoUnit {
  public:
@@ -68,60 +68,51 @@ class NeokeyServoUnit {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        Serial.println("query metro check");
+        Serial.print(F("QueryExecuter thread: "));
         Serial.print(threads.id());
         Serial.print(", ");
         Serial.println(threads.getState(threads.id()), HEX);
 
         CommandUnit([](Servo* s) { s->Query(); });
       }
+      delay(interval >> 2);
     }
   }
 
   void CommandExecuter(const uint32_t& interval) {
+    using M = Command::Mode;
     Metro metro{interval};
     while (1) {
-      // Serial.println("while begin");
       if (metro.check()) {
-        Serial.println("metro check");
+        Serial.print(F("CommandExecuter thread: "));
         Serial.print(threads.id());
         Serial.print(", ");
         Serial.println(threads.getState(threads.id()), HEX);
 
-        if (cmd_.mode == Command::Mode::Stop) {
+        if (cmd_.mode == M::Stop) {
           ExecuteStop();
-        } else if (cmd_.mode == Command::Mode::DZero) {
-          ExecuteDZero();
-        } else if (cmd_.mode == Command::Mode::SetPosition) {
+        } else if (cmd_.mode == M::SetPosition) {
           ExecuteSetPosition();
         }
-
-        Serial.print(threads.id());
-        Serial.print(", ");
-        Serial.println(threads.getState(threads.id()), HEX);
       }
-      // Serial.println("while end1");
+      delay(interval >> 2);
     }
   }
 
   void ExecuteStop() {
-    // Serial.println(cmd_.stop.init ? "init == true" : "init==false");
     if (cmd_.stop.init) {
+      Serial.println(F("ExecuteStop processing init state"));
       CommandUnit([](Servo* s) { s->Stop(); });
       cmd_.stop.init = false;
     }
-    // Serial.print(threads.id());
-    // Serial.print(", ");
-    // Serial.println(threads.getState(threads.id()), HEX);
-    //   Serial.println("init");
-    //   Serial.println("init processed");
-    //   Serial.println("set stop.init = false");
   }
 
+  // Using DiagnosticCommand during runtime might cause threads to freeze.
+  // Setting base position and using base-relative commands seems to be
+  // a better option.
   void ExecuteDZero() {
     if (cmd_.d_zero.init) {
-      Serial.println("ExecuteDZero working");
-
+      Serial.println(F("ExecuteDZero processing init state"));
       CommandUnit([&](Servo* s) {
         s->Stop();
         s->d(F("tel stop"));
@@ -130,56 +121,38 @@ class NeokeyServoUnit {
           // For unknown reason, commanding multiple times
           // has more stable result.
           s->d(F("d exact 0"));
-          delay(1);
+          delay(10);
         }
         s->Position(0);
       });
-
-      // CommandAll([](Servo* servo) {
-      //   servo->Stop();
-      //   servo->DiagnosticCommand(F("tel stop"));
-      //   servo->DiagnosticCommand(F("d exact 0"));
-      //   // servo->Position(0);
-      // });
       cmd_.d_zero.init = false;
     }
   }
 
   void ExecuteSetPosition() {
-    Serial.print(threads.id());
-    Serial.print(", ");
-    Serial.println(threads.getState(threads.id()), HEX);
-    Serial.println("ExecuteSetPosition");
-    if (cmd_.set_position.progress == Command::SetPosition::Progress::init) {
-      Serial.println("ExecuteSetPosition Actual work");
-      Serial.print(threads.id());
-      Serial.print(", ");
-      Serial.println(threads.getState(threads.id()), HEX);
-
-      CommandUnit([](Servo* s) { s->Position(0); });
-      cmd_.set_position.progress = Command::SetPosition::Progress::moving;
-
-      Serial.println("ExecuteSetPosition Actual work DONE");
-      Serial.print(threads.id());
-      Serial.print(", ");
-      Serial.println(threads.getState(threads.id()), HEX);
+    using P = Command::SetPosition::Progress;
+    switch (cmd_.set_position.progress) {
+      case P::init: {
+        Serial.println(F("ExecuteSetPosition processing init state"));
+        CommandUnit([this](Servo* s) {
+          s->Position(cmd_.set_position.position * (s->id_ % 2 ? 1 : -1));
+        });
+        cmd_.set_position.progress = Command::SetPosition::Progress::moving;
+      } break;
+      case P::moving: {
+        //     for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++)
+        //     {
+        //       if (!servos_[i].last_result().values.trajectory_complete) {
+        //         return;
+        //       }
+        //     }
+        //     cmd_.set_position.progress =
+        //     Command::SetPosition::Progress::complete;
+      } break;
+      default:
+        break;
     }
-    // servos_[0].cmd_.set_position.progress) {
-    //   temp_ser. Command::SetPosition::Progress::init: {
-    //     CommandAll([&](Servo* servo) {
-    //       servo->Position(cmd_.set_position.position *
-    //                       (servo->id_ % 2 ? 1 : -1));
-    //     });
-    //     cmd_.set_position.progress = Command::SetPosition::Progress::moving;
-    //   } break;
     //   case Command::SetPosition::Progress::moving: {
-    //     for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++) {
-    //       if (!servos_[i].last_result().values.trajectory_complete) {
-    //         return;
-    //       }
-    //     }
-    //     cmd_.set_position.progress =
-    //     Command::SetPosition::Progress::complete;
     //   } break;
     //   case Command::SetPosition::Progress::complete: {
     //     CommandAll([](Servo* servo) { servo->Stop(); });
@@ -203,6 +176,7 @@ Adafruit_NeoKey_1x4 neokey_mtx[NEOKEY_DIM_Y][NEOKEY_DIM_X / 4] = {
 NeoKey1x4Callback NeokeyCallback(keyEvent evt) {
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     auto key = evt.bit.NUM;
+
     Serial.print("Rise: ");
     Serial.println(key);
 
@@ -210,30 +184,25 @@ NeoKey1x4Callback NeokeyCallback(keyEvent evt) {
     using M = C::Mode;
     auto& cmd = neokey_su.cmd_;
     auto& mode = cmd.mode;
-    // auto& mutex = neokey_su.cmd_.mutex;
+    auto& mutex = neokey_su.cmd_.mutex;
 
-    mode = (M)key;
-    switch (mode) {
-      case M::Stop: {
-        Threads::Scope lock{neokey_su.cmd_.mutex};
-        Serial.println("key locked mutex");
+    switch (key) {
+      case 0: {
+        Threads::Scope lock{mutex};
+        mode = M::Stop;
         cmd.stop.init = true;
-        Serial.println("set stop.init = true");
-      }
-        Serial.println("key UNlocked mutex");
-        break;
-      case M::DZero: {
-        Threads::Scope lock{neokey_su.cmd_.mutex};
-        cmd.d_zero.init = true;
       } break;
-      case M::SetPosition: {
-        Threads::Scope lock{neokey_su.cmd_.mutex};
+      case 1: {
+        Threads::Scope lock{mutex};
+        mode = M::SetPosition;
         cmd.set_position.progress = C::SetPosition::Progress::init;
         cmd.set_position.position = 0;
       } break;
-      case M::Sine: {
-        Threads::Scope lock{neokey_su.cmd_.mutex};
-        cmd.sine.progress = C::Sine::Progress::init;
+      case 2: {
+        Threads::Scope lock{mutex};
+        mode = M::SetPosition;
+        cmd.set_position.progress = C::SetPosition::Progress::init;
+        cmd.set_position.position = 0.5;
       } break;
       default: {
         Serial.println(F("Unknown command"));
@@ -256,6 +225,7 @@ class NeokeyCommandReceiver {
       if (metro.check()) {
         neokey_.read();
       }
+      delay(interval >> 2);
     }
   }
 
@@ -264,12 +234,6 @@ class NeokeyCommandReceiver {
 
 class SerialPrintReplySender {
  public:
-  // template <typename ServoCommand>
-  // void CommandAll(ServoCommand c) {
-  //   c(servos_[0]);
-  //   c(servos_[1]);
-  // }
-
   void Run(const uint32_t& interval = 250) {
     Metro metro{interval};
     while (1) {
@@ -279,7 +243,6 @@ class SerialPrintReplySender {
       }
     }
   }
-
 } serial_print_rs;
 
 void setup() {
@@ -297,15 +260,15 @@ void setup() {
 
   servos_bus1[0].Stop();
   servos_bus1[1].Stop();
-  // CommandAll([](Servo* s) { s->Stop(); });
+  // CommandBus1([](Servo* s) { s->Stop(); });  // Why not working?
 
-  threads.addThread([] { neokey_su.CommandExecuter(500); });
-  threads.addThread([] { neokey_su.QueryExecuter(500); });
+  threads.addThread([] { neokey_su.CommandExecuter(100); });
+  threads.addThread([] { neokey_su.QueryExecuter(100); });
   threads.addThread([] { neokey_cr.Run(); });
   // threads.addThread([] { serial_print_rs.Run(); });
 }
 
 void loop() {
-  Serial.println("loop");
+  Serial.println("Loop is alive");
   delay(2000);
 }
