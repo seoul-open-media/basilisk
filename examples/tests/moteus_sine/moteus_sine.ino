@@ -3,17 +3,50 @@
 #include <ACAN2517FD.h>
 #include <Metro.h>
 #include <Moteus.h>
+#include <TeensyThreads.h>
 #include <initializers.h>
 #include <servo.h>
 
-Servo servos[] = {{1}, {2}};
+class SineServoUnit {
+ public:
+  SineServoUnit() : servos_{{1}, {2}} {}
 
-template <typename ServoCommand>
-void CommandAll(ServoCommand c) {
-  for (uint8_t i = 0; i < sizeof(servos) / sizeof(servos[0]); i++) {
-    c(&servos[i]);
+  template <typename ServoCommand>
+  void CommandAll(ServoCommand c) {
+    c(&servos_[0]);
+    c(&servos_[1]);
   }
-}
+
+  // Place ReplySender inside ServoUnit as a method rather making a class for it
+  // for this simple kind of scenario.
+  void SerialPrintReplySender(const uint32_t& interval = 250) {  // Default 4Hz.
+    Metro metro{interval};
+    while (1) {
+      if (metro.check()) {
+        CommandAll([](Servo* servo) { servo->Print(); });
+      }
+    }
+  }
+
+  // Query and Command in a unified Executer to avoid unnecessary
+  // syncronization problem since generally Replies are needed for Commands,
+  // and they should be executed at same frequency anyway.
+  // Executer is placed inside ServoUnit for Teensy version since
+  // bulk execution is not implemented in the Moteus Arduino library.
+  void Executer(const uint32_t& interval = 10) {  // Default 100Hz.
+    Metro metro{interval};
+    while (1) {
+      if (metro.check()) {
+        CommandAll([](Servo* servo) { servo->Query(); });
+
+        servos_[0].Position({.position = 0.25 * ::sin(millis() / 250.0)});
+        servos_[1].Position({.position = 0.5 * ::sin(millis() / 125.0)});
+      }
+    }
+  }
+
+  Servo servos_[2];
+} sine_su;
 
 void setup() {
   SerialInitializer.init();
@@ -21,27 +54,10 @@ void setup() {
   CanFdInitializer.init();  // Setup the CAN FD driver.
 
   // Clear all faults by sending Stop commands, and save the initial positions.
-  CommandAll([](Servo* servo) {
-    servo->SetStop();
-    delay(10);
-    servo->SetBasePosition();
-  });
+  sine_su.CommandAll([](Servo* servo) { servo->Stop(); });
+
+  threads.addThread([] { sine_su.Executer(); });
+  threads.addThread([] { sine_su.SerialPrintReplySender(); });
 }
 
-Metro cmd_metro{10};
-Metro rpl_metro{250};
-
-void loop() {
-  // Send Command every 10ms.
-  if (cmd_metro.check()) {
-    servos[0].controller_.SetPosition(
-        {.position = servos[0].base_pos_ + 0.25 * ::sin(millis() / 250.0)});
-    servos[1].controller_.SetPosition(
-        {.position = servos[1].base_pos_ + 0.5 * ::sin(millis() / 125.0)});
-  }
-
-  // Print Reply every 1s.
-  if (rpl_metro.check()) {
-    CommandAll([](Servo* servo) { servo->Print(); });
-  }
-}
+void loop() {}

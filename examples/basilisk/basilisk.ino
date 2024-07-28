@@ -10,39 +10,7 @@
 class Basilisk {
  public:
   Basilisk()
-      : pm_fmt_{.maximum_torque = Res::kFloat,
-                .velocity_limit = Res::kFloat,
-                .accel_limit = Res::kFloat},
-        pm_cmd_template_{
-            .maximum_torque = 32.0, .velocity_limit = 16.0, .accel_limit = 8.0},
-        q_fmt_{[] {
-          QFmt fmt;
-          fmt.abs_position = Res::kFloat;
-          fmt.motor_temperature = Res::kInt16;
-          fmt.trajectory_complete = Res::kInt8;
-          return fmt;
-        }()},
-        l_{1, &pm_fmt_, &q_fmt_},
-        r_{2, &pm_fmt_, &q_fmt_},
-        exec_metro_{10} {}
-
-  template <typename ServoCommand>
-  void CommandLR(ServoCommand c) {
-    c(&l_);
-    c(&r_);
-  }
-
-  void SetStop() {
-    CommandLR([](Servo* servo) { servo->SetStop(); });
-  }
-
-  void SetPositions(double pos_l, double pos_r) {
-    PmCmd pm_cmd{pm_cmd_template_};
-    pm_cmd.position = pos_l;
-    l_.SetPosition(pm_cmd);
-    pm_cmd.position = pos_r;
-    r_.SetPosition(pm_cmd);
-  }
+      : l_{1, &pm_fmt_, &q_fmt_}, r_{2, &pm_fmt_, &q_fmt_}, exec_metro_{10} {}
 
   void execute() {
     if (!exec_metro_.check()) return;
@@ -120,43 +88,47 @@ class Basilisk {
       Sine
     } mode;
 
-    struct Stop {
-      bool waiting;
-    } stop;
+    struct {  // don't use union since progress data should be reserved
+              // or previous command value should be used for comparing with new
+              // value
+      struct Stop {
+        bool waiting;
+      } stop;
 
-    struct DZero {
-      bool waiting;
-    } d_zero;
+      struct DZero {
+        bool waiting;
+      } d_zero;
 
-    struct SetPositions {
-      double l;
-      double r;
-      enum class Progress : uint8_t {
-        waiting,
-        moving,
-        complete,
-        stopped
-      } progress;
-    } set_positions;
+      struct SetPositions {
+        double l;
+        double r;
+        enum class Progress : uint8_t {
+          waiting,
+          moving,
+          complete,
+          stopped
+        } progress;
+      } set_positions;
 
-    struct WalkForward {
-      double speed;
-    } walk_forward;
+      struct WalkForward {
+        double speed;
+      } walk_forward;
 
-    struct WalkBackward {
-      double speed;
-    } walk_backward;
+      struct WalkBackward {
+        double speed;
+      } walk_backward;
 
-    struct GoToLpsPosition {
-      double x, y;
-      double speed;
-    } go_to_lps_position;
+      struct GoToLpsPosition {
+        double x, y;
+        double speed;
+      } go_to_lps_position;
 
-    struct Sine {
-      double amplitude;
-      double frequency;
-      uint32_t progress;
-    } sine;
+      struct Sine {
+        double amplitude;
+        double frequency;
+        uint32_t progress;
+      } sine;
+    } cmd;
   } cmd_;
 
   Servo l_, r_;
@@ -168,12 +140,9 @@ class Basilisk {
   Metro exec_metro_;
 } basilisk;
 
-class Executor {
-} executor;
-
-class NeokeyCommandReceiver {
+class NeokeyReceiver {
  public:
-  NeokeyCommandReceiver(uint16_t interval_ms) : neokey_{0x30, &Wire} {
+  NeokeyReceiver(uint16_t interval_ms) : neokey_{0x30, &Wire} {
     while (!neokey_.begin()) {
       Serial.println("Could not start NeoKey, check wiring?");
       delay(1000);
@@ -219,34 +188,7 @@ class NeokeyCommandReceiver {
  private:
   Adafruit_NeoKey_1x4 neokey_;
   Metro metro_{100};
-} neokey_cmd_rcvr{5};
-
-class SerialPrintReplySender {
- public:
-  void snd() {
-    if (!metro_.check()) return;
-
-    print(basilisk.mot_l_.last_result().values);
-    print(basilisk.mot_r_.last_result().values);
-  }
-
- private:
-  void print(Moteus::Query::Result reply) {
-    Serial.print(F("time "));
-    Serial.print(millis());
-    Serial.print(F("  mode "));
-    Serial.print(static_cast<int>(reply.mode));
-    Serial.print(F("  pos "));
-    Serial.print(reply.position);
-    Serial.print(F("  vel "));
-    Serial.print(reply.velocity);
-    Serial.print(F("  fault "));
-    Serial.print(reply.fault);
-    Serial.println();
-  }
-
-  Metro metro_{250};
-} serial_print_rpl_sndr;
+} neokey_cr{5};
 
 void setup() {
   SerialInitializer.init();
@@ -264,7 +206,7 @@ void loop() {
     basilisk.mot_l_.SetPosition({.position = 0});
   }
 
-  neokey_cmd_rcvr.rcv();
+  neokey_cr.rcv();
   serial_print_rpl_sndr.snd();
   basilisk.execute();
 }

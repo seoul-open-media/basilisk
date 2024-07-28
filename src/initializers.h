@@ -45,24 +45,6 @@ Initializer I2C1Initializer{[] {
   Serial.println(F("I2C1(Wire1) started"));
 }};
 
-Initializer Neokey0Initializer{[] {
-  while (!neokey0.begin()) {
-    Serial.println(F("Neokey0 begin failed"));
-    delay(1000);
-  }
-  Serial.println(F("Neokey0 started"));
-  delay(1000);
-}};
-
-Initializer Neokey1Initializer{[] {
-  while (!neokey1.begin()) {
-    Serial.println(F("Neokey1 begin failed"));
-    delay(1000);
-  }
-  Serial.println(F("Neokey1 started"));
-  delay(1000);
-}};
-
 Initializer CanFdInitializer{[] {  // Caution: Only for Bus 1 (JC1 port)
   while (1) {
     auto err_code = canfd_driver.begin(
