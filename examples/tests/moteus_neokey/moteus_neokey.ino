@@ -24,12 +24,12 @@ class NeokeyServoUnit {
  public:
   NeokeyServoUnit() : servos_{servos}, num_servos_{2} {}
 
-  // template <typename ServoCommand>
-  // void CommandUnit(ServoCommand c) {
-  //   for (size_t i = 0; i < num_servos_; i++) {
-  //     c(servos_ + i);
-  //   }
-  // }
+  template <typename ServoCommand>
+  void CommandUnit(ServoCommand c) {
+    for (size_t i = 0; i < num_servos_; i++) {
+      c(servos_ + i);
+    }
+  }
 
   struct Command {
     Threads::Mutex mutex;
@@ -108,8 +108,8 @@ class NeokeyServoUnit {
   void ExecuteStop() {
     // Serial.println(cmd_.stop.init ? "init == true" : "init==false");
     if (cmd_.stop.init) {
-      servos_[0].Stop();
-      servos_[1].Stop();
+      servos_->Stop();
+      (servos_ + 1)->Stop();
       // CommandUnit([](Servo* s) { s->Stop(); });
       cmd_.stop.init = false;
     }
@@ -152,8 +152,8 @@ class NeokeyServoUnit {
       Serial.print(", ");
       Serial.println(threads.getState(threads.id()), HEX);
 
-      servos_[0].Position(0);
-      servos_[1].Position(1);
+      servos_->Position(0);
+      (servos_ + 1)->Position(1);
       //      CommandUnit([](Servo* s) { s->Position(0); });
       cmd_.set_position.progress = Command::SetPosition::Progress::moving;
 
