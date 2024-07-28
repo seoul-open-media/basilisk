@@ -19,50 +19,13 @@ class Basilisk {
 
     switch (cmd_.mode) {
       case Command::Mode::Stop: {
-        if (cmd_.stop.waiting) {
-          CommandLR([](Moteus* m) { m->SetStop(); });
-          cmd_.stop.waiting = false;
-        }
+      
         break;
       }
       case Command::Mode::DZero: {
-        if (cmd_.d_zero.waiting) {
-          CommandLR([](Moteus* m) {
-            m->DiagnosticCommand(F("tel stop"));
-            m->DiagnosticCommand(F("d exact 0"));
-            m->SetPosition({.position = 0});
-          });
-          cmd_.d_zero.waiting = false;
-        }
         break;
       }
       case Command::Mode::SetPositions: {
-        switch (cmd_.set_positions.progress) {
-          case Command::SetPositions::Progress::waiting: {
-            SetPositions(cmd_.set_positions.l, cmd_.set_positions.r);
-            cmd_.set_positions.progress =
-                Command::SetPositions::Progress::moving;
-            break;
-          }
-          case Command::SetPositions::Progress::moving: {
-            if (mot_l_.last_result().values.trajectory_complete
-                // && mot_r_.last_result().values.trajectory_complete
-            ) {
-              cmd_.set_positions.progress =
-                  Command::SetPositions::Progress::complete;
-            }
-            break;
-          }
-          case Command::SetPositions::Progress::complete: {
-            CommandLR([](Moteus* m) { m->SetStop(); });
-            cmd_.set_positions.progress =
-                Command::SetPositions::Progress::stopped;
-            break;
-          }
-          default: {
-            break;
-          }
-        }
         break;
       }
       case Command::Mode::Sine: {

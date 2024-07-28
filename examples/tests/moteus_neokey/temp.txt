@@ -1,0 +1,124 @@
+
+class NeokeyServoUnit {
+ public:
+  NeokeyServoUnit()
+      : servos_{{1, &pm_fmt, &pm_cmd_template,
+                 CommandPositionRelativeTo::Absolute, &q_fmt},
+                {2, &pm_fmt, &pm_cmd_template,
+                 CommandPositionRelativeTo::Absolute, &q_fmt}} {}
+
+
+  template <typename ServoCommand>
+  void CommandAll(ServoCommand c) {
+    for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++) {
+      c(&servos_[i]);
+    }
+  }
+
+  void Executer(const uint32_t& interval = 10) {
+    Metro metro{interval};
+    while (1) {
+      // Serial.println("while");
+      if (metro.check()) {
+        CommandAll([](Servo* servo) { servo->Query(); });
+
+        servos_[0].Position({.position = 0.25 * ::sin(millis() / 250.0)});
+        servos_[1].Position({.position = 0.5 * ::sin(millis() / 125.0)});
+
+        // Serial.println("EX ");
+        // CommandAll([](Servo* servo) { servo->Query(); });
+
+        // {
+        //   Serial.println("mutex locked");
+        //   Threads::Scope lock{cmd_.mutex};
+        //   // (this->*executers_[(uint8_t)cmd_.mode])();
+        //   ExecuteStop();
+        // }
+        // Serial.println("mutex unlocked");
+      }
+      // Serial.println("before yield");
+      // yield();
+      // Serial.println("after yield");
+      // delay(250);
+      // Serial.println("after delay");
+    }
+  }
+
+  void ExecuteStop() {
+    Serial.println(cmd_.stop.init ? "true " : "false ");
+
+    if (cmd_.stop.init) {
+      Serial.println("init");
+      // CommandAll([](Servo* servo) { servo->Stop(); });
+      servos_[1].Stop();
+      Serial.println("init processed");
+      cmd_.stop.init = false;
+      Serial.println("set stop.init = false");
+    }
+  }
+
+  void ExecuteSetPosition() {
+    Serial.println("ExecuteSetPosition");
+    switch (cmd_.set_position.progress) {
+      case Command::SetPosition::Progress::init: {
+        CommandAll([&](Servo* servo) {
+          servo->Position(cmd_.set_position.position *
+                          (servo->id_ % 2 ? 1 : -1));
+        });
+        cmd_.set_position.progress = Command::SetPosition::Progress::moving;
+      } break;
+      case Command::SetPosition::Progress::moving: {
+        for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++) {
+          if (!servos_[i].last_result().values.trajectory_complete) {
+            return;
+          }
+        }
+        cmd_.set_position.progress = Command::SetPosition::Progress::complete;
+      } break;
+      case Command::SetPosition::Progress::complete: {
+        CommandAll([](Servo* servo) { servo->Stop(); });
+        cmd_.set_position.progress = Command::SetPosition::Progress::stopped;
+      } break;
+      default:
+        break;
+    }
+  }
+
+  void ExecuteSine() { Serial.println("ExecuteSine"); }
+
+  Servo servos_[2];
+  void (NeokeyServoUnit::*executers_[4])() = {
+      &ExecuteStop, &ExecuteDZero, &ExecuteSetPosition, &ExecuteSine};
+  static inline PmFmt pm_fmt{.maximum_torque = Res::kFloat,
+                             .velocity_limit = Res::kFloat,
+                             .accel_limit = Res::kFloat};
+  static inline PmCmd pm_cmd_template{
+      .maximum_torque = 32.0, .velocity_limit = 16.0, .accel_limit = 4.0};
+  static inline QFmt q_fmt{[] {
+    QFmt fmt;
+    fmt.abs_position = Res::kFloat;
+    fmt.motor_temperature = Res::kInt16;
+    fmt.trajectory_complete = Res::kInt8;
+    return fmt;
+  }()};
+} neokey_su;
+
+class SerialPrintReplySender {
+ public:
+  template <typename ServoCommand>
+  void CommandAll(ServoCommand c) {
+    c(servos_[0]);
+    c(servos_[1]);
+  }
+
+  void Run(const uint32_t& interval = 250) {
+    Metro metro_{interval};
+    while (1) {
+      if (metro_.check()) {
+        CommandAll([](Servo* servo) { servo->Print(); });
+      }
+    }
+  }
+
+  Servo* servos_[2] = {&neokey_su.servos_[0], &neokey_su.servos_[1]};
+} serial_print_rs;

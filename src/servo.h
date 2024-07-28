@@ -109,6 +109,12 @@ class Servo : public Moteus {
     return success;
   }
 
+  String d(const String& message_in,
+           Moteus::DiagnosticReplyMode reply_mode = Moteus::kExpectOK) {
+    Threads::Scope lock{mutex_};
+    return DiagnosticCommand(message_in, reply_mode);
+  }
+
   const int id_;
   Threads::Mutex mutex_;
 
