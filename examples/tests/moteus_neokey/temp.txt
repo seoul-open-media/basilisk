@@ -83,18 +83,6 @@ class NeokeyServoUnit {
   Servo servos_[2];
   void (NeokeyServoUnit::*executers_[4])() = {
       &ExecuteStop, &ExecuteDZero, &ExecuteSetPosition, &ExecuteSine};
-  static inline PmFmt pm_fmt{.maximum_torque = Res::kFloat,
-                             .velocity_limit = Res::kFloat,
-                             .accel_limit = Res::kFloat};
-  static inline PmCmd pm_cmd_template{
-      .maximum_torque = 32.0, .velocity_limit = 16.0, .accel_limit = 4.0};
-  static inline QFmt q_fmt{[] {
-    QFmt fmt;
-    fmt.abs_position = Res::kFloat;
-    fmt.motor_temperature = Res::kInt16;
-    fmt.trajectory_complete = Res::kInt8;
-    return fmt;
-  }()};
 } neokey_su;
 
 class SerialPrintReplySender {

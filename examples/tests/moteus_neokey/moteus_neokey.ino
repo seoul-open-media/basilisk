@@ -11,7 +11,25 @@
 #include <neokey.h>
 #include <servo.h>
 
-Servo servos_bus1[]{{1}, {2}};
+PmFmt pm_fmt{.maximum_torque = Res::kFloat,
+             .velocity_limit = Res::kFloat,
+             .accel_limit = Res::kFloat};
+
+PmCmd pm_cmd_template{
+    .maximum_torque = 32.0, .velocity_limit = 16.0, .accel_limit = 4.0};
+
+QFmt q_fmt{[] {
+  QFmt fmt;
+  fmt.abs_position = Res::kFloat;
+  fmt.motor_temperature = Res::kInt16;
+  fmt.trajectory_complete = Res::kInt8;
+  return fmt;
+}()};
+
+Servo servos_bus1[]{
+    {1, &pm_fmt, &pm_cmd_template, CommandPositionRelativeTo::Absolute, &q_fmt},
+    {2, &pm_fmt, &pm_cmd_template, CommandPositionRelativeTo::Absolute,
+     &q_fmt}};
 
 // template <typename ServoCommand>
 // void CommandBus1(ServoCommand c) {
@@ -137,30 +155,30 @@ class NeokeyServoUnit {
         CommandUnit([this](Servo* s) {
           s->Position(cmd_.set_position.position * (s->id_ % 2 ? 1 : -1));
         });
-        cmd_.set_position.progress = Command::SetPosition::Progress::moving;
+        cmd_.set_position.progress = P::moving;
       } break;
       case P::moving: {
-        //     for (size_t i = 0; i < sizeof(servos_) / sizeof(servos_[0]); i++)
-        //     {
-        //       if (!servos_[i].last_result().values.trajectory_complete) {
-        //         return;
-        //       }
-        //     }
-        //     cmd_.set_position.progress =
-        //     Command::SetPosition::Progress::complete;
+        Serial.println(F("ExecuteSetPosition processing moving state"));
+        for (size_t i = 0; i < num_servos_; i++) {
+          if (![&]() {
+                // Refer to the WaitComplete example why we should Query twice.
+                servos_[i].SetQuery();
+                servos_[i].SetQuery();
+                return servos_[i].last_result().values.trajectory_complete;
+              }()) {
+            return;
+          }
+        }
+        cmd_.set_position.progress = P::complete;
+      } break;
+      case P::complete: {
+        Serial.println(F("ExecuteSetPosition processing complete state"));
+        CommandUnit([](Servo* servo) { servo->Stop(); });
+        cmd_.set_position.progress = P::stopped;
       } break;
       default:
         break;
     }
-    //   case Command::SetPosition::Progress::moving: {
-    //   } break;
-    //   case Command::SetPosition::Progress::complete: {
-    //     CommandAll([](Servo* servo) { servo->Stop(); });
-    //     cmd_.set_position.progress = Command::SetPosition::Progress::stopped;
-    //   } break;
-    //   default:
-    //     break;
-    // }
   }
 
   Servo* servos_;
