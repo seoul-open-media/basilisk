@@ -35,14 +35,17 @@ class ServoUnit {
         // CommandUnit([&](Servo& s) { s.Position(target); });
         // count++;
 
-        double target = 0.5 * sin(millis() / 250.0);
+        double target = 0.25 * sin(millis() / 250.0);
 
-        // (A)
-        CommandUnit([&](Servo& s) { s.Position(target); });
+        // (A) -> fine
+        CommandUnit([=](Servo& s) { s.Position(target); });
 
-        // (B)
+        // (B) -> fails
         // servos_[0].Position(target);
         // servos_[1].Position(target);
+
+        // What is the difference between (A) and (B)?
+        // (B) works fine IF only one of the Servos is Commanded.
       }
     }
   }
