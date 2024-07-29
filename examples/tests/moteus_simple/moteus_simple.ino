@@ -9,25 +9,29 @@ class ServoUnit {
  public:
   ServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
 
-  Servo servos_[2];
-
-  void Query() {
-    servos_[0].Query();
-    servos_[1].Query();
+  template <typename ServoCommand>
+  void CommandAll(ServoCommand c) {
+    for (Servo& s : servos_) {
+      c(s);
+    }
   }
 
-  void Executer() {
-    static uint16_t count = 0;
+  void Query() {
+    CommandAll([](Servo& s) { s.Query(); });
+  }
+
+  void Command() {
+    static uint16_t count;
     double target = count % 2 ? 0.0 : 0.5;
-    servos_[0].Position(target);
-    servos_[1].Position(target);
+    CommandAll([&](Servo& s) { s.Position(target); });
     count++;
   }
 
   void Printer() {
-    servos_[0].Print();
-    servos_[1].Print();
+    CommandAll([](Servo& s) { s.Print(); });
   }
+
+  Servo servos_[2];
 } su;
 
 void setup() {
@@ -35,13 +39,12 @@ void setup() {
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
 
-  su.servos_[0].Stop();
-  su.servos_[1].Stop();
+  su.CommandAll([](Servo& s) { s.Stop(); });
 }
 
-Metro query{250};
+Metro query{10};
 Metro command{1000};
-Metro print{500};
+Metro print{100};
 
 void loop() {
   if (query.check()) {
@@ -49,7 +52,7 @@ void loop() {
   }
 
   if (command.check()) {
-    su.Executer();
+    su.Command();
   }
 
   if (print.check()) {
