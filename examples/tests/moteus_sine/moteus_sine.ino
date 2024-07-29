@@ -20,40 +20,28 @@ class SineServoUnit {
     }
   }
 
+  // Query and Command in a unified Executer to avoid unnecessary
+  // syncronization problem since generally Replies are needed for Commands,
+  // and they should be executed at same frequency anyway.
+  // Executer is placed inside ServoUnit for Teensy version since
+  // bulk execution is not implemented in the Moteus Arduino library.
+  void Executer(const uint32_t& interval = 10) {
+    Metro metro{interval};
+    while (1) {
+      if (metro.check()) {
+        CommandUnit([](Servo& s) { s.Query(); });
+        CommandUnit([](Servo& s) { s.Position(0.25 * sin(millis() / 250.0)); });
+      }
+    }
+  }
+
   // Place ReplySender inside ServoUnit as a method rather making a class for it
   // for this simple kind of scenario.
   void SerialPrintReplySender(const uint32_t& interval = 100) {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        // CommandUnit([](Servo* servo) { servo->Print(); });
-        servos_[0].Print();
-        servos_[1].Print();
-      }
-    }
-  }
-
-  void Query(const uint32_t& interval = 10) {
-    Metro metro{interval};
-    while (1) {
-      if (metro.check()) {
-        servos_[0].Query();
-        servos_[1].Query();
-      }
-    }
-  }
-
-  // Query and Command in a unified Executer to avoid unnecessary
-  // syncronization problem since generally Replies are needed for Commands,
-  // and they should be executed at same frequency anyway.
-  // Executer is placed inside ServoUnit for Teensy version since
-  // bulk execution is not implemented in the Moteus Arduino library.
-  void Executer(const uint32_t& interval = 100) {
-    Metro metro{interval};
-    while (1) {
-      if (metro.check()) {
-        servos_[0].Position(0.25 * ::sin(millis() / 250.0));
-        servos_[1].Position(0.5 * ::sin(millis() / 125.0));
+        CommandUnit([](Servo& servo) { servo.Print(); });
       }
     }
   }
@@ -82,11 +70,10 @@ void setup() {
 
   // Clear all faults by sending Stop commands, and save the initial positions.
   // sine_su.CommandUnit([](Servo* servo) { servo->Stop(); });
-  sine_su.servos_[0].Stop();
-  sine_su.servos_[1].Stop();
+  sine_su.CommandUnit([](Servo& s) { s.Stop(); });
 
   threads.addThread([] { sine_su.Executer(); });
   threads.addThread([] { sine_su.SerialPrintReplySender(); });
 }
 
-void loop() { delay(1000); }
+void loop() { yield(); }
