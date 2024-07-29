@@ -50,10 +50,6 @@ class Servo : protected Moteus {
                  if (q_fmt) {
                    options.query_format = *q_fmt;
                  }
-                 options.default_query =
-                     false;  // Query is Executer's job, which should run
-                             // continuously even when some Servos
-                             // are idle on the Command side.
                  return options;
                }()},
         pm_fmt_{pm_fmt},
@@ -127,7 +123,7 @@ class Servo : protected Moteus {
   }
 
   const int id_;
-  Threads::Mutex mutex_;
+  static Threads::Mutex mutex_;
 
   PmFmt* pm_fmt_;
   PmCmd* pm_cmd_template_;
@@ -220,3 +216,5 @@ class Servo : protected Moteus {
     Serial.println();
   }
 };
+
+Threads::Mutex Servo::mutex_;

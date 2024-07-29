@@ -2,49 +2,57 @@
 #include <Metro.h>
 #include <Moteus.h>
 #include <initializers.h>
-#include <servo.h>
 
 #define CANFD_BUS 1
 
-Servo servos[] = {{1, CANFD_BUS}, {2, CANFD_BUS}};
-template <typename ServoCommand>
-void CommandAll(ServoCommand c) {
-  for (uint8_t i = 0; i < 2; i++) {
-    c(&servos[i]);
-  }
-}
+class ServoUnit {
+ public:
+  ServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
 
-void Executer() {
-  Metro metro{1000};
-  uint16_t count = 0;
-  while (1) {
-    if (metro.check()) {
-      CommandAll([](Servo* s) { s->Query(); });
-      double target = count % 2 ? 0.0 : 0.5;
-      CommandAll([&](Servo* s) { s->Position(target); });
-      count++;
-    }
-  }
-}
+  Servo servos_[2];
 
-void Printer() {
-  Metro metro{1000};
-  while (1) {
-    if (metro.check()) {
-      CommandAll([](Servo* s) { s->Print(); });
-    }
+  void Query() {
+    servos_[0].Query();
+    servos_[1].Query();
   }
-}
+
+  void Executer() {
+    static uint16_t count = 0;
+    double target = count % 2 ? 0.0 : 0.5;
+    servos_[0].Position(target);
+    servos_[1].Position(target);
+    count++;
+  }
+
+  void Printer() {
+    servos_[0].Print();
+    servos_[1].Print();
+  }
+} su;
 
 void setup() {
   SerialInitializer.init();
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
 
-  CommandAll([](Servo* servo) { servo->Stop(); });
-
-  threads.addThread([] { Executer(); });
-  threads.addThread([] { Printer(); });
+  su.servos_[0].Stop();
+  su.servos_[1].Stop();
 }
 
-void loop() {}
+Metro query{250};
+Metro command{1000};
+Metro print{500};
+
+void loop() {
+  if (query.check()) {
+    su.Query();
+  };
+
+  if (command.check()) {
+    su.Executer();
+  }
+
+  if (print.check()) {
+    su.Printer();
+  }
+}
