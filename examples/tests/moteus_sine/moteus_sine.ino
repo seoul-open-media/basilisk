@@ -15,8 +15,15 @@ class SineServoUnit {
 
   template <typename ServoCommand>
   void CommandUnit(ServoCommand c) {
-    c(&servos_[0]);
-    c(&servos_[1]);
+    // c(&servos_[0]);
+    // c(&servos_[1]);
+
+    c(servos_);
+    c(servos_ + 1);
+
+    // for (uint8_t i = 0; i < 2; i++) {
+    //   c(&servos_[i]);
+    // }
   }
 
   // Place ReplySender inside ServoUnit as a method rather making a class for it
