@@ -1,4 +1,4 @@
-// Drive moteus of ID 1 and 2 in sine wave motion. Wiggle wiggle.
+// Drive moteus of ID 1 and 2 on Bus 1 in sine wave motion. Wiggle wiggle.
 
 #include <ACAN2517FD.h>
 #include <Metro.h>
@@ -7,9 +7,11 @@
 #include <initializers.h>
 #include <servo.h>
 
+#define CANFD_BUS 1  // Only Buses 1 and 2 work for T4_CanFd board v.1.5.
+
 class SineServoUnit {
  public:
-  SineServoUnit() : servos_{{1}, {2}} {}
+  SineServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
 
   template <typename ServoCommand>
   void CommandUnit(ServoCommand c) {
@@ -39,8 +41,8 @@ class SineServoUnit {
       if (metro.check()) {
         CommandUnit([](Servo* servo) { servo->Query(); });
 
-        servos_[0].Position({.position = 0.25 * ::sin(millis() / 250.0)});
-        servos_[1].Position({.position = 0.5 * ::sin(millis() / 125.0)});
+        servos_[0].Position(0.25 * ::sin(millis() / 250.0));
+        servos_[1].Position(0.5 * ::sin(millis() / 125.0));
       }
     }
   }
@@ -50,8 +52,22 @@ class SineServoUnit {
 
 void setup() {
   SerialInitializer.init();
-  SpiInitializer.init();    // [Teensy]-[CAN FD drivers] connection.
-  CanFdInitializer.init();  // Setup the CAN FD driver.
+
+  // Begin [Teensy]-[CAN FD drivers] connection.
+  if (CANFD_BUS == 1 || CANFD_BUS == 2) {
+    SpiInitializer.init();
+  } else if (CANFD_BUS == 3 || CANFD_BUS == 4) {
+    Serial.println(F("Only Buses 1 and 2 work for T4_CanFd board v.1.5"));
+    Spi1Initializer.init();
+  } else {
+    while (1) {
+      Serial.println("Invalid CAN FD Bus");
+      delay(1000);
+    }
+  }
+
+  // Begin the CAN FD driver.
+  CanFdInitializer.init(CANFD_BUS);
 
   // Clear all faults by sending Stop commands, and save the initial positions.
   sine_su.CommandUnit([](Servo* servo) { servo->Stop(); });

@@ -1,7 +1,13 @@
-// Make sure registering threads to `threads` by `threads.addThread()` happens
-// inside the `setup()` function. Do not register threads in class constructors.
-// Recommended that all variables manipulated by threads be declared as
-// volatile.
+// Expected output:
+// Time(s)  : 0       1       2       3       4 ...
+//            |       |       |       |       | ...
+// Run      : c       |       |       |       | ...
+// Thread   : v v v v v v v v |       |       | ...
+// Main loop: v   v   v   v   v   v   v   v   | ...
+// c is chosen random every 4s.
+// If c == 1, v increments every print from Thread.
+// If c == 2, v decrements every print from Thread.
+// If c == 0, v resets to zero.
 
 #include <Metro.h>
 #include <TeensyThreads.h>
@@ -29,12 +35,23 @@ class CommandReceiver {
 
         switch (received) {
           case 0: {
-            su_->cmd_.value = 0;
+            {
+              Threads::Scope lock{su_->mutex_};
+              su_->cmd_.value = 0;
+            }
+            for (size_t i = 0; i < 8; i++) {
+              {
+                Threads::Scope lock{su_->mutex_};
+                Serial.print(F("Thread: "));
+                Serial.println(su_->cmd_.value);
+              }
+              delay(250);
+            }
           } break;
           case 1: {
             for (size_t i = 0; i < 8; i++) {
               {
-                Threads::Scope lock{su.mutex_};
+                Threads::Scope lock{su_->mutex_};
                 su_->cmd_.value++;
                 Serial.print(F("Thread: "));
                 Serial.println(su_->cmd_.value);
@@ -45,7 +62,7 @@ class CommandReceiver {
           case 2: {
             for (size_t i = 0; i < 8; i++) {
               {
-                Threads::Scope lock{su.mutex_};
+                Threads::Scope lock{su_->mutex_};
                 su_->cmd_.value--;
                 Serial.print(F("Thread: "));
                 Serial.println(su_->cmd_.value);
@@ -66,7 +83,7 @@ class CommandReceiver {
 void setup() {
   Serial.begin(115200);
   randomSeed(0xDEADFACE);
-  threads.addThread([](void* self) { cr.Run(); });
+  threads.addThread([] { cr.Run(); });
 }
 
 void loop() {

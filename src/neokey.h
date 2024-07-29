@@ -10,13 +10,26 @@
 //   1 1          [3]{K K K K} [4]{K K K K} [5]{K K K K}
 //   2 2          [6]{K K K K} [7]{K K K K} [8]{K K K K}
 
-// Just a wrapper class with individual read and print method added.
+// Just a wrapper class of Adafruit_MultiNeoKey1x4 with some
+// helper methods added.
 class Neokey : public Adafruit_MultiNeoKey1x4 {
  public:
+  // Statement to prevent `read` in this class shadowing the parent method.
   using Adafruit_MultiNeoKey1x4::read;
 
   Neokey(Adafruit_NeoKey_1x4* neokeys, uint8_t rows, uint8_t cols)
       : Adafruit_MultiNeoKey1x4{neokeys, rows, cols} {}
+
+  uint8_t rows() { return _rows; }
+  uint8_t cols() { return _cols; }
+  uint8_t dim_y() { return _rows; }
+  uint8_t dim_x() { return _cols << 2; }
+
+  void registerCallbackAll(NeoKey1x4Callback (*cb)(keyEvent)) {
+    for (uint8_t key = 0; key < dim_x() * dim_y(); key++) {
+      registerCallback(key, cb);
+    }
+  }
 
   uint8_t read(uint8_t row, uint8_t col, bool do_print) {
     auto reading = _neokeys[row * _cols + col].read();

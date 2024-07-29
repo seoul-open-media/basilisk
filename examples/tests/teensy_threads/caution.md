@@ -1,0 +1,2 @@
+- Make sure registering threads to `threads` by `threads.addThread()` happens inside the `setup()` function.
+- Recommended that all variables manipulated by threads be declared as volatile.

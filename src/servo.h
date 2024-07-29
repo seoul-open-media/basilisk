@@ -12,19 +12,29 @@ using QRpl = mm::Query::Result;
 using QFmt = mm::Query::Format;
 using Res = mm::Resolution;
 
-// The following pins are selected for the seoul-open-media T4_CanFD board.
-#define MCP2518FD_CS 10
-#define MCP2518FD_INT 41
+// The following pins are selected for the SeoulOpenMedia T4_CanFD board v.1.5.
+#define MCP2518FD_CS_BUS1 10
+#define MCP2518FD_INT_BUS1 41
+#define MCP2518FD_CS_BUS2 9
+#define MCP2518FD_INT_BUS2 42
+#define MCP2518FD_CS_BUS3 0
+#define MCP2518FD_INT_BUS3 43
+#define MCP2518FD_CS_BUS4 2
+#define MCP2518FD_INT_BUS4 44
 
-// The CAN FD driver (MCP2518FD) object using the ACAN2517FD Arduino library.
-ACAN2517FD canfd_driver(MCP2518FD_CS, SPI, MCP2518FD_INT);
+// The CAN FD driver (MCP2518FD) objects using the ACAN2517FD Arduino library.
+ACAN2517FD canfd_drivers[4] = {{MCP2518FD_CS_BUS1, SPI, MCP2518FD_INT_BUS1},
+                               {MCP2518FD_CS_BUS2, SPI, MCP2518FD_INT_BUS2},
+                               {MCP2518FD_CS_BUS3, SPI1, MCP2518FD_INT_BUS3},
+                               {MCP2518FD_CS_BUS4, SPI1, MCP2518FD_INT_BUS4}};
 
 enum class CommandPositionRelativeTo : uint8_t { Absolute, Base, Recent };
 enum class ReplyPositionRelativeTo : uint8_t { Absolute, Base };
 
-class Servo : public Moteus {
+class Servo : protected Moteus {
  public:
-  Servo(int id, PmFmt* pm_fmt = nullptr, PmCmd* pm_cmd_template = nullptr,
+  Servo(int id, uint8_t bus = 1,  //
+        PmFmt* pm_fmt = nullptr, PmCmd* pm_cmd_template = nullptr,
         CommandPositionRelativeTo usr_cmd_pos_rel_to =
             CommandPositionRelativeTo::Absolute,
         QFmt* q_fmt = nullptr,
@@ -33,7 +43,7 @@ class Servo : public Moteus {
         ReplyPositionRelativeTo usr_rpl_aux2_pos_rel_to =
             ReplyPositionRelativeTo::Absolute)
       : id_{id},
-        Moteus{canfd_driver,
+        Moteus{canfd_drivers[bus - 1],
                [=]() {
                  Moteus::Options options;
                  options.id = id;
