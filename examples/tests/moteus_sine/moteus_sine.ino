@@ -13,18 +13,11 @@ class SineServoUnit {
  public:
   SineServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
 
-  template <typename ServoCommand>
-  void CommandUnit(ServoCommand c) {
-    // c(&servos_[0]);
-    // c(&servos_[1]);
-
-    c(servos_);
-    c(servos_ + 1);
-
-    // for (uint8_t i = 0; i < 2; i++) {
-    //   c(&servos_[i]);
-    // }
-  }
+  // template <typename ServoCommand>
+  // void CommandUnit(ServoCommand c) {
+  //   c(&servos_[0]);
+  //   c(&servos_[1]);
+  // }
 
   // Place ReplySender inside ServoUnit as a method rather making a class for it
   // for this simple kind of scenario.
@@ -32,7 +25,9 @@ class SineServoUnit {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        CommandUnit([](Servo* servo) { servo->Print(); });
+        // CommandUnit([](Servo* servo) { servo->Print(); });
+        servos_[0].Print();
+        servos_[1].Print();
       }
     }
   }
@@ -42,11 +37,13 @@ class SineServoUnit {
   // and they should be executed at same frequency anyway.
   // Executer is placed inside ServoUnit for Teensy version since
   // bulk execution is not implemented in the Moteus Arduino library.
-  void Executer(const uint32_t& interval = 10) {  // Default 100Hz.
+  void Executer(const uint32_t& interval = 100) {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        CommandUnit([](Servo* servo) { servo->Query(); });
+        // CommandUnit([](Servo* servo) { servo->Query(); });
+        servos_[0].Query();
+        servos_[1].Query();
 
         servos_[0].Position(0.25 * ::sin(millis() / 250.0));
         servos_[1].Position(0.5 * ::sin(millis() / 125.0));
@@ -77,10 +74,12 @@ void setup() {
   CanFdInitializer.init(CANFD_BUS);
 
   // Clear all faults by sending Stop commands, and save the initial positions.
-  sine_su.CommandUnit([](Servo* servo) { servo->Stop(); });
+  // sine_su.CommandUnit([](Servo* servo) { servo->Stop(); });
+  sine_su.servos_[0].Stop();
+  sine_su.servos_[1].Stop();
 
   threads.addThread([] { sine_su.Executer(); });
   threads.addThread([] { sine_su.SerialPrintReplySender(); });
 }
 
-void loop() {}
+void loop() { delay(1000); }

@@ -46,7 +46,7 @@ Metro print{500};
 void loop() {
   if (query.check()) {
     su.Query();
-  };
+  }
 
   if (command.check()) {
     su.Executer();
