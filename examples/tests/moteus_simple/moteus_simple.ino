@@ -31,13 +31,18 @@ class ServoUnit {
     Metro metro{10};
     while (1) {
       if (metro.check()) {
-        double target = count % 2 ? 0.0 : 0.5;
-        CommandUnit([&](Servo& s) { s.Position(target); });
-        count++;
+        // double target = count % 2 ? 0.0 : 0.5;
+        // CommandUnit([&](Servo& s) { s.Position(target); });
+        // count++;
 
-        // const auto time = millis();
-        // servos_[0].Position(0.25 * ::sin(time / 250.0));
-        // servos_[1].Position(0.5 * ::sin(time / 125.0));
+        double target = 0.5 * sin(millis() / 250.0);
+
+        // (A)
+        CommandUnit([&](Servo& s) { s.Position(target); });
+
+        // (B)
+        // servos_[0].Position(target);
+        // servos_[1].Position(target);
       }
     }
   }
@@ -66,4 +71,4 @@ void setup() {
   threads.addThread([] { su.Print(); });
 }
 
-void loop() {}
+void loop() { yield(); }
