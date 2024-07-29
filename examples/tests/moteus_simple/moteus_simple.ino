@@ -6,10 +6,6 @@
 
 #define CANFD_BUS 1
 
-Metro query{10};
-Metro command{10};
-Metro print{100};
-
 class ServoUnit {
  public:
   ServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
@@ -22,18 +18,33 @@ class ServoUnit {
   }
 
   void Query() {
-    CommandUnit([](Servo& s) { s.Query(); });
+    Metro metro{10};
+    while (1) {
+      if (metro.check()) {
+        CommandUnit([](Servo& s) { s.Query(); });
+      }
+    }
   }
 
   void Command() {
     static uint16_t count;
-    double target = count % 2 ? 0.0 : 0.5;
-    CommandUnit([&](Servo& s) { s.Position(target); });
-    count++;
+    Metro metro{1000};
+    while (1) {
+      if (metro.check()) {
+        double target = count % 2 ? 0.0 : 0.5;
+        CommandUnit([&](Servo& s) { s.Position(target); });
+        count++;
+      }
+    }
   }
 
   void Print() {
-    CommandUnit([](Servo& s) { s.Print(); });
+    Metro metro{100};
+    while (1) {
+      if (metro.check()) {
+        CommandUnit([](Servo& s) { s.Print(); });
+      }
+    }
   }
 
   Servo servos_[2];
@@ -46,29 +57,9 @@ void setup() {
 
   su.CommandUnit([](Servo& s) { s.Stop(); });
 
-  threads.addThread([] {
-    while (1) {
-      if (query.check()) {
-        su.Query();
-      }
-    }
-  });
-
-  threads.addThread([] {
-    while (1) {
-      if (command.check()) {
-        su.Command();
-      }
-    }
-  });
-
-  threads.addThread([] {
-    while (1) {
-      if (print.check()) {
-        su.Print();
-      }
-    }
-  });
+  threads.addThread([] { su.Query(); });
+  threads.addThread([] { su.Command(); });
+  threads.addThread([] { su.Print(); });
 }
 
 void loop() {}
