@@ -58,6 +58,8 @@ class Servo : protected Moteus {
         usr_rpl_pos_rel_to_{usr_rpl_pos_rel_to},
         usr_rpl_aux2_pos_rel_to_{usr_rpl_aux2_pos_rel_to} {}
 
+  QRpl GetReply() { return usr_rpl(/* Mutex lock inside. */); }
+
   void SetReply() {
     Threads::Scope lock{mutex_};
     const auto delta =
@@ -119,6 +121,9 @@ class Servo : protected Moteus {
   String d(const String& message_in,
            Moteus::DiagnosticReplyMode reply_mode = Moteus::kExpectOK) {
     Threads::Scope lock{mutex_};
+    Stop();
+    DiagnosticCommand(F("tel stop"));
+    SetDiagnosticFlush();
     return DiagnosticCommand(message_in, reply_mode);
   }
 
@@ -179,11 +184,7 @@ class Servo : protected Moteus {
 
   void Print() {  // Caution: Does not Query before print.
                   // Querying is left for the Executer.
-    QRpl rpl;
-    {
-      Threads::Scope lock{mutex_};
-      rpl = last_result().values;
-    }
+    const auto rpl = GetReply(/* Mutex lock inside. */);
     Serial.print(id_);
     Serial.print(F(" : t "));
     Serial.print(millis());
