@@ -28,12 +28,16 @@ class ServoUnit {
 
   void Command() {
     static uint16_t count;
-    Metro metro{1000};
+    Metro metro{10};
     while (1) {
       if (metro.check()) {
         double target = count % 2 ? 0.0 : 0.5;
         CommandUnit([&](Servo& s) { s.Position(target); });
         count++;
+
+        // const auto time = millis();
+        // servos_[0].Position(0.25 * ::sin(time / 250.0));
+        // servos_[1].Position(0.5 * ::sin(time / 125.0));
       }
     }
   }

@@ -13,21 +13,32 @@ class SineServoUnit {
  public:
   SineServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
 
-  // template <typename ServoCommand>
-  // void CommandUnit(ServoCommand c) {
-  //   c(&servos_[0]);
-  //   c(&servos_[1]);
-  // }
+  template <typename ServoCommand>
+  void CommandUnit(ServoCommand c) {
+    for (Servo& s : servos_) {
+      c(s);
+    }
+  }
 
   // Place ReplySender inside ServoUnit as a method rather making a class for it
   // for this simple kind of scenario.
-  void SerialPrintReplySender(const uint32_t& interval = 250) {  // Default 4Hz.
+  void SerialPrintReplySender(const uint32_t& interval = 100) {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
         // CommandUnit([](Servo* servo) { servo->Print(); });
         servos_[0].Print();
         servos_[1].Print();
+      }
+    }
+  }
+
+  void Query(const uint32_t& interval = 10) {
+    Metro metro{interval};
+    while (1) {
+      if (metro.check()) {
+        servos_[0].Query();
+        servos_[1].Query();
       }
     }
   }
@@ -41,10 +52,6 @@ class SineServoUnit {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        // CommandUnit([](Servo* servo) { servo->Query(); });
-        servos_[0].Query();
-        servos_[1].Query();
-
         servos_[0].Position(0.25 * ::sin(millis() / 250.0));
         servos_[1].Position(0.5 * ::sin(millis() / 125.0));
       }
