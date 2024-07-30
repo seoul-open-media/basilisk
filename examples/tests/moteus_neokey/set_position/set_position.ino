@@ -54,7 +54,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
   return 0;
 }
 
-static auto& neokey = specific::neokey3x4_i2c1;
+auto& neokey = specific::neokey3x4_i2c1;
 
 Metro receive_metro{10};
 void Receive() { neokey.read(); }
