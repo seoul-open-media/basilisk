@@ -6,72 +6,55 @@
 
 #define CANFD_BUS 1
 
-class ServoUnit {
- public:
-  ServoUnit() : servos_{{1, CANFD_BUS}, {2, CANFD_BUS}} {}
+Servo servos[] = {{1, CANFD_BUS}, {2, CANFD_BUS}};
 
-  template <typename ServoCommand>
-  void CommandUnit(ServoCommand c) {
-    for (Servo& s : servos_) {
-      c(s);
+template <typename ServoCommand>
+void CommandAll(ServoCommand c) {
+  for (Servo& s : servos) {
+    c(s);
+  }
+}
+
+void Query(const uint16_t interval) {
+  Metro metro{interval};
+  while (1) {
+    if (metro.check()) {
+      CommandAll([](Servo& s) { s.Query(); });
     }
   }
+}
 
-  void Query() {
-    Metro metro{10};
-    while (1) {
-      if (metro.check()) {
-        CommandUnit([](Servo& s) { s.Query(); });
-      }
+void Command(const uint16_t interval) {
+  Metro metro{interval};
+  static uint16_t count;
+  while (1) {
+    if (metro.check()) {
+      double target = count % 2 ? 0.0 : 0.5;
+      CommandAll([&](Servo& s) { s.Position(target); });
+      count++;
     }
   }
+}
 
-  void Command() {
-    static uint16_t count;
-    Metro metro{10};
-    while (1) {
-      if (metro.check()) {
-        // double target = count % 2 ? 0.0 : 0.5;
-        // CommandUnit([&](Servo& s) { s.Position(target); });
-        // count++;
-
-        double target = 0.25 * sin(millis() / 250.0);
-
-        // (A) -> fine
-        CommandUnit([=](Servo& s) { s.Position(target); });
-
-        // (B) -> fails
-        // servos_[0].Position(target);
-        // servos_[1].Position(target);
-
-        // What is the difference between (A) and (B)?
-        // (B) works fine IF only one of the Servos is Commanded.
-      }
+void Print(const uint16_t interval) {
+  Metro metro{interval};
+  while (1) {
+    if (metro.check()) {
+      CommandAll([](Servo& s) { s.Print(); });
     }
   }
-
-  void Print() {
-    Metro metro{100};
-    while (1) {
-      if (metro.check()) {
-        CommandUnit([](Servo& s) { s.Print(); });
-      }
-    }
-  }
-
-  Servo servos_[2];
-} su;
+}
 
 void setup() {
   SerialInitializer.init();
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
 
-  su.CommandUnit([](Servo& s) { s.Stop(); });
+  CommandAll([](Servo& s) { s.Stop(); });
 
-  threads.addThread([] { su.Query(); });
-  threads.addThread([] { su.Command(); });
-  threads.addThread([] { su.Print(); });
+  threads.addThread([] { Query(10); });
+  threads.addThread([] { Command(1000); });
+  threads.addThread([] { Print(100); });
 }
 
 void loop() { yield(); }
