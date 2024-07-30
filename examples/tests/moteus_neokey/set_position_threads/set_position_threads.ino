@@ -94,7 +94,7 @@ void setup() {
   CommandAll([](Servo& s) { s.Stop(); });
 
   threads.addThread([] { Receive(10); });
-  threads.addThread([] { Query(100); });
+  threads.addThread([] { Query(10); });
   threads.addThread([] { Command(10); });
   threads.addThread([] { Print(250); });
 }
