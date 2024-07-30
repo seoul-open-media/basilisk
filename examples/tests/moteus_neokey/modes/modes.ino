@@ -122,10 +122,6 @@ auto& neokey = specific::neokey3x4_i2c1;
 void NeokeyCommandReceiver() { neokey.read(); }
 
 void SerialPrintReplySender() {
-  Serial.print("cmd.mode = ");
-  Serial.println(cmd.mode == Command::Mode::Stop          ? "Stop"
-                 : cmd.mode == Command::Mode::SetPosition ? "SetPosition"
-                                                          : "Else");
   CommandAll([](Servo& s) { s.Print(); });
 }
 
