@@ -69,7 +69,7 @@ void Receive(const uint32_t interval) {
   Metro metro{interval};
   while (1) {
     if (metro.check()) {
-      CommandAll([](Servo& s) { neokey.read(); });
+      neokey.read();
     }
   }
 }
@@ -78,7 +78,7 @@ void Print(const uint32_t interval) {
   Metro metro{interval};
   while (1) {
     if (metro.check()) {
-      CommandAll([](Servo& s) { CommandAll([](Servo& s) { s.Print(); }); });
+      CommandAll([](Servo& s) { s.Print(); });
     }
   }
 }
