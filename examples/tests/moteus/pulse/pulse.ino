@@ -41,8 +41,6 @@ void setup() {
 
 void loop() {
   if (query_metro.check()) Query();
-
   if (command_metro.check()) Command();
-
   if (print_metro.check()) Print();
 }
