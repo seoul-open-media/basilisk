@@ -11,7 +11,7 @@ PmFmt pm_fmt{.maximum_torque = Res::kFloat,
              .accel_limit = Res::kFloat};
 
 PmCmd pm_cmd_template{
-    .maximum_torque = 32.0, .velocity_limit = 16.0, .accel_limit = 4.0};
+    .maximum_torque = 32.0, .velocity_limit = 32.0, .accel_limit = 16.0};
 
 QFmt q_fmt{[] {
   QFmt fmt;
