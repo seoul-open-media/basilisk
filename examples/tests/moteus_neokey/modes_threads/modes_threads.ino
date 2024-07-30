@@ -41,10 +41,13 @@ void CommandAll(ServoCommand c) {
   }
 }
 
-struct Command {
-  uint8_t mode;
-  double position;
-} cmd;
+// (A)
+// struct Command {
+//   double position;
+// } cmd;
+
+// (B)
+double cmd;
 
 void Query(const uint32_t interval) {
   Metro metro{interval};
@@ -61,12 +64,7 @@ void Command(const uint32_t interval) {
   while (1) {
     if (metro.check()) {
       print_thread("Command");
-      if (cmd.mode == 0) {
-        CommandAll([](Servo& s) { s.Stop(); });
-      } else if (cmd.mode == 1) {
-        CommandAll(
-            [](Servo& s) { s.Position(cmd.position * (s.id_ % 2 ? 1 : -1)); });
-      }
+      CommandAll([](Servo& s) { s.Position(cmd); });
     }
   }
 }
@@ -76,12 +74,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
     const auto key = evt.bit.NUM;
     Serial.print("Rise: ");
     Serial.println(key);
-    if (key < 4) {
-      cmd.mode = 0;
-    } else {
-      cmd.mode = 1;
-      cmd.position = 0.25 * evt.bit.NUM;
-    }
+    cmd = 0.25 * evt.bit.NUM;
   }
 
   return 0;
@@ -121,7 +114,7 @@ void setup() {
 
   threads.addThread([] { Receive(10); });  // ID 1 State 1(RUNNING)
   threads.addThread([] { Query(10); });    // ID 2 State 1(RUNNING)
-  threads.addThread([] { Command(10); });  // ID 3 State 2146959360(?)
+  threads.addThread([] { Command(10); });  // ID 3 State 0x7FF80000
   threads.addThread([] { Print(50); });    // ID 4 State 1(RUNNING)
 }
 
