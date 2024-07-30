@@ -12,38 +12,43 @@
 #include <Metro.h>
 #include <TeensyThreads.h>
 
+Threads::Mutex serial_mutex;
+
 class ServoUnit {
  public:
   struct {
     volatile int value;
   } cmd_;
 
-  Threads::Mutex mutex_;
+  Threads::Mutex cmd_mutex_;
 } su;
 
 class CommandReceiver {
  public:
-  CommandReceiver(ServoUnit* su) : su_{su} {}
+  CommandReceiver(ServoUnit& su) : su_{su} {}
 
   void Run(const uint32_t& interval = 4000) {
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        auto received = random(3);
-        Serial.print(F("Run: "));
-        Serial.println(received);
-
+        const auto received = random(3);
+        {
+          Threads::Scope serial_lock{serial_mutex};
+          Serial.print(F("Run: "));
+          Serial.println(received);
+        }
         switch (received) {
           case 0: {
             {
-              Threads::Scope lock{su_->mutex_};
-              su_->cmd_.value = 0;
+              Threads::Scope cmd_lock{su_.cmd_mutex_};
+              su_.cmd_.value = 0;
             }
             for (size_t i = 0; i < 8; i++) {
               {
-                Threads::Scope lock{su_->mutex_};
+                Threads::Scope serial_lock{serial_mutex};
                 Serial.print(F("Thread: "));
-                Serial.println(su_->cmd_.value);
+                Threads::Scope cmd_lock{su_.cmd_mutex_};
+                Serial.println(su_.cmd_.value);
               }
               delay(250);
             }
@@ -51,10 +56,11 @@ class CommandReceiver {
           case 1: {
             for (size_t i = 0; i < 8; i++) {
               {
-                Threads::Scope lock{su_->mutex_};
-                su_->cmd_.value++;
+                Threads::Scope cmd_lock{su_.cmd_mutex_};
+                su_.cmd_.value++;
+                Threads::Scope serial_lock{serial_mutex};
                 Serial.print(F("Thread: "));
-                Serial.println(su_->cmd_.value);
+                Serial.println(su_.cmd_.value);
               }
               delay(250);
             }
@@ -62,10 +68,11 @@ class CommandReceiver {
           case 2: {
             for (size_t i = 0; i < 8; i++) {
               {
-                Threads::Scope lock{su_->mutex_};
-                su_->cmd_.value--;
+                Threads::Scope cmd_lock{su_.cmd_mutex_};
+                su_.cmd_.value--;
+                Threads::Scope serial_lock{serial_mutex};
                 Serial.print(F("Thread: "));
-                Serial.println(su_->cmd_.value);
+                Serial.println(su_.cmd_.value);
               }
               delay(250);
             }
@@ -77,21 +84,33 @@ class CommandReceiver {
     }
   }
 
-  ServoUnit* su_;
-} cr{&su};
+  ServoUnit& su_;
+} cr{su};
+
+class ReplySender {
+ public:
+  ReplySender(ServoUnit& su) : su_{su} {}
+
+  void Run(const uint16_t interval = 500) {
+    Metro metro{interval};
+    while (1) {
+      if (metro.check()) {
+        Threads::Scope serial_lock{serial_mutex};
+        Serial.print("Main loop: ");
+        Threads::Scope cmd_lock{su.cmd_mutex_};
+        Serial.println(su.cmd_.value);
+      }
+    }
+  }
+
+  ServoUnit& su_;
+} rs{su};
 
 void setup() {
   Serial.begin(115200);
   randomSeed(0xDEADFACE);
   threads.addThread([] { cr.Run(); });
+  threads.addThread([] { rs.Run(); });
 }
 
-void loop() {
-  {
-    Serial.print("Main loop: ");
-    Threads::Scope lock{su.mutex_};
-    Serial.println(su.cmd_.value);
-  }
-
-  delay(500);
-}
+void loop() { yield(); }
