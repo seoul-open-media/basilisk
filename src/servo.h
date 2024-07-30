@@ -70,6 +70,12 @@ class Servo : protected Moteus {
       aux2_revs_++;
     }
     sys_rpl_ = last_result().values;
+
+    if (!sys_rpl_.trajectory_complete) {
+      trjcpt_ = 0;
+    } else if (trjcpt_ != 0xFF) {
+      trjcpt_++;
+    }
   }
 
   bool Query() {
@@ -84,11 +90,13 @@ class Servo : protected Moteus {
 
   bool Stop() {
     Threads::Scope lock{mutex_};
+    trjcpt_ = 0;
     return SetStop();
   }
 
   bool Position(const PmCmd& usr_cmd) {
     Threads::Scope lock{mutex_};
+    trjcpt_ = 0;
     return SetPosition(sys_cmd(usr_cmd), pm_fmt_);
   }
 
@@ -181,6 +189,7 @@ class Servo : protected Moteus {
   double base_pos_;
   double base_aux2_pos_;
   int aux2_revs_ = 0;
+  uint8_t trjcpt_ = 0;  // Accumulation of `trajectory_complete`.
 
   void Print() {  // Caution: Does not Query before print.
                   // Querying is left for the Executer.
@@ -206,6 +215,8 @@ class Servo : protected Moteus {
     Serial.print(rpl.motor_temperature);
     Serial.print(F(" / tjc "));
     Serial.print(rpl.trajectory_complete);
+    Serial.print(F(" -> "));
+    Serial.print(trjcpt_);
     Serial.print(F(" / hom "));
     Serial.print(static_cast<int>(rpl.home_state));
     Serial.print(F(" / vlt "));
