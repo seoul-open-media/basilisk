@@ -11,25 +11,25 @@
 #include <TeensyThreads.h>
 #include <initializers.h>
 #include <neokey.h>
-#include <specific/neokey4x4_i2c1.h>
+#include <specific/neokey3x4_i2c1.h>
 
-auto& neokey = specific::neokey4x4_i2c1;
+auto& neokey = specific::neokey3x4_i2c1;
 
 class NeokeyReceiver {
  public:
-  NeokeyReceiver(Neokey* neokey) : neokey_{neokey} {}
+  NeokeyReceiver(Neokey& neokey) : neokey_{neokey} {}
 
   void Run(const uint32_t& interval = 10) {  // Default 100Hz.
     Metro metro{interval};
     while (1) {
       if (metro.check()) {
-        neokey_->read();
+        neokey_.read();
       }
     }
   }
 
-  Neokey* neokey_;
-} neokey_r{&neokey};
+  Neokey& neokey_;
+} neokey_r{neokey};
 
 // The way NeoKey's callback is programmed is weird,
 // but just use it for now since it works anyway.
@@ -49,7 +49,7 @@ NeoKey1x4Callback print(keyEvent evt) {
 void setup() {
   SerialInitializer.init();
   I2C1Initializer.init();
-  NeokeyInitializer.init(&neokey);
+  NeokeyInitializer.init(neokey);
   neokey.registerCallbackAll(print);
 
   threads.addThread([] { neokey_r.Run(); });

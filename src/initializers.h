@@ -68,8 +68,8 @@ Initializer<void> I2C1Initializer{[] {
   Serial.println(F("I2C1(Wire1) started"));
 }};
 
-Initializer<Neokey*> NeokeyInitializer{[](Neokey* neokey) {
-  while (!neokey->begin()) {
+Initializer<Neokey&> NeokeyInitializer{[](Neokey& neokey) {
+  while (!neokey.begin()) {
     Serial.println(F("Neokey begin failed"));
     delay(1000);
   }
