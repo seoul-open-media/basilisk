@@ -112,7 +112,7 @@ class Servo : protected Moteus {
     auto success = Query(/* Mutex lock inside. */);
     if (success) {
       Threads::Scope lock{mutex_};
-      base_pos_ = last_result().values.position;
+      base_pos_ = GetReply().position;
     }
     return success;
   }
@@ -121,7 +121,7 @@ class Servo : protected Moteus {
     auto success = Query(/* Mutex lock inside. */);
     if (success) {
       Threads::Scope lock{mutex_};
-      base_aux2_pos_ = last_result().values.abs_position;
+      base_aux2_pos_ = GetReply().abs_position;
     }
     return success;
   }
