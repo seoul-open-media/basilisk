@@ -1,5 +1,3 @@
-// Drive moteus of ID 1 and 2 on Bus 1 in sine wave motion. Wiggle wiggle.
-
 #include <ACAN2517FD.h>
 #include <Metro.h>
 #include <Moteus.h>
