@@ -173,7 +173,7 @@ class NeokeyServoUnit {
                        CommandPositionRelativeTo::Absolute, &q_fmt}};
 } neokey_su;
 
-NeoKey1x4Callback NeokeyCallback(keyEvent evt) {
+NeoKey1x4Callback neokey_cb(keyEvent evt) {
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
     auto key = evt.bit.NUM;
 
@@ -262,7 +262,7 @@ void setup() {
   CanFdInitializer.init(CANFD_BUS);
 
   NeokeyInitializer.init(&neokey_cr.neokey_);
-  neokey_cr.neokey_.registerCallbackAll(NeokeyCallback);
+  neokey_cr.neokey_.registerCallbackAll(neokey_cb);
 
   neokey_su.CommandUnit([](Servo& s) { s.Stop(); });
 
