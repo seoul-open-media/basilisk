@@ -26,7 +26,7 @@ Servo servos[2] = {{1, CANFD_BUS, &pm_fmt, &pm_cmd_template,
                    {2, CANFD_BUS, &pm_fmt, &pm_cmd_template,
                     CommandPositionRelativeTo::Absolute, &q_fmt}};
 
-uint16_t current_key;
+uint16_t cmd;
 
 template <typename ServoCommand>
 void CommandAll(ServoCommand c) {
@@ -43,12 +43,12 @@ void Query() {
 Metro command_metro{10};
 void Command() {
   CommandAll(
-      [](Servo& s) { s.Position(0.25 * current_key * (s.id_ % 2 ? 1 : -1)); });
+      [](Servo& s) { s.Position(0.25 * cmd * (s.id_ % 2 ? 1 : -1)); });
 }
 
 NeoKey1x4Callback neokey_cb(keyEvent evt) {
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
-    current_key = evt.bit.NUM;
+    cmd = evt.bit.NUM;
   }
 
   return 0;

@@ -1,4 +1,5 @@
 #include <Metro.h>
+#include <TeensyThreads.h>
 #include <initializers.h>
 #include <neokey.h>
 #include <servo.h>
@@ -26,14 +27,14 @@ Servo servos[2] = {{1, CANFD_BUS, &pm_fmt, &pm_cmd_template,
                    {2, CANFD_BUS, &pm_fmt, &pm_cmd_template,
                     CommandPositionRelativeTo::Absolute, &q_fmt}};
 
-uint16_t current_key;
-
 template <typename ServoCommand>
 void CommandAll(ServoCommand c) {
   for (Servo& s : servos) {
     c(s);
   }
 }
+
+uint16_t cmd;
 
 void Query(const uint32_t interval) {
   Metro metro{interval};
@@ -48,16 +49,15 @@ void Command(const uint32_t interval) {
   Metro metro{interval};
   while (1) {
     if (metro.check()) {
-      CommandAll([](Servo& s) {
-        s.Position(0.25 * current_key * (s.id_ % 2 ? 1 : -1));
-      });
+      CommandAll(
+          [](Servo& s) { s.Position(0.25 * cmd * (s.id_ % 2 ? 1 : -1)); });
     }
   }
 }
 
 NeoKey1x4Callback neokey_cb(keyEvent evt) {
   if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
-    current_key = evt.bit.NUM;
+    cmd = evt.bit.NUM;
   }
 
   return 0;
