@@ -1,8 +1,6 @@
-#include <ACAN2517FD.h>
 #include <Metro.h>
-#include <Moteus.h>
-#include <TeensyThreads.h>
 #include <initializers.h>
+#include <servo.h>
 
 #define CANFD_BUS 1
 
