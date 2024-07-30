@@ -42,12 +42,13 @@ void CommandAll(ServoCommand c) {
 }
 
 // (A)
-// struct Command {
-//   double position;
-// } cmd;
+struct Command {
+  uint8_t mode;
+  double position;
+} cmd;
 
 // (B)
-double cmd;
+// double cmd;
 
 void Query(const uint32_t interval) {
   Metro metro{interval};
@@ -64,7 +65,11 @@ void Command(const uint32_t interval) {
   while (1) {
     if (metro.check()) {
       print_thread("Command");
-      CommandAll([](Servo& s) { s.Position(cmd); });
+      if (cmd.mode == 0x00) {
+        CommandAll([](Servo& s) { s.Stop(); });
+      } else if (cmd.mode == 0x01) {
+        CommandAll([](Servo& s) { s.Position(cmd.position); });
+      }
     }
   }
 }
@@ -74,7 +79,12 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
     const auto key = evt.bit.NUM;
     Serial.print("Rise: ");
     Serial.println(key);
-    cmd = 0.25 * evt.bit.NUM;
+    if (key < 4) {
+      cmd.mode = 0x00;
+    } else {
+      cmd.mode = 0x01;
+      cmd.position = 0.25 * evt.bit.NUM;
+    }
   }
 
   return 0;
