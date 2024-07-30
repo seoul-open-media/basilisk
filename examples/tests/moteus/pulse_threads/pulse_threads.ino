@@ -14,7 +14,7 @@ void CommandAll(ServoCommand c) {
   }
 }
 
-void Query(const uint16_t interval) {
+void Query(const uint32_t interval) {
   Metro metro{interval};
   while (1) {
     if (metro.check()) {
@@ -23,7 +23,7 @@ void Query(const uint16_t interval) {
   }
 }
 
-void Command(const uint16_t interval) {
+void Command(const uint32_t interval) {
   Metro metro{interval};
   static uint16_t count;
   while (1) {
@@ -35,7 +35,7 @@ void Command(const uint16_t interval) {
   }
 }
 
-void Print(const uint16_t interval) {
+void Print(const uint32_t interval) {
   Metro metro{interval};
   while (1) {
     if (metro.check()) {
