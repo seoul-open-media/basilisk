@@ -2,7 +2,7 @@
 #include <initializers.h>
 #include <neokey.h>
 #include <servo.h>
-#include <specific/neokey3x4_i2c1.h>
+#include <specific/neokey1x4_i2c1.h>
 
 #define CANFD_BUS 1
 
@@ -31,25 +31,34 @@ class Basilisk {
   }
 
   struct Command {
-    enum class Mode : uint8_t { Stop, DZero, SetPosition, Walk } mode;
+    enum class Mode : uint8_t {
+      Stop,
+      ExecuteDExact075,
+      SetPosition,
+      Walk
+    } mode;
 
     struct Stop {
       bool init;
     } stop;
 
-    struct DZero {
+    struct ExecuteDExact075 {
       bool init;
     } d_zero;
 
     struct SetPosition {
       enum class Progress : uint8_t { init, moving, complete } progress;
-      double position = 0.0;
-      bool which_foot;  // 0 = left, 1 = right
+      double position;
     } set_position;
 
     struct Walk {
-      enum class Progress : uint8_t {} progress;
-      double speed = 1.0;
+      enum class Progress : uint8_t {
+        init,
+        moving_left,
+        moving_right,
+        complete
+      } progress;
+      int step;
     } walk;
   } cmd_;
 
@@ -62,11 +71,14 @@ class Basilisk {
       case M::Stop: {
         ExecuteStop();
       } break;
-      case M::DZero: {
-        ExecuteDZero();
+      case M::ExecuteDExact075: {
+        ExecuteDExact075();
       } break;
       case M::SetPosition: {
         ExecuteSetPosition();
+      } break;
+      case M::Walk: {
+        ExecuteWalk();
       } break;
     }
   }
@@ -80,14 +92,14 @@ class Basilisk {
     }
   }
 
-  void ExecuteDZero() {
+  void ExecuteDExact075() {
     auto& c = cmd_.d_zero;
     if (c.init) {
-      Serial.println(F("ExecuteDZero processing init state"));
+      Serial.println(F("ExecuteDExact075 processing init state"));
       CommandLR([](Servo& s) {
         s.Stop();
         delay(50);
-        s.d(F("d exact 0"));
+        s.d(F("d exact 0.75"));
         delay(50);
         s.Stop();
       });
@@ -98,29 +110,162 @@ class Basilisk {
   void ExecuteSetPosition() {
     auto& c = cmd_.set_position;
     using P = Command::SetPosition::Progress;
+    switch (c.progress) {}
+  }
+
+  void ExecuteWalk() {
+    auto& c = cmd_.walk;
+    using P = Command::Walk::Progress;
     switch (c.progress) {
+      Serial.println(F("ExecuteWalk processing init state"));
       case P::init: {
-        Serial.println(F("ExecuteSetPosition processing init state"));
-        CommandLR([&](Servo& s) { s.Position(c.position); });
-        c.progress = P::moving;
-      } break;
-      case P::moving: {
-        Serial.println(F("ExecuteSetPosition processing moving state"));
-        for (Servo& s : lr_) {
-          if (s.trjcpt_ < 4) {
-            return;
-          }
-        }
+        // Stop both Servos.
+        Serial.println(F("Stop both Servos."));
         CommandLR([](Servo& s) { s.Stop(); });
-        cmd_.set_position.progress = P::complete;
+        cmd_.walk.step = 0;
+        delay(1000);
+
+        // Fix sig_L and free sig_R.
+        Serial.println(F("Fix sig_L and free sig_R."));
+        FixL();
+        FreeR();
+        delay(1000);
+
+        // Fix phi_L.
+        Serial.println(F("Fix phi_L."));
+        l_.Position(NaN);
+        delay(1000);
+
+        // Control phi_R to phi_L.
+        Serial.println(F("Control phi_R to phi_L."));
+        l_.Query();
+        const auto phi_L = l_.GetReply().position;
+        r_.PositionWaitComplete(phi_L);
+        delay(1000);
+
+        // Jump to moving_right state.
+        Serial.println(F("Jump to moving_right state."));
+        c.progress = P::moving_right;
+      } break;
+      case P::moving_left: {
+        Serial.println(F("ExecuteWalk processing moving_left state"));
+        delay(1000);
+
+        // Fix sig_R and free sig_L.
+        Serial.println(F("Fix sig_R and free sig_L."));
+        FixR();
+        FreeL();
+        delay(1000);
+
+        // Control phi_L and phi_R to 5/8.
+        CommandLR([](Servo& s) { s.Position(0.625); });
+        /*
+          // This does not work for unknown reason even though
+          // the trjcpt_ values are correctly updating.
+          while (l_.trjcpt_ < 4 || r_.trjcpt_ < 4) {
+            CommandLR([](Servo& s) {
+              s.Query();
+              // s.Print();
+            });
+            delay(10);
+          }
+        */
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+
+        // Left foot forward complete.
+        delay(1000);
+        CommandLR([](Servo& s) { s.Stop(); });
+
+        // Jump.
+        cmd_.walk.step++;
+        if (cmd_.walk.step < 4) {
+          c.progress = P::moving_right;
+        } else {
+          c.progress = P::complete;
+        }
+      } break;
+      case P::moving_right: {
+        Serial.println(F("ExecuteWalk processing moving_right state"));
+        delay(1000);
+
+        // Fix sig_L and free sig_R.
+        Serial.println(F("Fix sig_L and free sig_R."));
+        FixL();
+        FreeR();
+        delay(1000);
+
+        // Control phi_L and phi_R to 7/8.
+        CommandLR([](Servo& s) { s.Position(0.875); });
+        /*
+          // This does not work for unknown reason even though
+          // the trjcpt_ values are correctly updating.
+          while (l_.trjcpt_ < 4 || r_.trjcpt_ < 4) {
+            CommandLR([](Servo& s) {
+              s.Query();
+              // s.Print();
+            });
+            delay(10);
+          }
+        */
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+
+        // Right foot forward complete.
+        delay(1000);
+        CommandLR([](Servo& s) { s.Stop(); });
+
+        // Jump.
+        cmd_.walk.step++;
+        if (cmd_.walk.step < 4) {
+          c.progress = P::moving_left;
+        } else {
+          c.progress = P::complete;
+        }
+      } break;
+      case P::complete: {
+        // Stop both Servos.
+        CommandLR([](Servo& s) { s.Stop(); });
       } break;
     }
   }
 
-  void Walk() {}
-
   Servo l_, r_;
   Servo lr_[2];
+
+  const uint8_t electromagnet_pins[4] = {3, 4, 5, 6};
+
+  void FixL() {
+    digitalWrite(electromagnet_pins[0], LOW);
+    digitalWrite(electromagnet_pins[1], LOW);
+  }
+
+  void FreeL() {
+    digitalWrite(electromagnet_pins[0], HIGH);
+    digitalWrite(electromagnet_pins[1], HIGH);
+  }
+
+  void FixR() {
+    digitalWrite(electromagnet_pins[2], LOW);
+    digitalWrite(electromagnet_pins[3], LOW);
+  }
+
+  void FreeR() {
+    digitalWrite(electromagnet_pins[2], HIGH);
+    digitalWrite(electromagnet_pins[3], HIGH);
+  }
 
  private:
   PmFmt pm_fmt_{.maximum_torque = Res::kFloat,
@@ -128,7 +273,7 @@ class Basilisk {
                 .accel_limit = Res::kFloat};
 
   PmCmd pm_cmd_template_{
-      .maximum_torque = 32.0, .velocity_limit = 32.0, .accel_limit = 16.0};
+      .maximum_torque = 32.0, .velocity_limit = 2.0, .accel_limit = 1.0};
 
   QFmt q_fmt_{[] {
     QFmt fmt;
@@ -151,23 +296,27 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
     auto& cmd = basilisk.cmd_;
     auto& mode = basilisk.cmd_.mode;
 
-    if (key <= 0) {
+    if (key == 0) {
       mode = M::Stop;
       cmd.stop.init = true;
-    } else if (key <= 1) {
-      mode = M::DZero;
+    } else if (key == 1) {
+      mode = M::Stop;
+      cmd.stop.init = true;
+      basilisk.FreeL();
+      basilisk.FreeR();
+    } else if (key == 2) {
+      mode = M::ExecuteDExact075;
       cmd.d_zero.init = true;
     } else {
-      mode = M::SetPosition;
-      cmd.set_position.progress = C::SetPosition::Progress::init;
-      cmd.set_position.position = key * 0.25;
+      mode = M::Walk;
+      cmd.walk.progress = C::Walk::Progress::init;
     }
   }
 
   return 0;
 }
 
-auto& neokey = specific::neokey3x4_i2c1;
+auto& neokey = specific::neokey1x4_i2c1;
 void NeokeyCommandReceiver() { neokey.read(); }
 
 void SerialPrintReplySender() {
@@ -180,6 +329,10 @@ void setup() {
   CanFdInitializer.init(CANFD_BUS);
   NeokeyInitializer.init(neokey);
   neokey.registerCallbackAll(neokey_cb);
+
+  for (uint8_t i = 0; i < 4; i++) {
+    pinMode(basilisk.electromagnet_pins[i], OUTPUT);
+  }
 
   basilisk.CommandLR([](Servo& s) { s.Stop(); });
 }

@@ -62,6 +62,7 @@ class Servo : protected Moteus {
 
   void SetReply() {
     Threads::Scope lock{mutex_};
+
     const auto delta =
         last_result().values.abs_position - sys_rpl_.abs_position;
     if (delta > 0.5) {
@@ -69,6 +70,7 @@ class Servo : protected Moteus {
     } else if (delta < -0.5) {
       aux2_revs_++;
     }
+
     sys_rpl_ = last_result().values;
 
     if (!sys_rpl_.trajectory_complete) {
@@ -106,6 +108,21 @@ class Servo : protected Moteus {
       cmd.position = pos;
       return cmd;
     }()));
+  }
+
+  bool PositionWaitComplete(const PmCmd& usr_cmd) {
+    Threads::Scope lock{mutex_};
+    trjcpt_ = 0;
+    return SetPositionWaitComplete(sys_cmd(usr_cmd), 0.01, pm_fmt_);
+  }
+
+  bool PositionWaitComplete(const double& pos) {
+    return PositionWaitComplete(
+        /* Mutex lock inside. */ sys_cmd([&] {
+          auto cmd = pm_cmd_template_ ? *pm_cmd_template_ : PmCmd{};
+          cmd.position = pos;
+          return cmd;
+        }()));
   }
 
   bool SetBasePosition() {
@@ -188,7 +205,7 @@ class Servo : protected Moteus {
   double base_pos_;
   double base_aux2_pos_;
   int aux2_revs_ = 0;
-  uint8_t trjcpt_ = 0;  // Accumulation of `trajectory_complete`.
+  volatile uint8_t trjcpt_ = 0;  // Accumulation of `trajectory_complete`.
 
   void Print() {  // Caution: Does not Query before print.
                   // Querying is left for the Executer.
