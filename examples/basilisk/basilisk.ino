@@ -1,175 +1,195 @@
-#include <ACAN2517FD.h>
-#include <Adafruit_NeoKey_1x4.h>
 #include <Metro.h>
-#include <Moteus.h>
-#include <Wire.h>
 #include <initializers.h>
 #include <neokey.h>
 #include <servo.h>
+#include <specific/neokey3x4_i2c1.h>
+
+#define CANFD_BUS 1
 
 class Basilisk {
  public:
   Basilisk()
-      : l_{1, &pm_fmt_, &q_fmt_}, r_{2, &pm_fmt_, &q_fmt_}, exec_metro_{10} {}
+      : l_{1,
+           CANFD_BUS,
+           &pm_fmt_,
+           &pm_cmd_template_,
+           CommandPositionRelativeTo::Absolute,
+           &q_fmt_},
+        r_{2,
+           CANFD_BUS,
+           &pm_fmt_,
+           &pm_cmd_template_,
+           CommandPositionRelativeTo::Absolute,
+           &q_fmt_},
+        lr_{l_, r_} {}
 
-  void execute() {
-    if (!exec_metro_.check()) return;
-
-    CommandLR([](Moteus* m) { m->SetQuery(); });
-
-    switch (cmd_.mode) {
-      case Command::Mode::Stop: {
-      
-        break;
-      }
-      case Command::Mode::DZero: {
-        break;
-      }
-      case Command::Mode::SetPositions: {
-        break;
-      }
-      case Command::Mode::Sine: {
-        auto time_init = millis();
-        SetPositions(1, 1);
-        cmd_.sine.progress += millis() - time_init;
-        break;
-      }
-      default: {
-        break;
-      }
+  template <typename ServoCommand>
+  void CommandLR(ServoCommand c) {
+    for (Servo& s : lr_) {
+      c(s);
     }
   }
 
   struct Command {
-    enum class Mode : uint8_t {
-      Stop,
-      DZero,
-      SetPositions,
-      WalkForward,
-      WalkBackward,
-      GoToLpsPosition,
-      Sine
-    } mode;
+    enum class Mode : uint8_t { Stop, DZero, SetPosition, Walk } mode;
 
-    struct {  // don't use union since progress data should be reserved
-              // or previous command value should be used for comparing with new
-              // value
-      struct Stop {
-        bool waiting;
-      } stop;
+    struct Stop {
+      bool init;
+    } stop;
 
-      struct DZero {
-        bool waiting;
-      } d_zero;
+    struct DZero {
+      bool init;
+    } d_zero;
 
-      struct SetPositions {
-        double l;
-        double r;
-        enum class Progress : uint8_t {
-          waiting,
-          moving,
-          complete,
-          stopped
-        } progress;
-      } set_positions;
+    struct SetPosition {
+      enum class Progress : uint8_t { init, moving, complete } progress;
+      double position = 0.0;
+      bool which_foot;  // 0 = left, 1 = right
+    } set_position;
 
-      struct WalkForward {
-        double speed;
-      } walk_forward;
-
-      struct WalkBackward {
-        double speed;
-      } walk_backward;
-
-      struct GoToLpsPosition {
-        double x, y;
-        double speed;
-      } go_to_lps_position;
-
-      struct Sine {
-        double amplitude;
-        double frequency;
-        uint32_t progress;
-      } sine;
-    } cmd;
+    struct Walk {
+      enum class Progress : uint8_t {} progress;
+      double speed = 1.0;
+    } walk;
   } cmd_;
 
+  void Executer() {
+    using M = Command::Mode;
+
+    CommandLR([](Servo& s) { s.Query(); });
+
+    switch (cmd_.mode) {
+      case M::Stop: {
+        ExecuteStop();
+      } break;
+      case M::DZero: {
+        ExecuteDZero();
+      } break;
+      case M::SetPosition: {
+        ExecuteSetPosition();
+      } break;
+    }
+  }
+
+  void ExecuteStop() {
+    auto& c = cmd_.stop;
+    if (c.init) {
+      Serial.println(F("ExecuteStop processing init state"));
+      CommandLR([](Servo& s) { s.Stop(); });
+      c.init = false;
+    }
+  }
+
+  void ExecuteDZero() {
+    auto& c = cmd_.d_zero;
+    if (c.init) {
+      Serial.println(F("ExecuteDZero processing init state"));
+      CommandLR([](Servo& s) {
+        s.Stop();
+        delay(50);
+        s.d(F("d exact 0"));
+        delay(50);
+        s.Stop();
+      });
+      c.init = false;
+    }
+  }
+
+  void ExecuteSetPosition() {
+    auto& c = cmd_.set_position;
+    using P = Command::SetPosition::Progress;
+    switch (c.progress) {
+      case P::init: {
+        Serial.println(F("ExecuteSetPosition processing init state"));
+        CommandLR([&](Servo& s) { s.Position(c.position); });
+        c.progress = P::moving;
+      } break;
+      case P::moving: {
+        Serial.println(F("ExecuteSetPosition processing moving state"));
+        for (Servo& s : lr_) {
+          if (s.trjcpt_ < 4) {
+            return;
+          }
+        }
+        CommandLR([](Servo& s) { s.Stop(); });
+        cmd_.set_position.progress = P::complete;
+      } break;
+    }
+  }
+
+  void Walk() {}
+
   Servo l_, r_;
-  PmFmt pm_fmt_;
-  PmCmd pm_cmd_template_;
-  QFmt q_fmt_;
+  Servo lr_[2];
 
  private:
-  Metro exec_metro_;
+  PmFmt pm_fmt_{.maximum_torque = Res::kFloat,
+                .velocity_limit = Res::kFloat,
+                .accel_limit = Res::kFloat};
+
+  PmCmd pm_cmd_template_{
+      .maximum_torque = 32.0, .velocity_limit = 32.0, .accel_limit = 16.0};
+
+  QFmt q_fmt_{[] {
+    QFmt fmt;
+    fmt.abs_position = Res::kFloat;
+    fmt.motor_temperature = Res::kInt16;
+    fmt.trajectory_complete = Res::kInt8;
+    return fmt;
+  }()};
 } basilisk;
 
-class NeokeyReceiver {
- public:
-  NeokeyReceiver(uint16_t interval_ms) : neokey_{0x30, &Wire} {
-    while (!neokey_.begin()) {
-      Serial.println("Could not start NeoKey, check wiring?");
-      delay(1000);
-    }
-    Serial.println(F("NeoKey started"));
-  }
+NeoKey1x4Callback neokey_cb(keyEvent evt) {
+  if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
+    auto key = evt.bit.NUM;
 
-  void rcv() {
-    if (!metro_.check()) return;
+    Serial.print(F("Rise: "));
+    Serial.println(key);
 
-    const auto reading = neokey_.read();
-    if (reading & (1 << 0)) {
-      Serial.print("NeoKey #");
-      Serial.print(0);
-      Serial.println(" pressed. Basilisk CommandMode = Stop");
-      basilisk.cmd_.mode = Basilisk::Command::Mode::Stop;
-      basilisk.cmd_.stop.waiting = true;
-    } else if (reading & (1 << 1)) {
-      Serial.print("NeoKey #");
-      Serial.print(1);
-      Serial.println(" pressed. Basilisk CommandMode = DZero");
-      basilisk.cmd_.mode = Basilisk::Command::Mode::DZero;
-      basilisk.cmd_.d_zero.waiting = true;
-    } else if (reading & (1 << 2)) {
-      Serial.print("NeoKey #");
-      Serial.print(2);
-      Serial.println(" pressed. Basilisk CommandMode = SetPositions");
-      basilisk.cmd_.mode = Basilisk::Command::Mode::SetPositions;
-      basilisk.cmd_.set_positions.l = 0;
-      basilisk.cmd_.set_positions.r = 0;
-      basilisk.cmd_.set_positions.progress =
-          Basilisk::Command::SetPositions::Progress::waiting;
-    } else if (reading & (1 << 3)) {
-      Serial.print("NeoKey #");
-      Serial.print(3);
-      Serial.println(" pressed. Basilisk CommandMode = Sine");
-      basilisk.cmd_.mode = Basilisk::Command::Mode::Sine;
-      basilisk.cmd_.sine.amplitude = 0.5;
-      basilisk.cmd_.sine.frequency = 1;
+    using C = Basilisk::Command;
+    using M = C::Mode;
+    auto& cmd = basilisk.cmd_;
+    auto& mode = basilisk.cmd_.mode;
+
+    if (key <= 0) {
+      mode = M::Stop;
+      cmd.stop.init = true;
+    } else if (key <= 1) {
+      mode = M::DZero;
+      cmd.d_zero.init = true;
+    } else {
+      mode = M::SetPosition;
+      cmd.set_position.progress = C::SetPosition::Progress::init;
+      cmd.set_position.position = key * 0.25;
     }
   }
 
- private:
-  Adafruit_NeoKey_1x4 neokey_;
-  Metro metro_{100};
-} neokey_cr{5};
+  return 0;
+}
+
+auto& neokey = specific::neokey3x4_i2c1;
+void NeokeyCommandReceiver() { neokey.read(); }
+
+void SerialPrintReplySender() {
+  basilisk.CommandLR([](Servo& s) { s.Print(); });
+}
 
 void setup() {
   SerialInitializer.init();
-  I2C0Initializer.init();
   SpiInitializer.init();
-  Neokey0Initializer.init();
-  CanFdInitializer.init();
+  CanFdInitializer.init(CANFD_BUS);
+  NeokeyInitializer.init(neokey);
+  neokey.registerCallbackAll(neokey_cb);
 
-  basilisk.mot_l_.SetStop();
-  basilisk.mot_r_.SetStop();
+  basilisk.CommandLR([](Servo& s) { s.Stop(); });
 }
 
-void loop() {
-  while (1) {
-    basilisk.mot_l_.SetPosition({.position = 0});
-  }
+Metro executer_metro{10};
+Metro receiver_metro{25};
+Metro sender_metro{500};
 
-  neokey_cr.rcv();
-  serial_print_rpl_sndr.snd();
-  basilisk.execute();
+void loop() {
+  if (executer_metro.check()) basilisk.Executer();
+  if (receiver_metro.check()) NeokeyCommandReceiver();
+  if (sender_metro.check()) SerialPrintReplySender();
 }

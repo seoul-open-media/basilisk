@@ -129,7 +129,6 @@ class Servo : protected Moteus {
   String d(const String& message_in,
            Moteus::DiagnosticReplyMode reply_mode = Moteus::kExpectOK) {
     Threads::Scope lock{mutex_};
-    Stop();
     DiagnosticCommand(F("tel stop"));
     SetDiagnosticFlush();
     return DiagnosticCommand(message_in, reply_mode);
