@@ -2,7 +2,7 @@
 #include <initializers.h>
 #include <neokey.h>
 #include <servo.h>
-#include <specific/neokey1x4_i2c1.h>
+#include <specific/neokey1x4_i2c0.h>
 
 #define CANFD_BUS 1
 
@@ -123,42 +123,74 @@ class Basilisk {
         Serial.println(F("Stop both Servos."));
         CommandLR([](Servo& s) { s.Stop(); });
         cmd_.walk.step = 0;
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Fix sig_L and free sig_R.
         Serial.println(F("Fix sig_L and free sig_R."));
         FixL();
         FreeR();
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Fix phi_L.
         Serial.println(F("Fix phi_L."));
         l_.Position(NaN);
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Control phi_R to phi_L.
         Serial.println(F("Control phi_R to phi_L."));
         l_.Query();
         const auto phi_L = l_.GetReply().position;
         r_.PositionWaitComplete(phi_L);
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Jump to moving_right state.
         Serial.println(F("Jump to moving_right state."));
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
         c.progress = P::moving_right;
       } break;
       case P::moving_left: {
         Serial.println(F("ExecuteWalk processing moving_left state"));
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Fix sig_R and free sig_L.
         Serial.println(F("Fix sig_R and free sig_L."));
         FixR();
         FreeL();
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Control phi_L and phi_R to 5/8.
         CommandLR([](Servo& s) { s.Position(0.625); });
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
         /*
           // This does not work for unknown reason even though
           // the trjcpt_ values are correctly updating.
@@ -178,14 +210,22 @@ class Basilisk {
           if (r_.GetReply().trajectory_complete) temp_r++;
           delay(10);
         }
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
 
         // Left foot forward complete.
-        delay(1000);
+        delay(10);
         CommandLR([](Servo& s) { s.Stop(); });
 
         // Jump.
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
         cmd_.walk.step++;
-        if (cmd_.walk.step < 4) {
+        if (cmd_.walk.step < 6) {
           c.progress = P::moving_right;
         } else {
           c.progress = P::complete;
@@ -193,15 +233,28 @@ class Basilisk {
       } break;
       case P::moving_right: {
         Serial.println(F("ExecuteWalk processing moving_right state"));
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Fix sig_L and free sig_R.
         Serial.println(F("Fix sig_L and free sig_R."));
         FixL();
         FreeR();
-        delay(1000);
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
+        delay(10);
 
         // Control phi_L and phi_R to 7/8.
+        Serial.println(F("Control phi_L and phi_R to 7/8."));
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
         CommandLR([](Servo& s) { s.Position(0.875); });
         /*
           // This does not work for unknown reason even though
@@ -222,14 +275,22 @@ class Basilisk {
           if (r_.GetReply().trajectory_complete) temp_r++;
           delay(10);
         }
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
 
         // Right foot forward complete.
-        delay(1000);
+        delay(10);
         CommandLR([](Servo& s) { s.Stop(); });
 
         // Jump.
+        CommandLR([](Servo& s) {
+          s.Query();
+          s.Print();
+        });
         cmd_.walk.step++;
-        if (cmd_.walk.step < 4) {
+        if (cmd_.walk.step < 6) {
           c.progress = P::moving_left;
         } else {
           c.progress = P::complete;
@@ -269,11 +330,14 @@ class Basilisk {
 
  private:
   PmFmt pm_fmt_{.maximum_torque = Res::kFloat,
+                .watchdog_timeout = Res::kFloat,
                 .velocity_limit = Res::kFloat,
                 .accel_limit = Res::kFloat};
 
-  PmCmd pm_cmd_template_{
-      .maximum_torque = 32.0, .velocity_limit = 2.0, .accel_limit = 1.0};
+  PmCmd pm_cmd_template_{.maximum_torque = 32.0,
+                         .watchdog_timeout = NaN,
+                         .velocity_limit = 2.0,
+                         .accel_limit = 1.0};
 
   QFmt q_fmt_{[] {
     QFmt fmt;
@@ -316,7 +380,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
   return 0;
 }
 
-auto& neokey = specific::neokey1x4_i2c1;
+auto& neokey = specific::neokey1x4_i2c0;
 void NeokeyCommandReceiver() { neokey.read(); }
 
 void SerialPrintReplySender() {
@@ -327,6 +391,7 @@ void setup() {
   SerialInitializer.init();
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
+  I2C0Initializer.init();
   NeokeyInitializer.init(neokey);
   neokey.registerCallbackAll(neokey_cb);
 
@@ -344,5 +409,5 @@ Metro sender_metro{500};
 void loop() {
   if (executer_metro.check()) basilisk.Executer();
   if (receiver_metro.check()) NeokeyCommandReceiver();
-  if (sender_metro.check()) SerialPrintReplySender();
+  // if (sender_metro.check()) SerialPrintReplySender();
 }
