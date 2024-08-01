@@ -3,6 +3,7 @@
 #include <neokey.h>
 #include <servo.h>
 #include <specific/neokey1x4_i2c0.h>
+#include <specific/neokey3x4_i2c0.h>
 
 #define CANFD_BUS 1
 
@@ -35,7 +36,9 @@ class Basilisk {
       Stop,
       ExecuteDExact075,
       SetPosition,
-      Walk
+      Walk,
+      Diamond,
+      Gee
     } mode;
 
     struct Stop {
@@ -44,7 +47,7 @@ class Basilisk {
 
     struct ExecuteDExact075 {
       bool init;
-    } d_zero;
+    } d_exact_075;
 
     struct SetPosition {
       enum class Progress : uint8_t { init, moving, complete } progress;
@@ -62,6 +65,14 @@ class Basilisk {
       uint8_t steps;
       uint8_t current_step;
     } walk;
+
+    struct Diamond {
+      bool init;
+    } diamond;
+
+    struct Gee {
+      bool init;
+    } gee;
   } cmd_;
 
   void Executer() {
@@ -82,6 +93,12 @@ class Basilisk {
       case M::Walk: {
         ExecuteWalk();
       } break;
+      case M::Diamond: {
+        ExecuteDiamond();
+      }; break;
+      case M::Gee: {
+        ExecuteGee();
+      } break;
     }
   }
 
@@ -95,7 +112,7 @@ class Basilisk {
   }
 
   void ExecuteDExact075() {
-    auto& c = cmd_.d_zero;
+    auto& c = cmd_.d_exact_075;
     if (c.init) {
       Serial.println(F("ExecuteDExact075 processing init state"));
       CommandLR([](Servo& s) {
@@ -254,6 +271,161 @@ class Basilisk {
     }
   }
 
+  void ExecuteDiamond() {
+    auto& c = cmd_.diamond;
+    if (c.init) {
+      // Move to initial position
+      FixL();
+      FreeR();
+      l_.PositionWaitComplete(0.75);
+      r_.PositionWaitComplete(0.75);
+      Print();
+
+      while (1) {
+        // Step 1.
+        FixL();
+        FreeR();
+        CommandLR([&](Servo& s) { s.Position(1.125); });
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+        Print();
+        delay(500);
+
+        // Step 2.
+        FixR();
+        FreeL();
+        CommandLR([&](Servo& s) { s.Position(0.375); });
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+        Print();
+        delay(500);
+
+        // Step 3.
+        FixL();
+        FreeR();
+        CommandLR([&](Servo& s) { s.Position(0.625); });
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+        Print();
+        delay(500);
+
+        // Step 4.
+        FixR();
+        FreeL();
+        CommandLR([&](Servo& s) { s.Position(0.875); });
+        // Wait both complete.
+        for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+          l_.Query();
+          if (l_.GetReply().trajectory_complete) temp_l++;
+          r_.Query();
+          if (r_.GetReply().trajectory_complete) temp_r++;
+          delay(10);
+        }
+        Print();
+        delay(500);
+      }
+    }
+  }
+
+  void ExecuteGee() {
+    auto& c = cmd_.gee;
+    if (c.init) {
+      // Move to initial position
+      FixL();
+      FreeR();
+      l_.PositionWaitComplete(0.75);
+      r_.PositionWaitComplete(0.75);
+      Print();
+
+      while (1) {
+        for (uint8_t i = 0; i < 3; i++) {
+          FixLAnkle();
+          FixRAnkle();
+          FreeLToe();
+          FreeRToe();
+          CommandLR([&](Servo& s) { s.Position(0.875); });
+          // Wait both complete.
+          for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+            l_.Query();
+            if (l_.GetReply().trajectory_complete) temp_l++;
+            r_.Query();
+            if (r_.GetReply().trajectory_complete) temp_r++;
+            delay(10);
+          }
+          Print();
+          delay(500);
+
+          FixLToe();
+          FixRToe();
+          FreeLAnkle();
+          FreeRAnkle();
+          CommandLR([&](Servo& s) { s.Position(0.625); });
+          // Wait both complete.
+          for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+            l_.Query();
+            if (l_.GetReply().trajectory_complete) temp_l++;
+            r_.Query();
+            if (r_.GetReply().trajectory_complete) temp_r++;
+            delay(10);
+          }
+          Print();
+          delay(500);
+        }
+        for (uint8_t i = 0; i < 3; i++) {
+          FixLAnkle();
+          FixRAnkle();
+          FreeLToe();
+          FreeRToe();
+          CommandLR([&](Servo& s) { s.Position(0.675); });
+          // Wait both complete.
+          for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+            l_.Query();
+            if (l_.GetReply().trajectory_complete) temp_l++;
+            r_.Query();
+            if (r_.GetReply().trajectory_complete) temp_r++;
+            delay(10);
+          }
+          Print();
+          delay(500);
+
+          FixLToe();
+          FixRToe();
+          FreeLAnkle();
+          FreeRAnkle();
+          CommandLR([&](Servo& s) { s.Position(0.875); });
+          // Wait both complete.
+          for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
+            l_.Query();
+            if (l_.GetReply().trajectory_complete) temp_l++;
+            r_.Query();
+            if (r_.GetReply().trajectory_complete) temp_r++;
+            delay(10);
+          }
+          Print();
+          delay(500);
+        }
+      }
+    }
+  }
+
   Servo l_, r_;
   Servo lr_[2];
 
@@ -278,6 +450,22 @@ class Basilisk {
     digitalWrite(electromagnet_pins[2], HIGH);
     digitalWrite(electromagnet_pins[3], HIGH);
   }
+
+  void FixLAnkle() { digitalWrite(electromagnet_pins[0], LOW); }
+
+  void FreeLAnkle() { digitalWrite(electromagnet_pins[0], HIGH); }
+
+  void FixLToe() { digitalWrite(electromagnet_pins[1], LOW); }
+
+  void FreeLToe() { digitalWrite(electromagnet_pins[1], HIGH); }
+
+  void FixRAnkle() { digitalWrite(electromagnet_pins[2], LOW); }
+
+  void FreeRAnkle() { digitalWrite(electromagnet_pins[2], HIGH); }
+
+  void FixRToe() { digitalWrite(electromagnet_pins[3], LOW); }
+
+  void FreeRToe() { digitalWrite(electromagnet_pins[3], HIGH); }
 
   void Print() {
     CommandLR([](Servo& s) {
@@ -319,17 +507,31 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
     auto& mode = basilisk.cmd_.mode;
 
     if (key == 0) {
-      mode = M::Stop;
-      cmd.stop.init = true;
-    } else if (key == 1) {
+      // Stop and Free.
       mode = M::Stop;
       cmd.stop.init = true;
       basilisk.FreeL();
       basilisk.FreeR();
-    } else if (key == 2) {
+    } else if (key == 1) {
+      // Set current positions as initial position.
       mode = M::ExecuteDExact075;
-      cmd.d_zero.init = true;
-    } else {
+      cmd.d_exact_075.init = true;
+    } else if (key == 2) {
+      // Gee.
+      mode = M::Gee;
+      cmd.gee.init = true;
+    } else if (key == 3) {
+      // Diamond.
+      mode = M::Diamond;
+      cmd.diamond.init = true;
+    } else if (key == 4) {
+      // Walk in 90 degree stride.
+      mode = M::Walk;
+      cmd.walk.progress = C::Walk::Progress::init;
+      cmd.walk.steps = 4;
+      cmd.walk.stride = 0.125;
+    } else if (key == 5) {
+      // Catwalk.
       mode = M::Walk;
       cmd.walk.progress = C::Walk::Progress::init;
       cmd.walk.steps = 3;
@@ -352,6 +554,7 @@ void setup() {
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
   I2C0Initializer.init();
+  I2C1Initializer.init();
   NeokeyInitializer.init(neokey);
   neokey.registerCallbackAll(neokey_cb);
 
