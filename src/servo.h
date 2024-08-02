@@ -50,6 +50,7 @@ class Servo : protected Moteus {
                  if (q_fmt) {
                    options.query_format = *q_fmt;
                  }
+                 options.default_query = true;
                  return options;
                }()},
         pm_fmt_{pm_fmt},
@@ -61,45 +62,61 @@ class Servo : protected Moteus {
   QRpl GetReply() { return usr_rpl(/* Mutex lock inside. */); }
 
   void SetReply() {
-    Threads::Scope lock{mutex_};
+    bool new_trjcpt;
+    {
+      Threads::Scope lock{mutex_};
+      const auto delta_aux2_pos =
+          last_result().values.abs_position - sys_rpl_.abs_position;
+      if (delta_aux2_pos > 0.5) {
+        aux2_revs_--;
+      } else if (delta_aux2_pos < -0.5) {
+        aux2_revs_++;
+      }
 
-    const auto delta =
-        last_result().values.abs_position - sys_rpl_.abs_position;
-    if (delta > 0.5) {
-      aux2_revs_--;
-    } else if (delta < -0.5) {
-      aux2_revs_++;
+      new_trjcpt = last_result().values.trajectory_complete;
     }
 
-    sys_rpl_ = last_result().values;
+    update_trjcpt(
+        /* Mutex lock inside */ new_trjcpt);
 
-    if (!sys_rpl_.trajectory_complete) {
-      trjcpt_ = 0;
-    } else if (trjcpt_ != 0xFF) {
-      trjcpt_++;
+    {
+      Threads::Scope lock{mutex_};
+      sys_rpl_ = last_result().values;
     }
   }
 
   bool Query() {
-    bool success;
+    bool got_rpl;
     {
       Threads::Scope lock{mutex_};
-      success = SetQuery();
+      got_rpl = SetQuery();
     }
-    SetReply(/* Mutex lock inside. */);
-    return success;
+    if (got_rpl) SetReply(/* Mutex lock inside. */);
+    return got_rpl;
   }
 
   bool Stop() {
-    Threads::Scope lock{mutex_};
-    trjcpt_ = 0;
-    return SetStop();
+    bool got_rpl;
+    {
+      Threads::Scope lock{mutex_};
+      trjcpt_ = 0;
+      got_rpl = SetStop();
+    }
+    if (got_rpl) {
+      SetReply(/* Mutex lock inside. */);
+    }
+    return got_rpl;
   }
 
   bool Position(const PmCmd& usr_cmd) {
-    Threads::Scope lock{mutex_};
-    trjcpt_ = 0;
-    return SetPosition(sys_cmd(usr_cmd), pm_fmt_);
+    bool got_rpl;
+    {
+      Threads::Scope lock{mutex_};
+      trjcpt_ = 0;
+      got_rpl = SetPosition(sys_cmd(usr_cmd), pm_fmt_);
+    }
+    if (got_rpl) SetReply(/* Mutex lock inside. */);
+    return got_rpl;
   }
 
   bool Position(const double& pos) {
@@ -111,9 +128,14 @@ class Servo : protected Moteus {
   }
 
   bool PositionWaitComplete(const PmCmd& usr_cmd) {
-    Threads::Scope lock{mutex_};
-    trjcpt_ = 0;
-    return SetPositionWaitComplete(sys_cmd(usr_cmd), 0.01, pm_fmt_);
+    bool complete;
+    {
+      Threads::Scope lock{mutex_};
+      trjcpt_ = 0;
+      complete = SetPositionWaitComplete(sys_cmd(usr_cmd), 0.01, pm_fmt_);
+    }
+    if (complete) SetReply(/* Mutex lock inside. */);
+    return complete;
   }
 
   bool PositionWaitComplete(const double& pos) {
@@ -126,21 +148,24 @@ class Servo : protected Moteus {
   }
 
   bool SetBasePosition() {
-    auto success = Query(/* Mutex lock inside. */);
-    if (success) {
+    auto got_rpl = Query(/* Mutex lock inside. */);
+    if (got_rpl) {
       Threads::Scope lock{mutex_};
       base_pos_ = GetReply().position;
+      return true;
+    } else {
+      return false;
     }
-    return success;
   }
 
   bool SetBaseAux2Position() {
-    auto success = Query(/* Mutex lock inside. */);
-    if (success) {
-      Threads::Scope lock{mutex_};
-      base_aux2_pos_ = GetReply().abs_position;
+    auto got_rpl = Query(/* Mutex lock inside. */);
+    if (got_rpl) {
+      base_aux2_pos_ = GetReply(/* Mutex lock inside. */).abs_position;
+      return true;
+    } else {
+      return false;
     }
-    return success;
   }
 
   String d(const String& message_in,
@@ -152,6 +177,7 @@ class Servo : protected Moteus {
   }
 
   const int id_;
+
   static Threads::Mutex mutex_;
 
   PmFmt* pm_fmt_;
@@ -169,6 +195,7 @@ class Servo : protected Moteus {
         if (micros() - last_result().timestamp < 1e6) {
           cmd.position += last_result().values.position;
         } else {
+          Serial.println(F("More that 1s has past since last reply"));
           cmd.position = NaN;
         }
       } break;
@@ -205,10 +232,21 @@ class Servo : protected Moteus {
   double base_pos_;
   double base_aux2_pos_;
   int aux2_revs_ = 0;
+
   volatile uint8_t trjcpt_ = 0;  // Accumulation of `trajectory_complete`.
+  void update_trjcpt(bool increment_or_reset) {
+    if (increment_or_reset) {
+      Threads::Scope lock{mutex_};
+      if (trjcpt_ != 0xFF) {
+        trjcpt_++;
+      }
+    } else {
+      Threads::Scope lock{mutex_};
+      trjcpt_ = 0;
+    }
+  }
 
   void Print() {  // Caution: Does not Query before print.
-                  // Querying is left for the Executer.
     const auto rpl = GetReply(/* Mutex lock inside. */);
     Serial.print(id_);
     Serial.print(F(" : t "));
@@ -231,8 +269,11 @@ class Servo : protected Moteus {
     Serial.print(rpl.motor_temperature);
     Serial.print(F(" / tjc "));
     Serial.print(rpl.trajectory_complete);
-    Serial.print(F(" -> "));
-    Serial.print(trjcpt_);
+    Serial.print(F(" +> "));
+    {
+      Threads::Scope lock{mutex_};
+      Serial.println(trjcpt_);
+    }
     Serial.print(F(" / hom "));
     Serial.print(static_cast<int>(rpl.home_state));
     Serial.print(F(" / vlt "));
