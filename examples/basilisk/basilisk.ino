@@ -1,6 +1,5 @@
 #include <Metro.h>
 #include <initializers.h>
-#include <neokey.h>
 #include <servo.h>
 #include <specific/neokey1x4_i2c0.h>
 #include <specific/neokey3x4_i2c0.h>
@@ -28,6 +27,8 @@ class Basilisk {
     c(l_);
     c(r_);
   }
+
+  bool BothComplete() { return l_.trjcpt_ >> 2 | r_.trjcpt_ >> 2; }
 
   struct Command {
     enum class Mode : uint8_t {
@@ -60,18 +61,20 @@ class Basilisk {
 
     class Walk {
      public:
-      enum class Progress : uint8_t {
-        init,
-        moving_left,
-        moving_right,
-        complete
-      } progress;
+      enum class FSMState : uint8_t {
+        Init,
+        MoveLeft,
+        MoveRight,
+        Wait,
+        Complete
+      } fsm_state;
       double stride = 0.125;
       uint8_t steps;
 
      private:
       friend class Basilisk;
       uint8_t current_step;
+      FSMState wait_exit_to;
     } walk;
 
     struct Diamond {
@@ -134,8 +137,8 @@ class Basilisk {
     switch (c.fsm_state) {
       case FSM::Init: {
         Serial.println(F("ExecuteFree processing FSM::Init state"));
-        FreeL();
-        FreeR();
+        FreeSigmaL();
+        FreeSigmaR();
         c.fsm_state = FSM::Complete;
       } break;
       default:
@@ -188,12 +191,10 @@ class Basilisk {
 
   void ExecuteWalk() {
     auto& c = cmd_.walk;
-    using P = Command::Walk::Progress;
-    switch (c.progress) {
+    using FSM = Command::Walk::FSMState;
+    switch (c.fsm_state) {
       Serial.println(F("ExecuteWalk processing init state"));
-
-      Serial.println(F("ExecuteWalk processing init state"));
-      case P::init: {
+      case FSM::Init: {
         // Stop both Servos.
         Serial.println(F("Stop both Servos."));
         CommandBoth([](Servo& s) { s.Stop(); });
@@ -205,8 +206,8 @@ class Basilisk {
 
         // Fix sig_L and free sig_R.
         Serial.println(F("Fix sig_L and free sig_R."));
-        FixL();
-        FreeR();
+        FixSigmaL();
+        FreeSigmaR();
         Print();
 
         // Fix phi_L.
@@ -214,41 +215,42 @@ class Basilisk {
         l_.Position(NaN);
         Print();
 
-        // Control phi_R to phi_L.
+        // Command phi_R to phi_L and wait in WaitComplete state.
+        // Jump to MoveRight state when complete.
         Serial.println(F("Control phi_R to phi_L."));
         l_.Query();
-        r_.PositionWaitComplete(l_.GetReply().position);
-        Print();
-
-        // Jump to moving_right state.
-        Serial.println(F("Jump to moving_right state."));
-        c.progress = P::moving_right;
+        r_.Position(l_.GetReply().position);
+        c.wait_complete.wait_exit_to = FSM::MoveRight;
+        c.wait_complete.exit_condition = &Basilisk::BothComplete;
+        c.fsm_state = FSM::Wait;
         Print();
       } break;
-      case P::moving_left: {
-        Serial.println(F("ExecuteWalk processing moving_left state"));
+      case FSM::Wait: {
+        Serial.println(F("ExecuteWalk processing WaitComplete state"));
+        if ((this->*(cmd_.walk.wait_complete.exit_condition))()) {
+          c.fsm_state = c.wait_complete.wait_exit_to;
+        }
+      } break;
+      case FSM::MoveLeft: {
+        Serial.println(F("ExecuteWalk processing MoveLeft state"));
+
+        // c.current_step++;
+        if (c.current_step < c.steps) {
+          c.fsm_state = FSM::moving_right;
+        } else {
+          c.fsm_state = FSM::complete;
+        }
         Print();
 
         // Fix sig_R and free sig_L.
         Serial.println(F("Fix sig_R and free sig_L."));
-        FixR();
-        FreeL();
+        FixSigmaR();
+        FreeSigmaL();
         Print();
 
         // Control phi_L and phi_R to 5/8.
         CommandBoth([&](Servo& s) { s.Position(0.75 - c.stride); });
         Print();
-        /*
-          // This does not work for unknown reason even though
-          // the trjcpt_ values are correctly updating.
-          while (l_.trjcpt_ < 4 || r_.trjcpt_ < 4) {
-            CommandBoth([](Servo& s) {
-              s.Query();
-              // s.Print();
-            });
-            delay(10);
-          }
-        */
         // Wait both complete.
         for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
           l_.Query();
@@ -262,23 +264,16 @@ class Basilisk {
         // Left foot forward complete.
         CommandBoth([](Servo& s) { s.Stop(); });
 
-        // Jump.
-        c.current_step++;
-        if (c.current_step < c.steps) {
-          c.progress = P::moving_right;
-        } else {
-          c.progress = P::complete;
-        }
         Print();
       } break;
-      case P::moving_right: {
+      case FSM::moving_right: {
         Serial.println(F("ExecuteWalk processing moving_right state"));
         Print();
 
         // Fix sig_L and free sig_R.
         Serial.println(F("Fix sig_L and free sig_R."));
-        FixL();
-        FreeR();
+        FixSigmaL();
+        FreeSigmaR();
         Print();
 
         // Control phi_L and phi_R to 7/8.
@@ -309,18 +304,18 @@ class Basilisk {
         // Jump.
         c.current_step++;
         if (c.current_step < c.steps) {
-          c.progress = P::moving_left;
+          c.fsm_state = FSM::moving_left;
         } else {
-          c.progress = P::complete;
+          c.fsm_state = FSM::complete;
         }
         Print();
       } break;
-      case P::complete: {
+      case FSM::complete: {
         Serial.println(F("ExecuteWalk processing complete state"));
 
         // Reverse.
         c.stride *= -1.0;
-        c.progress = P::init;
+        c.fsm_state = FSM::init;
       } break;
     }
   }
@@ -329,16 +324,16 @@ class Basilisk {
     auto& c = cmd_.diamond;
     if (c.init) {
       // Move to initial position
-      FixL();
-      FreeR();
+      FixSigmaL();
+      FreeSigmaR();
       l_.PositionWaitComplete(0.75);
       r_.PositionWaitComplete(0.75);
       Print();
 
       while (1) {
         // Step 1.
-        FixL();
-        FreeR();
+        FixSigmaL();
+        FreeSigmaR();
         CommandBoth([&](Servo& s) { s.Position(1.125); });
         // Wait both complete.
         for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
@@ -352,8 +347,8 @@ class Basilisk {
         delay(500);
 
         // Step 2.
-        FixR();
-        FreeL();
+        FixSigmaR();
+        FreeSigmaL();
         CommandBoth([&](Servo& s) { s.Position(0.375); });
         // Wait both complete.
         for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
@@ -367,8 +362,8 @@ class Basilisk {
         delay(500);
 
         // Step 3.
-        FixL();
-        FreeR();
+        FixSigmaL();
+        FreeSigmaR();
         CommandBoth([&](Servo& s) { s.Position(0.625); });
         // Wait both complete.
         for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
@@ -382,8 +377,8 @@ class Basilisk {
         delay(500);
 
         // Step 4.
-        FixR();
-        FreeL();
+        FixSigmaR();
+        FreeSigmaL();
         CommandBoth([&](Servo& s) { s.Position(0.875); });
         // Wait both complete.
         for (int temp_l = 0, temp_r = 0; temp_l < 4 || temp_r < 4;) {
@@ -403,8 +398,8 @@ class Basilisk {
     auto& c = cmd_.gee;
     if (c.init) {
       // Move to initial position
-      FixL();
-      FreeR();
+      FixSigmaL();
+      FreeSigmaR();
       l_.PositionWaitComplete(0.75);
       r_.PositionWaitComplete(0.75);
       Print();
@@ -480,22 +475,22 @@ class Basilisk {
     }
   }
 
-  void FixL() {
+  void FixSigmaL() {
     digitalWrite(electromagnet_pins[0], LOW);
     digitalWrite(electromagnet_pins[1], LOW);
   }
 
-  void FreeL() {
+  void FreeSigmaL() {
     digitalWrite(electromagnet_pins[0], HIGH);
     digitalWrite(electromagnet_pins[1], HIGH);
   }
 
-  void FixR() {
+  void FixSigmaR() {
     digitalWrite(electromagnet_pins[2], LOW);
     digitalWrite(electromagnet_pins[3], LOW);
   }
 
-  void FreeR() {
+  void FreeSigmaR() {
     digitalWrite(electromagnet_pins[2], HIGH);
     digitalWrite(electromagnet_pins[3], HIGH);
   }
@@ -580,7 +575,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
       } break;
       case 4: {  // Walk in 90 degree stride.
         mode = M::Walk;
-        cmd.walk.progress = C::Walk::Progress::init;
+        cmd.walk.fsm_state = C::Walk::FSMState::init;
         cmd.walk.steps = 4;
         cmd.walk.stride = 0.125;
       } break;
@@ -603,7 +598,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
     // } else if (key == 5) {
     //   // Catwalk.
     //   mode = M::Walk;
-    //   cmd.walk.progress = C::Walk::Progress::init;
+    //   cmd.walk.progress = C::Walk::FSMState::init;
     //   cmd.walk.steps = 3;
     //   cmd.walk.stride = 0.24;
     // }
