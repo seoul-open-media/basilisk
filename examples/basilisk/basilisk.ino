@@ -60,10 +60,20 @@ class Basilisk {
 
     class Walk {
      public:
-      enum class FSMState : uint8_t { Init, Move, Wait, Complete } fsm_state;
+      enum class FSMState : uint8_t {
+        Init,
+        WaitInitLeft,
+        WaitInitRight,
+        Move,
+        WaitMove,
+        Complete
+      } fsm_state;
+      double eightwalk_l = 0.0,  // Delta sigma from zero pose
+          eightwalk_r = 0.0;     // to walk-standby pose.
       double stride =
-          0.125;  // Delta theta between zero pose and right-foot-forward pose.
-      uint8_t steps;  // Total steps counting both left and right steps.
+          0.125;      // Delta theta from zero pose to right-foot-forward pose.
+                      // Negative value manifests as walking backwards.
+      uint8_t steps;  // Total steps counting both left and right footsteps.
 
      private:
       friend class Basilisk;
@@ -228,29 +238,83 @@ class Basilisk {
         c.current_step = 0;
         Print();
 
-        // Fix left foot and free right foot.
-        Serial.println(F("Fix left foot and free right foot."));
-        DigitalWriteElectromagnet(1, false);
-        DigitalWriteElectromagnet(2, false);
-        DigitalWriteElectromagnet(3, true);
-        DigitalWriteElectromagnet(4, true);
-        Print();
-
-        // Fix rho_l.
-        Serial.println(F("Fix rho_l."));
-        l_.Position(NaN);
-        Print();
-
-        // Command rho_r to rho_l (walk standby pose)
-        // and wait in FSM::Wait state. Exit to FSM::Move state when complete.
-        Serial.println(F("Control rho_r to rho_l (walk standby pose)."));
-        l_.Query();
-        r_.Position(l_.GetReply().position);
-        c.fsm_state = FSM::Wait;
+        // Initialize left foot and enter FSM::WaitInitLeft state.
+        Serial.println(F("Initialize left foot."));
+        DigitalWriteElectromagnet(1, true);
+        DigitalWriteElectromagnet(2, true);
+        DigitalWriteElectromagnet(3, false);
+        DigitalWriteElectromagnet(4, false);
+        r_.Position(NaN);
+        l_.Position(-0.25 - c.eightwalk_l);
+        c.fsm_state = FSM::WaitInitLeft;
         Print();
       } break;
-      case FSM::Wait: {
-        Serial.println(F("ExecuteWalk processing FSM::Wait state"));
+      case FSM::WaitInitLeft: {
+        // When left foot initialization is complete,
+        // initialize right foot and enter FSM::WaitInitRight state.
+        if (BothComplete()) {
+          Serial.println(F("Initialize right foot."));
+          DigitalWriteElectromagnet(1, false);
+          DigitalWriteElectromagnet(2, false);
+          DigitalWriteElectromagnet(3, true);
+          DigitalWriteElectromagnet(4, true);
+          l_.Position(NaN);
+          r_.Position(-0.25 - c.eightwalk_r);
+          c.fsm_state = FSM::WaitInitRight;
+          Print();
+        }
+      } break;
+      case FSM::WaitInitRight: {
+        if (BothComplete()) {
+          Serial.println(F("Initialization complete."));
+          c.fsm_state = FSM::Move;
+        }
+      } break;
+      case FSM::Move: {
+        Serial.println(F("ExecuteWalk processing FSM::Move state"));
+        Print();
+
+        if (c.move_left) {
+          // Fix right foot and free left foot.
+          Serial.println(F("Fix right foot and free left foot"));
+          DigitalWriteElectromagnet(1, true);
+          DigitalWriteElectromagnet(2, true);
+          DigitalWriteElectromagnet(3, false);
+          DigitalWriteElectromagnet(4, false);
+          Print();
+
+          // Control rhos.
+          Serial.println(F("Control rhos"));
+          l_.Position(-0.25 - c.eightwalk_l - c.stride);
+          r_.Position(-0.25 - c.eightwalk_r - c.stride);
+          CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
+          Print();
+        } else {
+          // Fix left foot and free right foot.
+          Serial.println(F("Fix left foot and free right foot."));
+          DigitalWriteElectromagnet(1, false);
+          DigitalWriteElectromagnet(2, false);
+          DigitalWriteElectromagnet(3, true);
+          DigitalWriteElectromagnet(4, true);
+          Print();
+
+          // Control rhos.
+          Serial.println(F("Control rhos"));
+          l_.Position(-0.25 - c.eightwalk_l + c.stride);
+          r_.Position(-0.25 - c.eightwalk_r + c.stride);
+          Print();
+        }
+
+        // Update phase and current_step and jump to WaitMove state.
+        Serial.println(
+            F("Update phase and current_step and jump to WaitMove state."));
+        c.current_step++;
+        c.move_left = !c.move_left;
+        c.fsm_state = FSM::WaitMove;
+        Print();
+      } break;
+      case FSM::WaitMove: {
+        Serial.println(F("ExecuteWalk processing FSM::WaitMove state"));
         Print();
 
         // Resume to FSM::Move state
@@ -262,49 +326,6 @@ class Basilisk {
             c.fsm_state = FSM::Complete;
           }
         }
-        Print();
-      } break;
-      case FSM::Move: {
-        Serial.println(F("ExecuteWalk processing FSM::MoveLeft state"));
-        Print();
-
-        if (c.move_left) {
-          // Fix right foot and free left foot.
-          Serial.println(F("Fix right foot and free left foot."));
-          DigitalWriteElectromagnet(1, true);
-          DigitalWriteElectromagnet(2, true);
-          DigitalWriteElectromagnet(3, false);
-          DigitalWriteElectromagnet(4, false);
-          Print();
-
-          // Control rho_l and rho_r to -0.25 - stride.
-          Serial.println(F("Control rho_l and rho_r to -0.25 - stride."));
-          Print();
-          CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
-          Print();
-
-        } else {
-          // Fix left foot and free right foot.
-          Serial.println(F("Fix left foot and free right foot."));
-          DigitalWriteElectromagnet(1, false);
-          DigitalWriteElectromagnet(2, false);
-          DigitalWriteElectromagnet(3, true);
-          DigitalWriteElectromagnet(4, true);
-          Print();
-
-          // Control rho_l and rho_r to -0.25 + stride.
-          Serial.println(F("Control rho_l and rho_r to -0.25 + stride."));
-          Print();
-          CommandBoth([&](Servo& s) { s.Position(-0.25 + c.stride); });
-          Print();
-        }
-
-        // Update phase and current_step and jump to Wait state.
-        Serial.println(
-            F("Update phase and current_step and jump to Wait state."));
-        c.current_step++;
-        c.move_left = !c.move_left;
-        c.fsm_state = FSM::Wait;
         Print();
       } break;
       case FSM::Complete: {
@@ -352,8 +373,8 @@ class Basilisk {
         Print();
       } break;
       case FSM::Wait: {
-        Serial.println(F("ExecuteDiamond processing FSM::Wait state"));
-        Print();
+        // Serial.println(F("ExecuteDiamond processing FSM::Wait state"));
+        // Print();
 
         // Resume to FSM::Step state when complete.
         if (BothComplete()) {
@@ -368,7 +389,7 @@ class Basilisk {
         Print();
 
         if (c.current_step % 2 == 0) {
-          // Fix right foot and free left foot.
+          // Fix left foot and free right foot.
           DigitalWriteElectromagnet(1, false);
           DigitalWriteElectromagnet(2, false);
           DigitalWriteElectromagnet(3, true);
@@ -383,6 +404,8 @@ class Basilisk {
         Print();
 
         // Command both rhos to target.
+        Serial.print(F("Command both rhos to target: "));
+        Serial.println(c.target_rhos[c.current_step]);
         CommandBoth(
             [&](Servo& s) { s.Position(c.target_rhos[c.current_step]); });
         Print();
@@ -565,18 +588,26 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
         c.walk.fsm_state = C::Walk::FSMState::Init;
         c.walk.steps = 4;
         c.walk.stride = 0.25;
+        c.walk.eightwalk_l = 0.125;
+        c.walk.eightwalk_r = -0.125;
       } break;
       case 8: {  // Diamond step.
         m = M::Diamond;
         c.diamond.fsm_state = C::Diamond::FSMState::Init;
         c.diamond.stride = 0.125;
       } break;
-      case 9: {  // Gee.
+      case 9: {  // Gee in right direction.
         m = M::Gee;
         c.gee.fsm_state = C::Gee::FSMState::Init;
         c.gee.stride = 0.125;
         c.gee.steps = 4;
       } break;
+      case 10: {  // Gee in left direction.
+        m = M::Gee;
+        c.gee.fsm_state = C::Gee::FSMState::Init;
+        c.gee.stride = -0.125;
+        c.gee.steps = 4;
+      }
       default:
         break;
     }
@@ -614,5 +645,5 @@ Metro serial_print_rs_metro{500};
 void loop() {
   if (executer_metro.check()) basilisk.Executer();
   if (neokey_cr_metro.check()) NeokeyCommandReceiver();
-  if (serial_print_rs_metro.check()) SerialPrintReplySender();
+  // if (serial_print_rs_metro.check()) SerialPrintReplySender();
 }
