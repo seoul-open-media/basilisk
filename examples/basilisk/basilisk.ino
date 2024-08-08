@@ -60,21 +60,15 @@ class Basilisk {
 
     class Walk {
      public:
-      enum class FSMState : uint8_t {
-        Init,
-        MoveLeft,
-        MoveRight,
-        Wait,
-        Complete
-      } fsm_state;
+      enum class FSMState : uint8_t { Init, Move, Wait, Complete } fsm_state;
       double stride =
           0.125;  // Delta theta between zero pose and right-foot-forward pose.
       uint8_t steps;  // Total steps counting both left and right steps.
 
      private:
       friend class Basilisk;
+      bool move_left;  // true = move left foot; false = move right foot;
       uint8_t current_step;
-      FSMState wait_exit_to;
     } walk;
 
     class Diamond {
@@ -248,11 +242,10 @@ class Basilisk {
         Print();
 
         // Command rho_r to rho_l (walk standby pose)
-        // and wait in FSM::Wait state. Exit to MoveRight state when complete.
+        // and wait in FSM::Wait state. Exit to FSM::Move state when complete.
         Serial.println(F("Control rho_r to rho_l (walk standby pose)."));
         l_.Query();
         r_.Position(l_.GetReply().position);
-        c.wait_exit_to = FSM::MoveRight;
         c.fsm_state = FSM::Wait;
         Print();
       } break;
@@ -260,64 +253,57 @@ class Basilisk {
         Serial.println(F("ExecuteWalk processing FSM::Wait state"));
         Print();
 
-        // Jump to exit-to state designated by previous state
-        // or Complete state if done walking all steps.
+        // Resume to FSM::Move state
+        // or FSM::Complete state if done walking all steps.
         if (BothComplete()) {
           if (c.current_step < c.steps) {
-            c.fsm_state = c.wait_exit_to;
+            c.fsm_state = FSM::Move;
           } else {
             c.fsm_state = FSM::Complete;
           }
         }
         Print();
       } break;
-      case FSM::MoveLeft: {
+      case FSM::Move: {
         Serial.println(F("ExecuteWalk processing FSM::MoveLeft state"));
         Print();
 
-        // Fix right foot and free left foot.
-        Serial.println(F("Fix right foot and free left foot."));
-        DigitalWriteElectromagnet(1, true);
-        DigitalWriteElectromagnet(2, true);
-        DigitalWriteElectromagnet(3, false);
-        DigitalWriteElectromagnet(4, false);
-        Print();
+        if (c.move_left) {
+          // Fix right foot and free left foot.
+          Serial.println(F("Fix right foot and free left foot."));
+          DigitalWriteElectromagnet(1, true);
+          DigitalWriteElectromagnet(2, true);
+          DigitalWriteElectromagnet(3, false);
+          DigitalWriteElectromagnet(4, false);
+          Print();
 
-        // Control rho_l and rho_r to -0.25 - stride.
-        Serial.println(F("Control rho_l and rho_r to -0.25 - stride."));
-        Print();
-        CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
-        Print();
+          // Control rho_l and rho_r to -0.25 - stride.
+          Serial.println(F("Control rho_l and rho_r to -0.25 - stride."));
+          Print();
+          CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
+          Print();
 
-        // Update current_step and jump to Wait state.
-        Serial.println(F("Update current_step and jump to Wait state."));
+        } else {
+          // Fix left foot and free right foot.
+          Serial.println(F("Fix left foot and free right foot."));
+          DigitalWriteElectromagnet(1, false);
+          DigitalWriteElectromagnet(2, false);
+          DigitalWriteElectromagnet(3, true);
+          DigitalWriteElectromagnet(4, true);
+          Print();
+
+          // Control rho_l and rho_r to -0.25 + stride.
+          Serial.println(F("Control rho_l and rho_r to -0.25 + stride."));
+          Print();
+          CommandBoth([&](Servo& s) { s.Position(-0.25 + c.stride); });
+          Print();
+        }
+
+        // Update phase and current_step and jump to Wait state.
+        Serial.println(
+            F("Update phase and current_step and jump to Wait state."));
         c.current_step++;
-        c.wait_exit_to = FSM::MoveRight;
-        c.fsm_state = FSM::Wait;
-        Print();
-      } break;
-      case FSM::MoveRight: {
-        Serial.println(F("ExecuteWalk processing FSM::MoveRight state"));
-        Print();
-
-        // Fix left foot and free right foot.
-        Serial.println(F("Fix left foot and free right foot."));
-        DigitalWriteElectromagnet(1, false);
-        DigitalWriteElectromagnet(2, false);
-        DigitalWriteElectromagnet(3, true);
-        DigitalWriteElectromagnet(4, true);
-        Print();
-
-        // Control rho_l and rho_r to -0.25 + stride.
-        Serial.println(F("Control rho_l and rho_r to -0.25 + stride."));
-        Print();
-        CommandBoth([&](Servo& s) { s.Position(-0.25 + c.stride); });
-        Print();
-
-        // Update current_step and jump to Wait state.
-        Serial.println(F("Update current_step and jump to FSM::Wait state."));
-        c.current_step++;
-        c.wait_exit_to = FSM::MoveLeft;
+        c.move_left = !c.move_left;
         c.fsm_state = FSM::Wait;
         Print();
       } break;
@@ -571,7 +557,7 @@ NeoKey1x4Callback neokey_cb(keyEvent evt) {
       case 6: {  // Baby Walk: walk in 10 degree stride.
         m = M::Walk;
         c.walk.fsm_state = C::Walk::FSMState::Init;
-        c.walk.steps = 8;
+        c.walk.steps = 16;
         c.walk.stride = 10.0 / 360.0;
       } break;
       case 7: {  // 8-walk.
