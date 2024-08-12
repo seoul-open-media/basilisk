@@ -1,7 +1,6 @@
-#include <Metro.h>
+#include <beat.h>
 #include <initializers.h>
 #include <servo.h>
-#include <specific/neokey1x4_i2c0.h>
 #include <specific/neokey3x4_i2c0.h>
 
 #define CANFD_BUS 1
@@ -13,13 +12,13 @@ class Basilisk {
            CANFD_BUS,
            &pm_fmt_,
            &pm_cmd_template_,
-           CommandPositionRelativeTo::Absolute,
+           PmCmdPosRelTo::Absolute,
            &q_fmt_},
         r_{2,
            CANFD_BUS,
            &pm_fmt_,
            &pm_cmd_template_,
-           CommandPositionRelativeTo::Absolute,
+           PmCmdPosRelTo::Absolute,
            &q_fmt_} {}
 
   template <typename ServoCommand>
@@ -148,6 +147,10 @@ class Basilisk {
         Print();
 
         CommandBoth([](Servo& s) { s.Stop(); });
+        DigitalWriteElectromagnet(1, false);
+        DigitalWriteElectromagnet(2, false);
+        DigitalWriteElectromagnet(3, false);
+        DigitalWriteElectromagnet(4, false);
         c.fsm_state = FSM::Complete;
       } break;
       default:
@@ -210,7 +213,7 @@ class Basilisk {
         Serial.println(F("ExecuteSetRho processing FSM::Wait state"));
 
         // Query is done at Executer before entering FSM-based stage.
-        if (l_.trjcpt_ >> 2 | r_.trjcpt_ >> 2) {
+        if (BothComplete()) {
           CommandBoth([](Servo& s) { s.Stop(); });
           c.fsm_state = FSM::Complete;
         }
@@ -233,9 +236,10 @@ class Basilisk {
         CommandBoth([](Servo& s) { s.Stop(); });
         Print();
 
-        // Initialize current_step to 0.
-        Serial.println(F("Initialize current_step to 0."));
+        // Initialize private state values.
+        Serial.println(F("Initialize private state values."));
         c.current_step = 0;
+        c.move_left = false;
         Print();
 
         // Initialize left foot and enter FSM::WaitInitLeft state.
@@ -252,12 +256,17 @@ class Basilisk {
       case FSM::WaitInitLeft: {
         // When left foot initialization is complete,
         // initialize right foot and enter FSM::WaitInitRight state.
+        Serial.println(F("ExecuteWalk processing FSM::WaitInitLeft state"));
+        Print();
+
         if (BothComplete()) {
           Serial.println(F("Initialize right foot."));
           DigitalWriteElectromagnet(1, false);
           DigitalWriteElectromagnet(2, false);
           DigitalWriteElectromagnet(3, true);
           DigitalWriteElectromagnet(4, true);
+          Print();
+
           l_.Position(NaN);
           r_.Position(-0.25 - c.eightwalk_r);
           c.fsm_state = FSM::WaitInitRight;
@@ -268,6 +277,7 @@ class Basilisk {
         if (BothComplete()) {
           Serial.println(F("Initialization complete."));
           c.fsm_state = FSM::Move;
+          Print();
         }
       } break;
       case FSM::Move: {
@@ -287,7 +297,6 @@ class Basilisk {
           Serial.println(F("Control rhos"));
           l_.Position(-0.25 - c.eightwalk_l - c.stride);
           r_.Position(-0.25 - c.eightwalk_r - c.stride);
-          CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
           Print();
         } else {
           // Fix left foot and free right foot.
@@ -336,6 +345,8 @@ class Basilisk {
         c.stride *= -1.0;
         c.fsm_state = FSM::Init;
       } break;
+      default:
+        break;
     }
   }
 
@@ -373,8 +384,8 @@ class Basilisk {
         Print();
       } break;
       case FSM::Wait: {
-        // Serial.println(F("ExecuteDiamond processing FSM::Wait state"));
-        // Print();
+        Serial.println(F("ExecuteDiamond processing FSM::Wait state"));
+        Print();
 
         // Resume to FSM::Step state when complete.
         if (BothComplete()) {
@@ -502,6 +513,20 @@ class Basilisk {
     digitalWrite(electromagnet_pins[id - 1], free ? HIGH : LOW);
   }
 
+  void EmFixAll() {
+    DigitalWriteElectromagnet(1, false);
+    DigitalWriteElectromagnet(2, false);
+    DigitalWriteElectromagnet(3, false);
+    DigitalWriteElectromagnet(4, false);
+  }
+
+  void EmFreeAll() {
+    DigitalWriteElectromagnet(1, true);
+    DigitalWriteElectromagnet(2, true);
+    DigitalWriteElectromagnet(3, true);
+    DigitalWriteElectromagnet(4, true);
+  }
+
   void Print() {
     CommandBoth([](Servo& s) {
       s.Query();
@@ -521,7 +546,7 @@ class Basilisk {
 
   PmCmd pm_cmd_template_{.maximum_torque = 32.0,
                          .watchdog_timeout = NaN,
-                         .velocity_limit = 2.0,
+                         .velocity_limit = 4.0,
                          .accel_limit = 1.0};
 
   QFmt q_fmt_{[] {
@@ -533,91 +558,89 @@ class Basilisk {
   }()};
 } basilisk;
 
-NeoKey1x4Callback neokey_cb(keyEvent evt) {
-  if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
-    auto key = evt.bit.NUM;
-
-    Serial.print(F("Neokey rise: "));
-    Serial.println(key);
-
-    using C = Basilisk::Command;
-    using M = C::Mode;
-    auto& c = basilisk.cmd_;
-    auto& m = basilisk.cmd_.mode;
-
-    switch (key) {
-      case 0: {  // Stop.
-        m = M::Stop;
-        c.stop.fsm_state = C::Stop::FSMState::Init;
-      } break;
-      case 1: {  // ElectromagnetOnOff.
-        m = M::ElectromagnetOnOff;
-        c.electromagnet_on_off.fsm_state =
-            C::ElectromagnetOnOff::FSMState::Init;
-      } break;
-      case 2: {  // "d exact -0.25".
-        m = M::DExactM025;
-        c.d_exact_m025.fsm_state = C::DExactM025::FSMState::Init;
-      } break;
-      case 3: {  // Set rho_l and rho_r.
-        m = M::SetRho;
-        c.set_rho.fsm_state = C::SetRho::FSMState::Init;
-        c.set_rho.rho_l = 0.0;
-        c.set_rho.rho_r = 0.0;
-      } break;
-      case 4: {  // Walk in 45 degree stride.
-        m = M::Walk;
-        c.walk.fsm_state = C::Walk::FSMState::Init;
-        c.walk.steps = 4;
-        c.walk.stride = 0.125;
-      } break;
-      case 5: {  // Catwalk: walk in 90 degree stride.
-        m = M::Walk;
-        c.walk.fsm_state = C::Walk::FSMState::Init;
-        c.walk.steps = 4;
-        c.walk.stride = 0.25;
-      } break;
-      case 6: {  // Baby Walk: walk in 10 degree stride.
-        m = M::Walk;
-        c.walk.fsm_state = C::Walk::FSMState::Init;
-        c.walk.steps = 16;
-        c.walk.stride = 10.0 / 360.0;
-      } break;
-      case 7: {  // 8-walk.
-        m = M::Walk;
-        c.walk.fsm_state = C::Walk::FSMState::Init;
-        c.walk.steps = 4;
-        c.walk.stride = 0.25;
-        c.walk.eightwalk_l = 0.125;
-        c.walk.eightwalk_r = -0.125;
-      } break;
-      case 8: {  // Diamond step.
-        m = M::Diamond;
-        c.diamond.fsm_state = C::Diamond::FSMState::Init;
-        c.diamond.stride = 0.125;
-      } break;
-      case 9: {  // Gee in right direction.
-        m = M::Gee;
-        c.gee.fsm_state = C::Gee::FSMState::Init;
-        c.gee.stride = 0.125;
-        c.gee.steps = 4;
-      } break;
-      case 10: {  // Gee in left direction.
-        m = M::Gee;
-        c.gee.fsm_state = C::Gee::FSMState::Init;
-        c.gee.stride = -0.125;
-        c.gee.steps = 4;
-      }
-      default:
-        break;
-    }
-  }
-
-  return 0;
-}
-
 auto& neokey = specific::neokey3x4_i2c0;
-void NeokeyCommandReceiver() { neokey.read(); }
+void neokey_cb(uint16_t key) {
+  Serial.print(F("Neokey rose: "));
+  Serial.println(key);
+
+  using C = Basilisk::Command;
+  using M = C::Mode;
+  auto& c = basilisk.cmd_;
+  auto& m = basilisk.cmd_.mode;
+
+  switch (key) {
+    case 0: {  // Stop.
+      m = M::Stop;
+      c.stop.fsm_state = C::Stop::FSMState::Init;
+    } break;
+    case 1: {  // ElectromagnetOnOff.
+      m = M::ElectromagnetOnOff;
+      c.electromagnet_on_off.fsm_state = C::ElectromagnetOnOff::FSMState::Init;
+    } break;
+    case 2: {  // "d exact -0.25".
+      m = M::DExactM025;
+      c.d_exact_m025.fsm_state = C::DExactM025::FSMState::Init;
+    } break;
+    case 3: {  // Set rho_l and rho_r.
+      m = M::SetRho;
+      c.set_rho.fsm_state = C::SetRho::FSMState::Init;
+      c.set_rho.rho_l = 0.0;
+      c.set_rho.rho_r = 0.0;
+    } break;
+    case 4: {  // Walk in 45 degree stride.
+      m = M::Walk;
+      c.walk.fsm_state = C::Walk::FSMState::Init;
+      c.walk.steps = 4;
+      c.walk.stride = 0.125;
+      c.walk.eightwalk_l = 0.0;
+      c.walk.eightwalk_r = 0.0;
+    } break;
+    case 5: {  // Catwalk: walk in 90 degree stride.
+      m = M::Walk;
+      c.walk.fsm_state = C::Walk::FSMState::Init;
+      c.walk.steps = 4;
+      c.walk.stride = 0.25;
+      c.walk.eightwalk_l = 0.0;
+      c.walk.eightwalk_r = 0.0;
+    } break;
+    case 6: {  // Baby Walk: walk in 10 degree stride.
+      m = M::Walk;
+      c.walk.fsm_state = C::Walk::FSMState::Init;
+      c.walk.steps = 16;
+      c.walk.stride = 10.0 / 360.0;
+      c.walk.eightwalk_l = 0.0;
+      c.walk.eightwalk_r = 0.0;
+    } break;
+    case 7: {  // 8-walk.
+      m = M::Walk;
+      c.walk.fsm_state = C::Walk::FSMState::Init;
+      c.walk.steps = 4;
+      c.walk.stride = 0.125;
+      c.walk.eightwalk_l = 0.125;
+      c.walk.eightwalk_r = -0.125;
+    } break;
+    case 8: {  // Diamond step.
+      m = M::Diamond;
+      c.diamond.fsm_state = C::Diamond::FSMState::Init;
+      c.diamond.stride = 0.125;
+    } break;
+    case 9: {  // Gee in right direction.
+      m = M::Gee;
+      c.gee.fsm_state = C::Gee::FSMState::Init;
+      c.gee.stride = 0.125;
+      c.gee.steps = 4;
+    } break;
+    case 10: {  // Gee in left direction.
+      m = M::Gee;
+      c.gee.fsm_state = C::Gee::FSMState::Init;
+      c.gee.stride = -0.125;
+      c.gee.steps = 4;
+    }
+    default:
+      break;
+  }
+}
+void NeokeyCommandReceiver() { neokey.Read(); }
 
 void SerialPrintReplySender() {
   basilisk.CommandBoth([](Servo& s) { s.Print(); });
@@ -630,7 +653,7 @@ void setup() {
   I2C0Initializer.init();
   I2C1Initializer.init();
   NeokeyInitializer.init(neokey);
-  neokey.registerCallbackAll(neokey_cb);
+  neokey.SetCommonRiseCallback(neokey_cb);
   for (uint8_t i = 0; i < 4; i++) {
     pinMode(basilisk.electromagnet_pins[i], OUTPUT);
   }
@@ -638,12 +661,12 @@ void setup() {
   basilisk.CommandBoth([](Servo& s) { s.Stop(); });
 }
 
-Metro executer_metro{10};
-Metro neokey_cr_metro{25};
-Metro serial_print_rs_metro{500};
+Beat executer_beat{10};
+Beat neokey_cr_beat{25};
+Beat serial_print_rs_beat{500};
 
 void loop() {
-  if (executer_metro.check()) basilisk.Executer();
-  if (neokey_cr_metro.check()) NeokeyCommandReceiver();
-  // if (serial_print_rs_metro.check()) SerialPrintReplySender();
+  if (executer_beat.Hit()) basilisk.Executer();
+  if (neokey_cr_beat.Hit()) NeokeyCommandReceiver();
+  if (serial_print_rs_beat.Hit()) SerialPrintReplySender();
 }

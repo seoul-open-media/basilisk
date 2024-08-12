@@ -73,11 +73,13 @@ Initializer<Neokey&> NeokeyInitializer{[](Neokey& neokey) {
     Serial.println(F("Neokey begin failed"));
     delay(1000);
   }
+  Serial.println(F("Neokey started"));
 }};
 
 Initializer<uint8_t> CanFdInitializer{[](uint8_t bus) {
   void (*isr)();
   // Capturing `bus` for a lambda disables cast to `void(*)()`.
+  // Maybe try declaring `init_` as parameterized (callable) type.
   switch (bus) {
     case 1: {
       isr = [] { canfd_drivers[0].isr(); };

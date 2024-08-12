@@ -1,6 +1,5 @@
-#include <Metro.h>
+#include <beat.h>
 #include <initializers.h>
-#include <neokey.h>
 #include <servo.h>
 #include <specific/neokey3x4_i2c1.h>
 
@@ -21,12 +20,9 @@ QFmt q_fmt{[] {
   return fmt;
 }()};
 
-Servo servos[2] = {{1, CANFD_BUS, &pm_fmt, &pm_cmd_template,
-                    CommandPositionRelativeTo::Absolute, &q_fmt},
-                   {2, CANFD_BUS, &pm_fmt, &pm_cmd_template,
-                    CommandPositionRelativeTo::Absolute, &q_fmt}};
-
-uint16_t cmd;
+Servo servos[] = {
+    {1, CANFD_BUS, &pm_fmt, &pm_cmd_template, PmCmdPosRelTo::Absolute, &q_fmt},
+    {2, CANFD_BUS, &pm_fmt, &pm_cmd_template, PmCmdPosRelTo::Absolute, &q_fmt}};
 
 template <typename ServoCommand>
 void CommandAll(ServoCommand c) {
@@ -35,49 +31,46 @@ void CommandAll(ServoCommand c) {
   }
 }
 
-Metro query_metro{10};
+uint16_t cmd;
+
+Beat query_beat{10};
 void Query() {
   CommandAll([](Servo& s) { s.Query(); });
 }
 
-Metro command_metro{10};
+Beat command_beat{10};
 void Command() {
-  CommandAll(
-      [](Servo& s) { s.Position(0.25 * cmd * (s.id_ % 2 ? 1 : -1)); });
-}
-
-NeoKey1x4Callback neokey_cb(keyEvent evt) {
-  if (evt.bit.EDGE == SEESAW_KEYPAD_EDGE_RISING) {
-    cmd = evt.bit.NUM;
-  }
-
-  return 0;
+  CommandAll([](Servo& s) { s.Position(0.25 * cmd * (s.id_ % 2 ? 1 : -1)); });
 }
 
 auto& neokey = specific::neokey3x4_i2c1;
+void neokey_cb(uint16_t key) {
+  Serial.print(F("Key rose: "));
+  Serial.println(key);
+  cmd = key;
+}
+Beat receive_beat{10};
+void Receive() { neokey.Read(); }
 
-Metro receive_metro{10};
-void Receive() { neokey.read(); }
-
-Metro print_metro{250};
+Beat print_beat{500};
 void Print() {
   CommandAll([](Servo& s) { s.Print(); });
 }
 
 void setup() {
   SerialInitializer.init();
-  I2C0Initializer.init();
+  I2C1Initializer.init();
   SpiInitializer.init();
   CanFdInitializer.init(CANFD_BUS);
   NeokeyInitializer.init(neokey);
-  neokey.registerCallbackAll(neokey_cb);
+  neokey.SetCommonRiseCallback(neokey_cb);
 
   CommandAll([](Servo& s) { s.Stop(); });
 }
 
 void loop() {
-  if (receive_metro.check()) Receive();
-  if (command_metro.check()) Command();
-  if (query_metro.check()) Query();
-  if (print_metro.check()) Print();
+  if (receive_beat.Hit()) Receive();
+  if (query_beat.Hit()) Query();
+  if (command_beat.Hit()) Command();
+  if (print_beat.Hit()) Print();
 }

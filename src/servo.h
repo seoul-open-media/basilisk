@@ -1,9 +1,7 @@
 #pragma once
 
 #include <ACAN2517FD.h>
-#include <Arduino.h>
 #include <Moteus.h>
-#include <TeensyThreads.h>
 
 namespace mm = mjbots::moteus;
 using PmCmd = mm::PositionMode::Command;
@@ -12,7 +10,8 @@ using QRpl = mm::Query::Result;
 using QFmt = mm::Query::Format;
 using Res = mm::Resolution;
 
-// The following pins are selected for the SeoulOpenMedia T4_CanFD board v.1.5.
+// The following pins are selected for the SeoulOpenMedia T4_CanFD board v1.5.
+// Only Buses 1 and 2 work for now.
 #define MCP2518FD_CS_BUS1 10
 #define MCP2518FD_INT_BUS1 41
 #define MCP2518FD_CS_BUS2 9
@@ -28,23 +27,20 @@ ACAN2517FD canfd_drivers[4] = {{MCP2518FD_CS_BUS1, SPI, MCP2518FD_INT_BUS1},
                                {MCP2518FD_CS_BUS3, SPI1, MCP2518FD_INT_BUS3},
                                {MCP2518FD_CS_BUS4, SPI1, MCP2518FD_INT_BUS4}};
 
-enum class CommandPositionRelativeTo : uint8_t { Absolute, Base, Recent };
-enum class ReplyPositionRelativeTo : uint8_t { Absolute, Base };
+enum class PmCmdPosRelTo : uint8_t { Absolute, Base, Recent };
+enum class QRplPosRelTo : bool { Absolute, Base };
 
 class Servo : protected Moteus {
  public:
   Servo(int id, uint8_t bus = 1,  //
         PmFmt* pm_fmt = nullptr, PmCmd* pm_cmd_template = nullptr,
-        CommandPositionRelativeTo usr_cmd_pos_rel_to =
-            CommandPositionRelativeTo::Absolute,
+        PmCmdPosRelTo usr_pm_cmd_pos_rel_to = PmCmdPosRelTo::Absolute,
         QFmt* q_fmt = nullptr,
-        ReplyPositionRelativeTo usr_rpl_pos_rel_to =
-            ReplyPositionRelativeTo::Absolute,
-        ReplyPositionRelativeTo usr_rpl_aux2_pos_rel_to =
-            ReplyPositionRelativeTo::Absolute)
+        QRplPosRelTo usr_q_rpl_pos_rel_to = QRplPosRelTo::Absolute,
+        QRplPosRelTo usr_q_rpl_aux2_pos_rel_to = QRplPosRelTo::Absolute)
       : id_{id},
         Moteus{canfd_drivers[bus - 1],
-               [=]() {
+               [&]() {
                  Moteus::Options options;
                  options.id = id;
                  if (q_fmt) {
@@ -55,122 +51,68 @@ class Servo : protected Moteus {
                }()},
         pm_fmt_{pm_fmt},
         pm_cmd_template_{pm_cmd_template},
-        usr_cmd_pos_rel_to_{usr_cmd_pos_rel_to},
-        usr_rpl_pos_rel_to_{usr_rpl_pos_rel_to},
-        usr_rpl_aux2_pos_rel_to_{usr_rpl_aux2_pos_rel_to} {}
+        usr_pm_cmd_pos_rel_to_{usr_pm_cmd_pos_rel_to},
+        usr_q_rpl_pos_rel_to_{usr_q_rpl_pos_rel_to},
+        usr_q_rpl_aux2_pos_rel_to_{usr_q_rpl_aux2_pos_rel_to} {}
 
-  QRpl GetReply() { return usr_rpl(/* Mutex lock inside. */); }
+  QRpl GetQRpl() { return usr_rpl(); }
 
-  void SetReply() {
-    bool new_trjcpt;
-    {
-      Threads::Scope lock{mutex_};
-      const auto delta_aux2_pos =
-          last_result().values.abs_position - sys_rpl_.abs_position;
-      if (delta_aux2_pos > 0.5) {
-        aux2_revs_--;
-      } else if (delta_aux2_pos < -0.5) {
-        aux2_revs_++;
-      }
-
-      new_trjcpt = last_result().values.trajectory_complete;
+  void SetQRpl() {
+    const auto delta_aux2_pos =
+        last_result().values.abs_position - sys_rpl_.abs_position;
+    if (delta_aux2_pos > 0.5) {
+      aux2_revs_--;
+    } else if (delta_aux2_pos < -0.5) {
+      aux2_revs_++;
     }
 
-    update_trjcpt(
-        /* Mutex lock inside */ new_trjcpt);
+    update_trjcpt(last_result().values.trajectory_complete);
 
-    {
-      Threads::Scope lock{mutex_};
-      sys_rpl_ = last_result().values;
-    }
+    sys_rpl_ = last_result().values;
   }
 
   bool Query() {
-    bool got_rpl;
-    {
-      Threads::Scope lock{mutex_};
-      got_rpl = SetQuery();
-    }
-    if (got_rpl) SetReply(/* Mutex lock inside. */);
+    const auto got_rpl = SetQuery();
+    if (got_rpl) SetQRpl();
     return got_rpl;
   }
 
   bool Stop() {
-    bool got_rpl;
-    {
-      Threads::Scope lock{mutex_};
-      trjcpt_ = 0;
-      got_rpl = SetStop();
-    }
-    if (got_rpl) {
-      SetReply(/* Mutex lock inside. */);
-    }
+    trjcpt_ = 0;
+    const auto got_rpl = SetStop();
+    if (got_rpl) SetQRpl();
     return got_rpl;
   }
 
   bool Position(const PmCmd& usr_cmd) {
-    bool got_rpl;
-    {
-      Threads::Scope lock{mutex_};
-      trjcpt_ = 0;
-      got_rpl = SetPosition(sys_cmd(usr_cmd), pm_fmt_);
-    }
-    if (got_rpl) SetReply(/* Mutex lock inside. */);
+    trjcpt_ = 0;
+    const auto got_rpl = SetPosition(sys_cmd(usr_cmd), pm_fmt_);
+    if (got_rpl) SetQRpl();
     return got_rpl;
   }
 
   bool Position(const double& pos) {
-    return Position(/* Mutex lock inside. */ sys_cmd([&] {
+    return Position(sys_cmd([&] {
       auto cmd = pm_cmd_template_ ? *pm_cmd_template_ : PmCmd{};
       cmd.position = pos;
       return cmd;
     }()));
   }
 
-  bool PositionWaitComplete(const PmCmd& usr_cmd) {
-    bool complete;
-    {
-      Threads::Scope lock{mutex_};
-      trjcpt_ = 0;
-      complete = SetPositionWaitComplete(sys_cmd(usr_cmd), 0.01, pm_fmt_);
-    }
-    if (complete) SetReply(/* Mutex lock inside. */);
-    return complete;
-  }
-
-  bool PositionWaitComplete(const double& pos) {
-    return PositionWaitComplete(
-        /* Mutex lock inside. */ sys_cmd([&] {
-          auto cmd = pm_cmd_template_ ? *pm_cmd_template_ : PmCmd{};
-          cmd.position = pos;
-          return cmd;
-        }()));
-  }
-
   bool SetBasePosition() {
-    auto got_rpl = Query(/* Mutex lock inside. */);
-    if (got_rpl) {
-      Threads::Scope lock{mutex_};
-      base_pos_ = GetReply().position;
-      return true;
-    } else {
-      return false;
-    }
+    const auto got_rpl = Query();
+    if (got_rpl) base_pos_ = GetQRpl().position;
+    return got_rpl;
   }
 
   bool SetBaseAux2Position() {
-    auto got_rpl = Query(/* Mutex lock inside. */);
-    if (got_rpl) {
-      base_aux2_pos_ = GetReply(/* Mutex lock inside. */).abs_position;
-      return true;
-    } else {
-      return false;
-    }
+    const auto got_rpl = Query();
+    if (got_rpl) base_aux2_pos_ = GetQRpl().abs_position;
+    return got_rpl;
   }
 
   String d(const String& message_in,
            Moteus::DiagnosticReplyMode reply_mode = Moteus::kExpectOK) {
-    Threads::Scope lock{mutex_};
     DiagnosticCommand(F("tel stop"));
     SetDiagnosticFlush();
     return DiagnosticCommand(message_in, reply_mode);
@@ -178,19 +120,17 @@ class Servo : protected Moteus {
 
   const int id_;
 
-  static Threads::Mutex mutex_;
-
   PmFmt* pm_fmt_;
   PmCmd* pm_cmd_template_;
-  CommandPositionRelativeTo usr_cmd_pos_rel_to_;
+  PmCmdPosRelTo usr_pm_cmd_pos_rel_to_;
   PmCmd sys_cmd(const PmCmd& usr_cmd) {
     auto cmd = usr_cmd;
-    switch (usr_cmd_pos_rel_to_) {
-      case CommandPositionRelativeTo::Base: {
+    switch (usr_pm_cmd_pos_rel_to_) {
+      case PmCmdPosRelTo::Base: {
         if (isnan(base_pos_) || isnan(cmd.position)) break;
         cmd.position += base_pos_;
       } break;
-      case CommandPositionRelativeTo::Recent: {
+      case PmCmdPosRelTo::Recent: {
         if (isnan(cmd.position)) break;
         if (micros() - last_result().timestamp < 1e6) {
           cmd.position += last_result().values.position;
@@ -205,25 +145,21 @@ class Servo : protected Moteus {
     return cmd;
   }
 
-  ReplyPositionRelativeTo usr_rpl_pos_rel_to_;
-  ReplyPositionRelativeTo usr_rpl_aux2_pos_rel_to_;
+  QRplPosRelTo usr_q_rpl_pos_rel_to_;
+  QRplPosRelTo usr_q_rpl_aux2_pos_rel_to_;
   QRpl sys_rpl_;  // Caution: aux2 position coiled.
-                  // `SetReply()` should be call after each Query
+                  // `SetQRpl()` should be call after each Query
                   // to track aux2 revolutions. This field is
                   // solely for keeping previos Reply since the
                   // Moteus Arduino library silently updates
                   // `last_result_` within `SetQuery()`.
   QRpl usr_rpl() {
-    QRpl rpl;
-    {
-      Threads::Scope lock{mutex_};
-      rpl = sys_rpl_;
-    }
+    auto rpl = sys_rpl_;
     rpl.abs_position += aux2_revs_;  // Uncoil aux2 position.
-    if (usr_rpl_pos_rel_to_ == ReplyPositionRelativeTo::Base) {
+    if (usr_q_rpl_pos_rel_to_ == QRplPosRelTo::Base) {
       rpl.position -= base_pos_;
     }
-    if (usr_rpl_aux2_pos_rel_to_ == ReplyPositionRelativeTo::Base) {
+    if (usr_q_rpl_aux2_pos_rel_to_ == QRplPosRelTo::Base) {
       rpl.abs_position -= base_aux2_pos_;
     }
     return rpl;
@@ -234,20 +170,19 @@ class Servo : protected Moteus {
   int aux2_revs_ = 0;
 
   volatile uint8_t trjcpt_ = 0;  // Accumulation of `trajectory_complete`.
-  void update_trjcpt(bool increment_or_reset) {
-    if (increment_or_reset) {
-      Threads::Scope lock{mutex_};
+  void update_trjcpt(bool t_increment_f_reset) {
+    if (t_increment_f_reset) {
       if (trjcpt_ != 0xFF) {
         trjcpt_++;
       }
     } else {
-      Threads::Scope lock{mutex_};
       trjcpt_ = 0;
     }
   }
 
   void Print() {  // Caution: Does not Query before print.
-    const auto rpl = GetReply(/* Mutex lock inside. */);
+    const auto rpl = GetQRpl();
+
     Serial.print(id_);
     Serial.print(F(" : t "));
     Serial.print(millis());
@@ -270,10 +205,7 @@ class Servo : protected Moteus {
     Serial.print(F(" / tjc "));
     Serial.print(rpl.trajectory_complete);
     Serial.print(F(" +> "));
-    {
-      Threads::Scope lock{mutex_};
-      Serial.println(trjcpt_);
-    }
+    Serial.println(trjcpt_);
     Serial.print(F(" / hom "));
     Serial.print(static_cast<int>(rpl.home_state));
     Serial.print(F(" / vlt "));
@@ -285,5 +217,3 @@ class Servo : protected Moteus {
     Serial.println();
   }
 };
-
-Threads::Mutex Servo::mutex_;

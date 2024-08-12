@@ -11,43 +11,58 @@
 //   2 2          [6]{K K K K} [7]{K K K K} [8]{K K K K}
 
 // Just a wrapper class of Adafruit_MultiNeoKey1x4 with some
-// helper methods added.
-class Neokey : public Adafruit_MultiNeoKey1x4 {
+// helper methods added and callback handling done right.
+class Neokey : private Adafruit_MultiNeoKey1x4 {
  public:
-  // Statement to prevent `read` in this class shadowing the parent method.
-  using Adafruit_MultiNeoKey1x4::read;
-
   Neokey(Adafruit_NeoKey_1x4* neokeys, uint8_t rows, uint8_t cols)
-      : Adafruit_MultiNeoKey1x4{neokeys, rows, cols} {}
+      : Adafruit_MultiNeoKey1x4{neokeys, rows, cols} {
+    last_buttons_ = new uint8_t[_rows * _cols];
+    memset(last_buttons_, 0, _cols * _rows);
+  }
 
-  uint8_t rows() { return _rows; }
-  uint8_t cols() { return _cols; }
+  ~Neokey() { delete[] last_buttons_; }
+
+  bool begin() { return static_cast<Adafruit_MultiNeoKey1x4*>(this)->begin(); }
+
   uint8_t dim_y() { return _rows; }
   uint8_t dim_x() { return _cols << 2; }
 
-  void registerCallbackAll(NeoKey1x4Callback (*cb)(keyEvent)) {
-    for (uint8_t key = 0; key < dim_x() * dim_y(); key++) {
-      registerCallback(key, cb);
+  void SetCommonRiseCallback(void (*callback)(uint16_t)) {
+    common_rise_callback_ = callback;
+  }
+
+  void Read() {
+    for (uint8_t row = 0; row < _rows; row++) {
+      for (uint8_t col = 0; col < _cols; col++) {
+        auto nk_idx = row * _cols + col;
+        auto& nk = _neokeys[nk_idx];
+
+        // "Not sure why we have to do it twice."
+        nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+        auto buttons = nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+
+        buttons ^= NEOKEY_1X4_BUTTONMASK;
+        buttons &= NEOKEY_1X4_BUTTONMASK;
+        buttons >>= NEOKEY_1X4_BUTTONA;
+
+        // Compare to last reading.
+        auto& last_buttons = last_buttons_[nk_idx];
+        uint8_t just_pressed = (buttons ^ last_buttons) & buttons;
+
+        for (uint8_t b = 0; b < 4; b++) {
+          if (just_pressed & (1 << b) && common_rise_callback_) {
+            uint16_t key = (nk_idx << 2) + b;
+            common_rise_callback_(key);
+          }
+        }
+
+        // Stash for next run.
+        last_buttons = buttons;
+      }
     }
   }
 
-  uint8_t read(uint8_t row, uint8_t col, bool do_print) {
-    auto reading = _neokeys[row * _cols + col].read();
-    if (do_print) {
-      Serial.print(F("NeoKey[row = "));
-      Serial.print(row);
-      Serial.print(F("][col = "));
-      Serial.print(col);
-      Serial.print(F("] = 0b"));
-      Serial.println(reading, BIN);
-      for (uint8_t i = 0; i < 4; i++) {
-        Serial.print(F("Key["));
-        Serial.print(i);
-        Serial.print(F("] "));
-        Serial.println(reading & 0x1 ? "Pressed" : "Not Pressed");
-        reading >>= 1;
-      }
-    }
-    return reading;
-  }
+ private:
+  void (*common_rise_callback_)(uint16_t key);
+  uint8_t* last_buttons_;
 };

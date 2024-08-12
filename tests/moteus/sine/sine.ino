@@ -1,4 +1,4 @@
-#include <Metro.h>
+#include <beat.h>
 #include <initializers.h>
 #include <servo.h>
 
@@ -13,17 +13,17 @@ void CommandAll(ServoCommand c) {
   }
 }
 
-Metro query_metro{100};
+Beat query_beat{100};
 void Query() {
   CommandAll([](Servo& s) { s.Query(); });
 }
 
-Metro command_metro{10};
+Beat command_beat{10};
 void Command() {
   CommandAll([](Servo& s) { s.Position(0.25 * sin(millis() / 250.0)); });
 }
 
-Metro print_metro{100};
+Beat print_beat{500};
 void Print() {
   CommandAll([](Servo& s) { s.Print(); });
 }
@@ -37,7 +37,7 @@ void setup() {
 }
 
 void loop() {
-  if (query_metro.check()) Query();
-  if (command_metro.check()) Command();
-  if (print_metro.check()) Print();
+  if (query_beat.Hit()) Query();
+  if (command_beat.Hit()) Command();
+  if (print_beat.Hit()) Print();
 }
