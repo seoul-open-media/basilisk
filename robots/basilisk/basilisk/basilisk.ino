@@ -27,7 +27,7 @@ class Basilisk {
     c(r_);
   }
 
-  bool BothComplete() { return l_.trjcpt_ >> 2 | r_.trjcpt_ >> 2; }
+  bool BothComplete() { return l_.trjcpt_ >> 2 && r_.trjcpt_ >> 2; }
 
   struct Command {
     enum class Mode : uint8_t {
@@ -69,9 +69,9 @@ class Basilisk {
       } fsm_state;
       double eightwalk_l = 0.0,  // Delta sigma from zero pose
           eightwalk_r = 0.0;     // to walk-standby pose.
-      double stride =
-          0.125;      // Delta theta from zero pose to right-foot-forward pose.
-                      // Negative value manifests as walking backwards.
+      double stride = 0.125;     // Delta theta from walk-standby pose
+                                 // to right-foot-forward pose. Negative value
+                                 // manifests as walking backwards.
       uint8_t steps;  // Total steps counting both left and right footsteps.
 
      private:
@@ -135,6 +135,8 @@ class Basilisk {
       case M::Gee: {
         ExecuteGee();
       } break;
+      default:
+        break;
     }
   }
 
@@ -147,10 +149,9 @@ class Basilisk {
         Print();
 
         CommandBoth([](Servo& s) { s.Stop(); });
-        DigitalWriteElectromagnet(1, false);
-        DigitalWriteElectromagnet(2, false);
-        DigitalWriteElectromagnet(3, false);
-        DigitalWriteElectromagnet(4, false);
+
+        EmFixAll();  // Temporary.
+
         c.fsm_state = FSM::Complete;
       } break;
       default:
@@ -166,10 +167,8 @@ class Basilisk {
         Serial.println(
             F("ExecuteElectromagnetOnOff processing FSM::Init state"));
 
-        DigitalWriteElectromagnet(1, true);
-        DigitalWriteElectromagnet(2, true);
-        DigitalWriteElectromagnet(3, true);
-        DigitalWriteElectromagnet(4, true);
+        EmFreeAll();  // Temporary.
+
         c.fsm_state = FSM::Complete;
       } break;
       default:
@@ -191,6 +190,7 @@ class Basilisk {
           delay(50);
           s.Stop();
         });
+
         c.fsm_state = FSM::Complete;
       } break;
       default:
@@ -207,6 +207,7 @@ class Basilisk {
 
         l_.Position(c.rho_l);
         r_.Position(c.rho_r);
+
         c.fsm_state = FSM::Wait;
       } break;
       case FSM::Wait: {
@@ -215,6 +216,7 @@ class Basilisk {
         // Query is done at Executer before entering FSM-based stage.
         if (BothComplete()) {
           CommandBoth([](Servo& s) { s.Stop(); });
+
           c.fsm_state = FSM::Complete;
         }
       } break;
@@ -244,10 +246,10 @@ class Basilisk {
 
         // Initialize left foot and enter FSM::WaitInitLeft state.
         Serial.println(F("Initialize left foot."));
-        DigitalWriteElectromagnet(1, true);
-        DigitalWriteElectromagnet(2, true);
-        DigitalWriteElectromagnet(3, false);
-        DigitalWriteElectromagnet(4, false);
+        ElectromagnetDigitalWrite(1, true);
+        ElectromagnetDigitalWrite(2, true);
+        ElectromagnetDigitalWrite(3, false);
+        ElectromagnetDigitalWrite(4, false);
         r_.Position(NaN);
         l_.Position(-0.25 - c.eightwalk_l);
         c.fsm_state = FSM::WaitInitLeft;
@@ -260,11 +262,12 @@ class Basilisk {
         Print();
 
         if (BothComplete()) {
+          Serial.println(F("Left foot initialization complete."));
           Serial.println(F("Initialize right foot."));
-          DigitalWriteElectromagnet(1, false);
-          DigitalWriteElectromagnet(2, false);
-          DigitalWriteElectromagnet(3, true);
-          DigitalWriteElectromagnet(4, true);
+          ElectromagnetDigitalWrite(1, false);
+          ElectromagnetDigitalWrite(2, false);
+          ElectromagnetDigitalWrite(3, true);
+          ElectromagnetDigitalWrite(4, true);
           Print();
 
           l_.Position(NaN);
@@ -275,7 +278,8 @@ class Basilisk {
       } break;
       case FSM::WaitInitRight: {
         if (BothComplete()) {
-          Serial.println(F("Initialization complete."));
+          Serial.println(F("Right foot initialization complete."));
+
           c.fsm_state = FSM::Move;
           Print();
         }
@@ -287,10 +291,10 @@ class Basilisk {
         if (c.move_left) {
           // Fix right foot and free left foot.
           Serial.println(F("Fix right foot and free left foot"));
-          DigitalWriteElectromagnet(1, true);
-          DigitalWriteElectromagnet(2, true);
-          DigitalWriteElectromagnet(3, false);
-          DigitalWriteElectromagnet(4, false);
+          ElectromagnetDigitalWrite(1, true);
+          ElectromagnetDigitalWrite(2, true);
+          ElectromagnetDigitalWrite(3, false);
+          ElectromagnetDigitalWrite(4, false);
           Print();
 
           // Control rhos.
@@ -301,10 +305,10 @@ class Basilisk {
         } else {
           // Fix left foot and free right foot.
           Serial.println(F("Fix left foot and free right foot."));
-          DigitalWriteElectromagnet(1, false);
-          DigitalWriteElectromagnet(2, false);
-          DigitalWriteElectromagnet(3, true);
-          DigitalWriteElectromagnet(4, true);
+          ElectromagnetDigitalWrite(1, false);
+          ElectromagnetDigitalWrite(2, false);
+          ElectromagnetDigitalWrite(3, true);
+          ElectromagnetDigitalWrite(4, true);
           Print();
 
           // Control rhos.
@@ -341,7 +345,7 @@ class Basilisk {
         Serial.println(F("ExecuteWalk processing FSM::Complete state"));
         Print();
 
-        // Reverse. (temp)
+        // Temporarily reverse.
         c.stride *= -1.0;
         c.fsm_state = FSM::Init;
       } break;
@@ -359,10 +363,10 @@ class Basilisk {
         Print();
 
         // Fix left foot and free right foot.
-        DigitalWriteElectromagnet(1, false);
-        DigitalWriteElectromagnet(2, false);
-        DigitalWriteElectromagnet(3, true);
-        DigitalWriteElectromagnet(4, true);
+        ElectromagnetDigitalWrite(1, false);
+        ElectromagnetDigitalWrite(2, false);
+        ElectromagnetDigitalWrite(3, true);
+        ElectromagnetDigitalWrite(4, true);
         Print();
 
         // Move to initial position
@@ -401,16 +405,16 @@ class Basilisk {
 
         if (c.current_step % 2 == 0) {
           // Fix left foot and free right foot.
-          DigitalWriteElectromagnet(1, false);
-          DigitalWriteElectromagnet(2, false);
-          DigitalWriteElectromagnet(3, true);
-          DigitalWriteElectromagnet(4, true);
+          ElectromagnetDigitalWrite(1, false);
+          ElectromagnetDigitalWrite(2, false);
+          ElectromagnetDigitalWrite(3, true);
+          ElectromagnetDigitalWrite(4, true);
         } else {
           // Fix right foot and free left foot.
-          DigitalWriteElectromagnet(1, true);
-          DigitalWriteElectromagnet(2, true);
-          DigitalWriteElectromagnet(3, false);
-          DigitalWriteElectromagnet(4, false);
+          ElectromagnetDigitalWrite(1, true);
+          ElectromagnetDigitalWrite(2, true);
+          ElectromagnetDigitalWrite(3, false);
+          ElectromagnetDigitalWrite(4, false);
         }
         Print();
 
@@ -443,10 +447,10 @@ class Basilisk {
         Print();
 
         // Fix left foot and free right foot
-        DigitalWriteElectromagnet(1, false);
-        DigitalWriteElectromagnet(2, false);
-        DigitalWriteElectromagnet(3, true);
-        DigitalWriteElectromagnet(4, true);
+        ElectromagnetDigitalWrite(1, false);
+        ElectromagnetDigitalWrite(2, false);
+        ElectromagnetDigitalWrite(3, true);
+        ElectromagnetDigitalWrite(4, true);
         Print();
 
         // Go to zero pose.
@@ -476,19 +480,19 @@ class Basilisk {
       case FSM::Step: {
         if (c.phase) {
           // Fix toes and free ankles.
-          DigitalWriteElectromagnet(1, true);
-          DigitalWriteElectromagnet(2, false);
-          DigitalWriteElectromagnet(3, true);
-          DigitalWriteElectromagnet(4, false);
+          ElectromagnetDigitalWrite(1, true);
+          ElectromagnetDigitalWrite(2, false);
+          ElectromagnetDigitalWrite(3, true);
+          ElectromagnetDigitalWrite(4, false);
 
           // Shear.
           CommandBoth([&](Servo& s) { s.Position(-0.25 - c.stride); });
         } else {
           // Fix ankles and free toes.
-          DigitalWriteElectromagnet(1, false);
-          DigitalWriteElectromagnet(2, true);
-          DigitalWriteElectromagnet(3, false);
-          DigitalWriteElectromagnet(4, true);
+          ElectromagnetDigitalWrite(1, false);
+          ElectromagnetDigitalWrite(2, true);
+          ElectromagnetDigitalWrite(3, false);
+          ElectromagnetDigitalWrite(4, true);
 
           // Shear.
           CommandBoth([&](Servo& s) { s.Position(-0.25 + c.stride); });
@@ -506,25 +510,25 @@ class Basilisk {
     }
   }
 
-  void DigitalWriteElectromagnet(int id, bool free) {
+  void ElectromagnetDigitalWrite(int id, bool free) {
     // ID    | 1         | 2       | 3          | 4
     // Index | 0         | 1       | 2          | 3
     // Part  | LeftAnkle | LeftToe | RightAnkle | RightToe
-    digitalWrite(electromagnet_pins[id - 1], free ? HIGH : LOW);
+    digitalWrite(electromagnet_pins[id - 1], free);
   }
 
   void EmFixAll() {
-    DigitalWriteElectromagnet(1, false);
-    DigitalWriteElectromagnet(2, false);
-    DigitalWriteElectromagnet(3, false);
-    DigitalWriteElectromagnet(4, false);
+    ElectromagnetDigitalWrite(1, false);
+    ElectromagnetDigitalWrite(2, false);
+    ElectromagnetDigitalWrite(3, false);
+    ElectromagnetDigitalWrite(4, false);
   }
 
   void EmFreeAll() {
-    DigitalWriteElectromagnet(1, true);
-    DigitalWriteElectromagnet(2, true);
-    DigitalWriteElectromagnet(3, true);
-    DigitalWriteElectromagnet(4, true);
+    ElectromagnetDigitalWrite(1, true);
+    ElectromagnetDigitalWrite(2, true);
+    ElectromagnetDigitalWrite(3, true);
+    ElectromagnetDigitalWrite(4, true);
   }
 
   void Print() {

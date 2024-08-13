@@ -43,9 +43,7 @@ class Servo : protected Moteus {
                [&]() {
                  Moteus::Options options;
                  options.id = id;
-                 if (q_fmt) {
-                   options.query_format = *q_fmt;
-                 }
+                 if (q_fmt) options.query_format = *q_fmt;
                  options.default_query = true;
                  return options;
                }()},
