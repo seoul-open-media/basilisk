@@ -10,8 +10,7 @@
 //   1 1          [3]{K K K K} [4]{K K K K} [5]{K K K K}
 //   2 2          [6]{K K K K} [7]{K K K K} [8]{K K K K}
 
-// Just a wrapper class of Adafruit_MultiNeoKey1x4 with some
-// helper methods added and callback handling done right.
+// A wrapper class of Adafruit_MultiNeoKey1x4, callback handling done right.
 class Neokey : private Adafruit_MultiNeoKey1x4 {
  public:
   Neokey(Adafruit_NeoKey_1x4* neokeys, uint8_t rows, uint8_t cols)
