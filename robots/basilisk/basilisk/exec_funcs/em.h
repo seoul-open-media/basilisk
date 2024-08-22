@@ -12,7 +12,7 @@ void ExecFuncs::Em(Basilisk& b) {
     case FSM::Init: {
       Serial.println(F("ExecFuncs::Em(FSM::Init)"));
 
-      for (uint8_t id = 0; id < 4; id++) {
+      for (uint8_t id = 1; id <= 4; id++) {
         b.ems_.SetStrength(id, c.strength[id - 1]);
       }
 

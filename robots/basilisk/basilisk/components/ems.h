@@ -13,7 +13,7 @@ enum class EmStrength : int {
 class Ems {
  public:
   Ems(const uint8_t& pin_la = 3, const uint8_t& pin_lt = 4,
-      const uint8_t& pin_ra = 5, const uint8_t& pin_rt = 6)
+      const uint8_t& pin_ra = 5, const uint8_t& pin_rt = 22)
       : pin_la_{pin_la},
         pin_lt_{pin_lt},
         pin_ra_{pin_ra},

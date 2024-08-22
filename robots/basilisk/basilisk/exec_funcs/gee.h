@@ -72,8 +72,8 @@ namespace cmd_presets::gee {
 using C = const Basilisk::Command::Gee;
 using FSM = C::FSMState;
 
-C right{0.125, 4};
+C right{0.125, 8};
 
-C left{-0.125, 4};
+C left{-0.125, 8};
 
 }  // namespace cmd_presets::gee

@@ -4,6 +4,7 @@ class Basilisk;
 
 class ExecFuncs {
  public:
+  static void WaitTime(Basilisk&);
   static void Stop(Basilisk&);
   static void Em(Basilisk&);
   static void DExactM025(Basilisk&);

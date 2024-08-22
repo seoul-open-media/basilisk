@@ -41,11 +41,7 @@ class Initializer<void> {
 
 Initializer<void> SerialInitializer{[] {
   Serial.begin(115200);
-  while (!Serial) {
-    Serial.println(F("Serial begin failed"));
-    delay(1000);
-  }
-  Serial.println(F("Serial started"));
+  if (!!Serial) Serial.println(F("Serial started"));
 }};
 
 Initializer<void> SpiInitializer{[] {

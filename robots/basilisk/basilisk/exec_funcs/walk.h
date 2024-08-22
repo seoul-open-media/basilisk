@@ -75,6 +75,10 @@ void ExecFuncs::Walk(Basilisk& b) {
         Serial.println(F("Fix right foot and free left foot"));
         b.ems_.FixRight();
         b.ems_.FreeLeft();
+
+        // temp
+        delay(500);
+
         b.Print();
 
         // Control rhos.
@@ -90,6 +94,10 @@ void ExecFuncs::Walk(Basilisk& b) {
 
         b.ems_.FixLeft();
         b.ems_.FreeRight();
+
+        // temp
+        delay(500);
+
         b.Print();
 
         // Control rhos.
@@ -133,12 +141,12 @@ namespace cmd_presets::walk {
 using C = const Basilisk::Command::Walk;
 using FSM = C::FSMState;
 
-C square{0.125, 0.0, 0.0, 4, false};
+C square{0.125, 0.0, 0.0, 8, false};
 
 C catwalk{0.25, 0.0, 0.0, 4, false};
 
-C babywalk{10.0 / 360.0, 0.0, 0.0, 16, false};
+C babywalk{10.0 / 360.0, 0.0, 0.0, 32, false};
 
-C eightwalk{0.125, 0.125, -0.125, 4, false};
+C eightwalk{0.125, 0.125, -0.125, 8, false};
 
 }  // namespace cmd_presets::walk

@@ -6,4 +6,5 @@
 #include "gee.h"
 #include "set_rho.h"
 #include "stop.h"
+#include "wait_time.h"
 #include "walk.h"

@@ -3,7 +3,8 @@
 
 #include "basilisk.h"
 #include "executer.h"
-#include "rpl_sndrs/rs_serial_print.h"
+#include "rpl_sndrs/serial_print_rs.h"
+#include "rpl_sndrs/serial_plotter_rs.h"
 
 void setup() {
   SerialInitializer.init();
@@ -22,9 +23,11 @@ void setup() {
 Beat executer_beat{10};
 Beat neokey_cr_beat{25};
 Beat serial_print_rs_beat{500};
+Beat serial_plotter_rs_beat{50};
 
 void loop() {
   if (neokey_cr_beat.Hit()) neokey_cr.Run();
   if (executer_beat.Hit()) executer.Run();
   if (serial_print_rs_beat.Hit()) SerialPrintReplySender();
+  if (serial_plotter_rs_beat.Hit()) SerialPlotterReplySender();
 }

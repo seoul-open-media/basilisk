@@ -4,25 +4,27 @@
 #include <servo.h>
 
 #include "components/ems.h"
-#include "exec_funcs/exec_funcs.h"
+#include "exec_funcs/exec_funcs_class.h"
 
 #define CANFD_BUS 1
 
 class Basilisk {
  public:
-  Basilisk()
-      : l_{1,
+  Basilisk(int id_l = 1, int id_r = 2)
+      : l_{id_l,
            CANFD_BUS,
            &pm_fmt_,
            &pm_cmd_template_,
            PmCmdPosRelTo::Absolute,
            &q_fmt_},
-        r_{2,
+        r_{id_r,
            CANFD_BUS,
            &pm_fmt_,
            &pm_cmd_template_,
            PmCmdPosRelTo::Absolute,
            &q_fmt_} {}
+
+  // Util methods:
 
   template <typename ServoCommand>
   void CommandBoth(ServoCommand c) {
@@ -41,9 +43,12 @@ class Basilisk {
     });
   }
 
+  // Basilisk Command struct:
+
   struct Command {
-    enum class Mode {
+    enum class Mode : uint8_t {
       None,
+      WaitTime,
       Stop,
       Em,
       DExactM025,  // Not preserved after power off.
@@ -53,22 +58,35 @@ class Basilisk {
       Gee
     } mode;
 
+    struct WaitTime {
+      friend class ExecFuncs;
+
+      enum class FSMState : uint8_t { Wait } fsm_state = FSMState::Wait;
+
+      uint32_t duration;
+      Mode exit_to_mode;
+      uint8_t exit_to_fsm;
+
+     private:
+      uint32_t init_time;
+    } wait_time;
+
     struct Stop {
-      enum class FSMState { Init } fsm_state = FSMState::Init;
+      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
     } stop;
 
     struct Em {
-      enum class FSMState { Init } fsm_state = FSMState::Init;
+      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
       EmStrength strength[4] = {EmStrength::Max, EmStrength::Max,
                                 EmStrength::Max, EmStrength::Max};
     } em;
 
     struct DExactM025 {
-      enum class FSMState { Init } fsm_state = FSMState::Init;
+      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
     } d_exact_m025;
 
     struct SetRho {
-      enum class FSMState { Init, Wait } fsm_state = FSMState::Init;
+      enum class FSMState : uint8_t { Init, Wait } fsm_state = FSMState::Init;
       double rho_l = -0.25, rho_r = -0.25;
     } set_rho;
 
@@ -183,19 +201,25 @@ class Basilisk {
     } gee;
   } cmd_;
 
+  // Electric components:
+
   Servo l_, r_;
   Ems ems_;
 
  private:
-  PmFmt pm_fmt_{.maximum_torque = Res::kFloat,
+  // PositionMode/Query Formats and templates:
+
+  PmFmt pm_fmt_{.kp_scale = Res::kFloat,
+                .maximum_torque = Res::kFloat,
                 .watchdog_timeout = Res::kFloat,
                 .velocity_limit = Res::kFloat,
                 .accel_limit = Res::kFloat};
 
-  PmCmd pm_cmd_template_{.maximum_torque = 32.0,
+  PmCmd pm_cmd_template_{.kp_scale = 0.5,
+                         .maximum_torque = 32.0,
                          .watchdog_timeout = NaN,
-                         .velocity_limit = 4.0,
-                         .accel_limit = 1.0};
+                         .velocity_limit = 0.5,
+                         .accel_limit = 0.25};
 
   QFmt q_fmt_{[] {
     QFmt fmt;
@@ -204,4 +228,4 @@ class Basilisk {
     fmt.trajectory_complete = Res::kInt8;
     return fmt;
   }()};
-} basilisk;
+} basilisk{2, 1};
