@@ -2,7 +2,7 @@
 #include <initializers.h>
 #include <specific/neokey3x4_i2c1.h>
 
-auto& neokey = specific::neokey3x4_i2c1;
+auto& neokey = specifics::neokey3x4_i2c1;
 
 Beat neokey_beat{10};
 

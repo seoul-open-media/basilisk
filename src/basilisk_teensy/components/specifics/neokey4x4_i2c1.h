@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Adafruit_NeoKey_1x4.h>
-#include <Wire.h>
-#include <neokey.h>
+#include "../neokey.h"
 
 // Assuming specific setup:
 // I2C1        col 0
@@ -26,7 +24,8 @@
 #define I2C_BUS1 (&Wire1)
 #endif
 
-namespace specific {
+namespace basilisk {
+namespace specifics {
 
 Adafruit_NeoKey_1x4 neokey4x4_i2c1_mtx[NEOKEY_DIM_Y][NEOKEY_DIM_X / 4] = {
     Adafruit_NeoKey_1x4{0x30, I2C_BUS1},  //
@@ -37,4 +36,5 @@ Adafruit_NeoKey_1x4 neokey4x4_i2c1_mtx[NEOKEY_DIM_Y][NEOKEY_DIM_X / 4] = {
 Neokey neokey4x4_i2c1{(Adafruit_NeoKey_1x4*)neokey4x4_i2c1_mtx,  //
                       NEOKEY_DIM_Y, NEOKEY_DIM_X / 4};
 
-}  // namespace specific
+}  // namespace specifics
+}  // namespace basilisk

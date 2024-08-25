@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Adafruit_NeoKey_1x4.h>
-#include <Arduino.h>
+#include "../helpers/imports.h"
+
+namespace basilisk {
 
 // Definition of row, col, x, y in a matrix of NeoKey1x4s:
 //             col 0            1            2
@@ -16,15 +17,12 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
   Neokey(Adafruit_NeoKey_1x4* neokeys, uint8_t rows, uint8_t cols)
       : Adafruit_MultiNeoKey1x4{neokeys, rows, cols} {
     last_buttons_ = new uint8_t[_rows * _cols];
-    memset(last_buttons_, 0, _cols * _rows);
+    memset(last_buttons_, 0, _rows * _cols);
   }
 
   ~Neokey() { delete[] last_buttons_; }
 
-  bool begin() { return static_cast<Adafruit_MultiNeoKey1x4*>(this)->begin(); }
-
-  uint8_t dim_y() { return _rows; }
-  uint8_t dim_x() { return _cols << 2; }
+  bool Setup() { return begin(); }
 
   void SetCommonRiseCallback(void (*callback)(uint16_t)) {
     common_rise_callback_ = callback;
@@ -33,13 +31,12 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
   void Read() {
     for (uint8_t row = 0; row < _rows; row++) {
       for (uint8_t col = 0; col < _cols; col++) {
-        auto nk_idx = row * _cols + col;
+        const uint8_t nk_idx = row * _cols + col;
         auto& nk = _neokeys[nk_idx];
 
         // "Not sure why we have to do it twice."
         nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
         auto buttons = nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-
         buttons ^= NEOKEY_1X4_BUTTONMASK;
         buttons &= NEOKEY_1X4_BUTTONMASK;
         buttons >>= NEOKEY_1X4_BUTTONA;
@@ -48,10 +45,10 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
         auto& last_buttons = last_buttons_[nk_idx];
         uint8_t just_pressed = (buttons ^ last_buttons) & buttons;
 
+        // Call callback for risen buttons.
         for (uint8_t b = 0; b < 4; b++) {
           if (just_pressed & (1 << b) && common_rise_callback_) {
-            uint16_t key = (nk_idx << 2) + b;
-            common_rise_callback_(key);
+            common_rise_callback_((nk_idx << 2) + b);
           }
         }
 
@@ -65,3 +62,5 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
   void (*common_rise_callback_)(uint16_t key);
   uint8_t* last_buttons_;
 };
+
+}  // namespace basilisk

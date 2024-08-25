@@ -1,9 +1,12 @@
 #pragma once
 
-#include <Arduino.h>
+#include "imports.h"
 
-// Continuously usable up to approximately 50 days.
+namespace basilisk {
+namespace utils {
+
 // Time is in milliseconds, stored as uint32_t.
+// Continuously usable up to approximately 50 days.
 class Beat {
  public:
   Beat(const uint32_t& interval)
@@ -22,3 +25,6 @@ class Beat {
   uint32_t next_beat_;
   const uint32_t interval_;
 };
+
+}  // namespace utils
+}  // namespace basilisk

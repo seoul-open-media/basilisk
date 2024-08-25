@@ -1,54 +1,33 @@
 #pragma once
 
-#include <Arduino.h>
-#include <servo.h>
+#include "../components/ems.h"
+#include "../globals.h"
+#include "../servo.h"
 
-#include "components/ems.h"
-#include "exec_funcs/exec_funcs_class.h"
-
-#define CANFD_BUS 1
+namespace basilisk {
+struct ModeRunners;
 
 class Basilisk {
  public:
-  Basilisk(int id_l = 1, int id_r = 2)
-      : l_{id_l,
-           CANFD_BUS,
-           &pm_fmt_,
-           &pm_cmd_template_,
-           PmCmdPosRelTo::Absolute,
-           &q_fmt_},
-        r_{id_r,
-           CANFD_BUS,
-           &pm_fmt_,
-           &pm_cmd_template_,
-           PmCmdPosRelTo::Absolute,
-           &q_fmt_} {}
+  Basilisk(int id_l, int id_r, uint8_t bus = 1)
+      : l_{id_l, bus, &globals::pm_fmt, &globals::q_fmt},
+        r_{id_r, bus, &globals::pm_fmt, &globals::q_fmt},
+        pm_cmd_template_{&globals::pm_cmd_template} {}
 
-  // Util methods:
+  /////////////////
+  // Components: //
 
-  template <typename ServoCommand>
-  void CommandBoth(ServoCommand c) {
-    c(l_);
-    c(r_);
-  }
+  Servo l_, r_;
+  Ems ems_;
 
-  bool BothComplete(const uint8_t& threshold) {
-    return l_.trjcpt_ >= threshold && r_.trjcpt_ >= threshold;
-  }
-
-  void Print() {
-    CommandBoth([](Servo& s) {
-      s.Query();
-      s.Print();
-    });
-  }
-
-  // Basilisk Command struct:
+  //////////////////////////////
+  // Basilisk Command struct: //
 
   struct Command {
     enum class Mode : uint8_t {
       None,
       WaitTime,
+      WaitMove,
       Stop,
       Em,
       DExactM025,  // Not preserved after power off.
@@ -59,7 +38,7 @@ class Basilisk {
     } mode;
 
     struct WaitTime {
-      friend class ExecFuncs;
+      friend struct ModeRunners;
 
       enum class FSMState : uint8_t { Wait } fsm_state = FSMState::Wait;
 
@@ -125,7 +104,7 @@ class Basilisk {
       bool phase = false;
 
      private:
-      friend class ExecFuncs;
+      friend struct ModeRunners;
 
       uint8_t current_step = 0;
     } walk;
@@ -146,7 +125,7 @@ class Basilisk {
       double stride = 0.125;
 
      private:
-      friend class ExecFuncs;
+      friend struct ModeRunners;
 
       uint8_t current_step = 0;
 
@@ -195,37 +174,33 @@ class Basilisk {
       bool phase = false;
 
      private:
-      friend class ExecFuncs;
+      friend struct ModeRunners;
 
       uint8_t current_step = 0;
     } gee;
   } cmd_;
 
-  // Electric components:
+  ///////////////////
+  // Util methods: //
 
-  Servo l_, r_;
-  Ems ems_;
+  template <typename ServoCommand>
+  void CommandBoth(ServoCommand c) {
+    c(l_);
+    c(r_);
+  }
+
+  void Print() {
+    CommandBoth([](Servo& s) {
+      s.SetQuery();
+      s.Print();
+    });
+  }
 
  private:
-  // PositionMode/Query Formats and templates:
+  /////////////////////
+  // Configurations: //
 
-  PmFmt pm_fmt_{.kp_scale = Res::kFloat,
-                .maximum_torque = Res::kFloat,
-                .watchdog_timeout = Res::kFloat,
-                .velocity_limit = Res::kFloat,
-                .accel_limit = Res::kFloat};
+  const PmCmd* const pm_cmd_template_;
+};
 
-  PmCmd pm_cmd_template_{.kp_scale = 0.5,
-                         .maximum_torque = 32.0,
-                         .watchdog_timeout = NaN,
-                         .velocity_limit = 0.5,
-                         .accel_limit = 0.25};
-
-  QFmt q_fmt_{[] {
-    QFmt fmt;
-    fmt.abs_position = Res::kFloat;
-    fmt.motor_temperature = Res::kInt16;
-    fmt.trajectory_complete = Res::kInt8;
-    return fmt;
-  }()};
-} basilisk{2, 1};
+}  // namespace basilisk
