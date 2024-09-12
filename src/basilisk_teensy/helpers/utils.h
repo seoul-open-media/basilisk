@@ -4,6 +4,8 @@
 
 namespace utils {
 
+const uint64_t one_uint64 = static_cast<uint64_t>(1);
+
 // Time is in milliseconds, stored as uint32_t.
 // Continuously usable up to approximately 50 days.
 class Beat {

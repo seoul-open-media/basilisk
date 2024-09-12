@@ -1,37 +1,51 @@
 #pragma once
 
 #include "../helpers/imports.h"
+#include "../helpers/utils.h"
 
 class FootSwitches {
  public:
-  FootSwitches(int pin_l = 23, int pin_r = 29)
-      : pins_{pin_l, pin_r}, accums_{0} {}
+  FootSwitches(int pin_l = 23, int pin_r = 29) : pins_{pin_l, pin_r} {}
 
+  // Must be called before use.
   void Setup() {
-    for (const auto& pin : pins_) pinMode(pin, INPUT);
-  }
-
-  uint8_t Poll() {
-    uint8_t readings = 0;
-    for (uint8_t i = 0; i < 2; i++) {
-      const auto contact = digitalRead(pins_[i]);
-      if (contact) Increment(accums_[i]);
-      readings |= (1 << i);
+    if (!setup_cplt_) {
+      for (const auto& pin : pins_) pinMode(pin, INPUT);
+      setup_cplt_ = true;
     }
-    return readings;
   }
 
-  void ResetAccum() {
-    for (auto& accum : accums_) accum = 0;
-  }
+  // Should be called in regular interval to track feet contact to ground
+  // and accumulation of such data.
+  void Run() {
+    if (!setup_cplt_) {
+      Serial.println("FootSwitches: Setup NOT complete");
+      return;
+    }
 
-  void Increment(uint32_t& val) {
-    if (val + 1 != 0) val++;
+    last_run_time = millis();
+
+    for (uint8_t i = 0; i < 2; i++) {
+      state_[i].contact >>= 1;
+      if (digitalRead(pins_[i])) {
+        state_[i].contact |= new_contact;
+        state_[i].last_contact_time = millis();
+      }
+    }
   }
 
   const int pins_[2];
-  uint32_t accums_[2];
+  struct State {
+    uint64_t contact = 0;
+    uint32_t last_contact_time = 0;
+
+    bool Contact(uint8_t n) {
+      return contact >= (((utils::one_uint64 << n) - 1) << (64 - n));
+    }
+  } state_[2];
+  uint32_t last_run_time = 0;
 
  private:
+  const uint64_t new_contact = utils::one_uint64 << 63;
   bool setup_cplt_ = false;
 };

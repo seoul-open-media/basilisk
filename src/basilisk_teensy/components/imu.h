@@ -44,18 +44,17 @@ class Imu {
         temp[0] = strtok(buf, ",");
         temp[1] = strtok(nullptr, ",");
         temp[2] = strtok(nullptr, ",");
-        if (![&] {
+        if ([&] {
               for (const auto* s : temp) {
                 if (!s) return false;
               }
               return true;
             }()) {
-          continue;
+          for (int i = 0; i < 3; i++) {
+            euler_[i] = atof(temp[i]) / 360.0;
+          }
+          last_updated_time_ = millis();
         }
-        for (int i = 0; i < 3; i++) {
-          euler_[i] = atof(temp[i]) / 360.0;
-        }
-        last_updated_time_ = millis();
         buf_idx = -1;
       } else if (buf[buf_idx] == '*') {
         buf_idx = -1;

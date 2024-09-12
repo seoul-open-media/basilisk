@@ -4,32 +4,42 @@
 #include "helpers/imports.h"
 #include "helpers/utils.h"
 
-FootSwitches ftsw{23, 29};
+FootSwitches fsw{23, 29};
 Imu imu{};
 Lps lps{300.0, 300.0, 300.0};
-utils::Beat temp_beat{100};
+utils::Beat fsw_beat{10};
+utils::Beat serial_plotter_rs_beat{100};
 
 void setup() {
   Serial.begin(9600);
   imu.Setup();
   lps.Setup();
-  ftsw.Setup();
+  fsw.Setup();
 }
 
 void loop() {
-  // Serial.println("loop");
   {
     imu.Run();
     lps.Run();
   }
 
-  if (temp_beat.Hit()) {
-    ftsw.Poll();
-    Serial.print("ftsw.accums_[0]:");
-    Serial.print(ftsw.accums_[0]);
+  if (fsw_beat.Hit()) {
+    fsw.Run();
+  }
+
+  if (serial_plotter_rs_beat.Hit()) {
+    Serial.print("fsw.state_[0].contact:");
+    Serial.print(fsw.state_[0].contact, BIN);
     Serial.print(",");
-    Serial.print("ftsw.accums_[1]:");
-    Serial.print(ftsw.accums_[1]);
+    Serial.print("fsw.state_[1].contact:");
+    Serial.print(fsw.state_[1].contact, BIN);
+    Serial.println();
+
+    Serial.print("fsw.state_[0].Contact(32):");
+    Serial.print(fsw.state_[0].Contact(32) ? "True" : "False");
+    Serial.print(",");
+    Serial.print("fsw.state_[1].Contact(32):");
+    Serial.print(fsw.state_[1].Contact(32) ? "True" : "False");
     Serial.println();
 
     Serial.print("imu.euler_[0]:");
@@ -40,20 +50,8 @@ void loop() {
     Serial.print(",");
     Serial.print("imu.euler_[2]:");
     Serial.print(imu.euler_[2]);
-    Serial.print(",");
-    Serial.print("imu.last_updated_time_:");
-    Serial.print(imu.last_updated_time_);
     Serial.println();
 
-    Serial.print("lps.dists_raw_[0]:");
-    Serial.print(lps.dists_raw_[0]);
-    Serial.print(",");
-    Serial.print("lps.dists_raw_[1]:");
-    Serial.print(lps.dists_raw_[1]);
-    Serial.print(",");
-    Serial.print("lps.dists_raw_[2]:");
-    Serial.print(lps.dists_raw_[2]);
-    Serial.print(",");
     Serial.print("lps.x_:");
     Serial.print(lps.x_);
     Serial.print(",");
