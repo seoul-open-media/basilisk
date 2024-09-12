@@ -17,7 +17,7 @@ class NeokeyCommandReceiver {
     });
   }
 
-  void Run() { neokey.Read(); }
+  void Run() { neokey.Run(); }
 
  private:
   Neokey& neokey_;

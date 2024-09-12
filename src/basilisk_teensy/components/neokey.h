@@ -2,8 +2,6 @@
 
 #include "../helpers/imports.h"
 
-namespace basilisk {
-
 // Definition of row, col, x, y in a matrix of NeoKey1x4s:
 //             col 0            1            2
 // row y         x    0 1 2 3      4 5 6 7      8 9 a b
@@ -22,13 +20,34 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
 
   ~Neokey() { delete[] last_buttons_; }
 
-  bool Setup() { return begin(); }
+  bool Setup(void (*callback)(uint16_t)) {
+    Wire.begin();
 
-  void SetCommonRiseCallback(void (*callback)(uint16_t)) {
+    if (!begin()) {
+      Serial.println("Neokey: Begin failed");
+      return false;
+    }
+    Serial.println("Neokey: Started");
+
+    if (!callback) {
+      Serial.println("Neokey: Common rise callback register failed");
+      return false;
+    }
     common_rise_callback_ = callback;
+    Serial.println("Neokey: Common rise callback registered");
+
+    Serial.println("Neokey: Setup complete");
+    return true;
   }
 
-  void Read() {
+  // Should be called in regular interval short enough to ensure that
+  // no physical press of a button is missed.
+  void Run() {
+    if (!setup_cplt_) {
+      Serial.println("Neokey: Setup NOT complete");
+      return;
+    }
+
     for (uint8_t row = 0; row < _rows; row++) {
       for (uint8_t col = 0; col < _cols; col++) {
         const uint8_t nk_idx = row * _cols + col;
@@ -47,7 +66,7 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
 
         // Call callback for risen buttons.
         for (uint8_t b = 0; b < 4; b++) {
-          if (just_pressed & (1 << b) && common_rise_callback_) {
+          if (just_pressed & (1 << b)) {
             common_rise_callback_((nk_idx << 2) + b);
           }
         }
@@ -62,5 +81,3 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
   void (*common_rise_callback_)(uint16_t key);
   uint8_t* last_buttons_;
 };
-
-}  // namespace basilisk

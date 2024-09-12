@@ -106,7 +106,7 @@ void neokey_cb(uint16_t key) {
     cmd.set_position.position = key * 0.25;
   }
 }
-void NeokeyCommandReceiver() { neokey.Read(); }
+void NeokeyCommandReceiver() { neokey.Run(); }
 
 void SerialPrintReplySender() {
   CommandAll([](Servo& s) { s.Print(); });

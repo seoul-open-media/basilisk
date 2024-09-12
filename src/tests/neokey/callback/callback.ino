@@ -19,5 +19,5 @@ void setup() {
 }
 
 void loop() {
-  if (neokey_beat.Hit()) neokey.Read();
+  if (neokey_beat.Hit()) neokey.Run();
 }

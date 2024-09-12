@@ -32,22 +32,20 @@ class Lps {
       : cfg_{.c = c, .x_c = x_c, .y_c = y_c} {}
 
   // Must be called before use.
-  void Setup() {
-    if (!setup_cplt_) {
-      LPS_SERIAL.begin(9600);
-      for (auto& dist_sm : dists_sm_) dist_sm.begin(SMOOTHED_AVERAGE, 10);
-      setup_cplt_ = true;
+  bool Setup() {
+    LPS_SERIAL.begin(9600);
+    if (!LPS_SERIAL) {
+      Serial.println("LPS: LPS_SERIAL(Serial6) begin failed");
+      return false;
     }
+    for (auto& dist_sm : dists_sm_) dist_sm.begin(SMOOTHED_AVERAGE, 10);
+    Serial.println("LPS: Setup complete");
+    return true;
   }
 
   // Should be called continuously to immediately receive to
   // incoming sensor data and prevent Serial buffer overflow.
   void Run() {
-    if (!setup_cplt_) {
-      Serial.println("LPS: Setup NOT complete");
-      return;
-    }
-
     if (LPS_SERIAL.available() >= 6) {
       if (LPS_SERIAL.read() == 255 && LPS_SERIAL.read() == 2) {
         error_.matome = 0;
@@ -69,6 +67,20 @@ class Lps {
     }
   }
 
+  uint8_t dists_raw_[3] = {0, 0, 0};
+  union {
+    uint8_t bytes[3];
+    uint32_t matome = 0;
+  } error_;
+  uint8_t latency_ = 0;
+  uint32_t last_raw_update_ = 0;
+  Smoothed<double> dists_sm_[3];
+  double x_ = 0.0, y_ = 0.0;
+  uint32_t last_xy_update_ = 0;
+  const struct {
+    const double c, x_c, y_c;
+  } cfg_;
+
  private:
   void SetXY() {
     const auto a = dists_sm_[0].get();
@@ -80,22 +92,4 @@ class Lps {
 
     last_xy_update_ = millis();
   }
-
- public:
-  uint8_t dists_raw_[3] = {0, 0, 0};
-  union {
-    uint8_t bytes[3];
-    uint32_t matome = 0;
-  } error_;
-  uint8_t latency_ = 0;
-  uint32_t last_raw_update_ = 0;
-  Smoothed<double> dists_sm_[3];
-  double x_ = 0.0, y_ = 0.0;
-  uint32_t last_xy_update_ = 0;
-
- private:
-  const struct {
-    const double c, x_c, y_c;
-  } cfg_;
-  bool setup_cplt_ = false;
 };

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "components/canfd_drivers.h"
-#include "helpers/helpers.h"
+#include "../helpers/imports.h"
+#include "canfd_drivers.h"
 
-namespace basilisk {
-
-class Servo : public Moteus {
+class Servo : private Moteus {
  public:
   Servo(const int& id, uint8_t bus,  //
         const PmFmt* const pm_fmt, const QFmt* const q_fmt)
@@ -30,22 +28,23 @@ class Servo : public Moteus {
     return got_rpl;
   }
 
-  QRpl GetReplyAux2PositionUncoiled() {
+  // aux2 position uncoiled.
+  QRpl GetReply() {
     auto rpl = last_result().values;
     rpl.abs_position += aux2_revs_;  // Uncoil aux2 position.
     return rpl;
   }
 
   void SetReply() {
-    const auto delta_aux2_pos =
-        last_result().values.abs_position - prev_rpl_.abs_position;
-    if (delta_aux2_pos > 0.5) {
+    const auto new_aux2_pos_coiled = last_result().values.abs_position;
+    const auto delta_aux2_pos_coiled =
+        new_aux2_pos_coiled - prev_aux2_pos_coiled_;
+    if (delta_aux2_pos_coiled > 0.5) {
       aux2_revs_--;
-    } else if (delta_aux2_pos < -0.5) {
+    } else if (delta_aux2_pos_coiled < -0.5) {
       aux2_revs_++;
     }
-
-    prev_rpl_ = last_result().values;
+    prev_aux2_pos_coiled_ = new_aux2_pos_coiled;
   }
 
   void SetPosition(const PmCmd& cmd) {
@@ -56,15 +55,17 @@ class Servo : public Moteus {
   const int id_;
   const PmFmt* const pm_fmt_;
   const QFmt* const q_fmt_;
-  QRpl prev_rpl_;  // This field is solely for keeping the previous Reply
-                   // in order to compare it to a new Reply to track
-                   // aux2 revolutions, since the Moteus Arduino library
-                   // silently updates `last_result_` within `SetQuery()`.
+  double prev_aux2_pos_coiled_;  // This field is solely for keeping
+                                 // aux2 position of the previous Reply
+                                 // in order to compare it to a new Reply
+                                 // to track aux2 revolutions, since
+                                 // the Moteus Arduino library silently
+                                 // updates `last_result_` within `SetQuery()`.
   int aux2_revs_ = 0;
 
  public:
   void Print() {
-    const auto rpl = GetReplyAux2PositionUncoiled();
+    const auto rpl = GetReply();
     Serial.print(id_);
     Serial.print(F(" : t "));
     Serial.print(millis());
@@ -101,5 +102,3 @@ class Servo : public Moteus {
     Serial.println();
   }
 };
-
-}  // namespace basilisk

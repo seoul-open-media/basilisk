@@ -1,24 +1,104 @@
 #pragma once
 
-#include "../components/ems.h"
+#include "../components/imu.h"
+#include "../components/lego_blocks.h"
+#include "../components/lps.h"
+#include "../components/magnets.h"
+#include "../components/servo.h"
 #include "../globals.h"
-#include "../servo.h"
+#include "../helpers/utils.h"
 
-namespace basilisk {
 struct ModeRunners;
 
 class Basilisk {
  public:
-  Basilisk(int id_l, int id_r, uint8_t bus = 1)
-      : l_{id_l, bus, &globals::pm_fmt, &globals::q_fmt},
-        r_{id_r, bus, &globals::pm_fmt, &globals::q_fmt},
-        pm_cmd_template_{&globals::pm_cmd_template} {}
-
   /////////////////
   // Components: //
 
   Servo l_, r_;
-  Magnets ems_;
+  Lps lps_;
+  Imu imu_;
+  Magnets mags_;
+  LegoBlocks lego_;
+
+  /////////////////////
+  // Configurations: //
+
+  const struct Configuration {
+    struct {
+      const int id_l = 1, id_r = 2;
+      const uint8_t bus = 1;
+    } servo;
+    struct {
+      const double c = 300.0, x_c = 300.0, y_c = 300.0;
+    } lps;
+    struct {
+      const uint8_t pin_la = 3, pin_lt = 4, pin_ra = 5, pin_rt = 6;
+      const uint32_t run_interval = 100;
+    } magnets;
+    struct {
+      const int pin_l = 23, pin_r = 29;
+      const uint32_t run_interval = 20;
+    } lego;
+  } cfg_;
+
+  const PmCmd* const pm_cmd_template_;
+
+  //////////////////
+  // Constructor: //
+
+  Basilisk(const Configuration& cfg)
+      : cfg_{cfg},
+        l_{cfg_.servo.id_l, cfg_.servo.bus, &globals::pm_fmt, &globals::q_fmt},
+        r_{cfg_.servo.id_r, cfg_.servo.bus, &globals::pm_fmt, &globals::q_fmt},
+        pm_cmd_template_{&globals::pm_cmd_template},
+        lps_{cfg_.lps.c, cfg_.lps.x_c, cfg_.lps.y_c},
+        imu_{},
+        mags_{cfg_.magnets.pin_la, cfg_.magnets.pin_lt,  //
+              cfg_.magnets.pin_ra, cfg_.magnets.pin_rt},
+        lego_{cfg_.lego.pin_l, cfg_.lego.pin_r} {}
+
+  ///////////////////
+  // Setup method: //
+
+  // Should be called before use.
+  bool Setup() {
+    if (!CanFdDriverInitializer::Setup(cfg_.servo.bus)) {
+      Serial.println("Basilisk: CanFdDriver setup failed");
+      return false;
+    }
+    if (!lps_.Setup()) {
+      Serial.println("Basilisk: LPS setup failed");
+      return false;
+    }
+    if (!imu_.Setup()) {
+      Serial.println("Basilisk: IMU setup failed");
+      return false;
+    }
+    if (!mags_.Setup()) {
+      Serial.println("Basilisk: Magnets setup failed");
+      return false;
+    }
+    if (!lego_.Setup()) {
+      Serial.println("Basilisk: LegoBlocks setup failed");
+      return false;
+    }
+    return true;
+  }
+
+  ////////////////////////
+  // Components runner: //
+
+  void Run() {
+    lps_.Run();
+    imu_.Run();
+
+    static utils::Beat mags_run_beat{cfg_.magnets.run_interval};
+    if (mags_run_beat.Hit()) mags_.Run();
+
+    static utils::Beat lego_run_beat{cfg_.lego.run_interval};
+    if (lego_run_beat.Hit()) lego_.Run();
+  }
 
   //////////////////////////////
   // Basilisk Command struct: //
@@ -49,7 +129,7 @@ class Basilisk {
     struct Em {
       enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
       MagnetStrength strength[4] = {MagnetStrength::Max, MagnetStrength::Max,
-                                MagnetStrength::Max, MagnetStrength::Max};
+                                    MagnetStrength::Max, MagnetStrength::Max};
     } em;
 
     struct SetRho {
@@ -176,12 +256,4 @@ class Basilisk {
       s.Print();
     });
   }
-
- private:
-  /////////////////////
-  // Configurations: //
-
-  const PmCmd* const pm_cmd_template_;
 };
-
-}  // namespace basilisk

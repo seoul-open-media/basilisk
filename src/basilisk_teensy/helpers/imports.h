@@ -2,7 +2,6 @@
 
 #include <ACAN2517FD.h>
 #include <Adafruit_NeoKey_1x4.h>
-#include <Arduino.h>
 #include <Moteus.h>
 #include <Smoothed.h>
 

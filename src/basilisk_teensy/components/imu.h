@@ -7,28 +7,27 @@
 /* Angle unit of incoming data from the EBIMU board is 'degrees' between
  * -180.0 and 180.0, but the rest of the program assumes 'revolutions'
  * as angle unit for compatibility with moteus servomotor controllers.
- * The field `double euler_[3]` saves angles in revolutions, between
- * -0.5 and 0.5. */
+ * The field `double euler_[3]` saves angles in revolutions,
+ * between -0.5 and 0.5, and the field `yaw_revs_` tracks full revolutions
+ * in yaw axis so we can compute 'uncoiled' value for yaw.
+ * All yaw values and returns are uncoiled except `euler_[2]`. */
 class Imu {
  public:
-  Imu() : euler_{0.0} {}
-
   // Must be called before use.
-  void Setup() {
-    if (!setup_cplt_) {
-      IMU_SERIAL.begin(57600);
-      setup_cplt_ = true;
+  bool Setup() {
+    IMU_SERIAL.begin(57600);
+    if (!IMU_SERIAL) {
+      Serial.println("IMU: IMU_SERIAL(Serial2) begin failed");
+      return false;
     }
+    Serial.println("IMU: Setup complete");
+    return true;
   }
 
   // Should be called continuously to immediately receive to
-  // incoming sensor data and prevent Serial buffer overflow.
+  // incoming sensor data and prevent Serial buffer overflow
+  // and correctly track full revolutions.
   void Run() {
-    if (!setup_cplt_) {
-      Serial.println("IMU: Setup NOT complete");
-      return;
-    }
-
     static const int buf_size = 64;
     static char buf[buf_size];
     static int buf_idx = 0;
@@ -50,26 +49,36 @@ class Imu {
               }
               return true;
             }()) {
+          const auto prev_yaw_coiled = euler_[2];
           for (int i = 0; i < 3; i++) {
             euler_[i] = atof(temp[i]) / 360.0;
           }
+          const auto delta_yaw_coiled = euler_[2] - prev_yaw_coiled;
+          if (delta_yaw_coiled > 0.5) {
+            yaw_revs_--;
+          } else if (delta_yaw_coiled < -0.5) {
+            yaw_revs_++;
+          }
           last_updated_time_ = millis();
         }
-        buf_idx = -1;
       } else if (buf[buf_idx] == '*') {
         buf_idx = -1;
       }
     }
   }
 
-  void SetBaseYaw() { base_yaw_ = euler_[3]; }
+  double GetYaw(bool rel) {  // false: Absolute, true: RelToBase
+    if (!rel) {
+      return euler_[2] + yaw_revs_;
+    } else {
+      return euler_[2] + yaw_revs_ - base_yaw_;
+    }
+  }
 
-  double GetYawRelToBase() { return euler_[3] - base_yaw_; }
+  void SetBaseYaw() { base_yaw_ = GetYaw(false); }
 
-  double euler_[3];  // [0]: roll, [1]: pitch, [2]: yaw, in revs
+  double euler_[3] = {0.0, 0.0, 0.0};  // [0]: roll, [1]: pitch, [2]: yaw
+  int yaw_revs_ = 0;
   double base_yaw_ = 0.0;
   uint32_t last_updated_time_;
-
- private:
-  bool setup_cplt_ = false;
 };

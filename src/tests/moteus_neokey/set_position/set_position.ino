@@ -50,7 +50,7 @@ void neokey_cb(uint16_t key) {
   cmd = key;
 }
 Beat receive_beat{10};
-void Receive() { neokey.Read(); }
+void Receive() { neokey.Run(); }
 
 Beat print_beat{500};
 void Print() {

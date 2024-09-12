@@ -2,7 +2,7 @@
 
 #include "helpers/imports.h"
 
-namespace basilisk::globals {
+namespace globals {
 
 const PmFmt pm_fmt{.position = kFloat,
                    .velocity = kFloat,
@@ -21,11 +21,11 @@ const PmCmd pm_cmd_template{.position = NaN,
                             .feedforward_torque = 0.0,
                             .kp_scale = 1.0,
                             .kd_scale = 1.0,
-                            .maximum_torque = 32.0,
+                            .maximum_torque = 16.0,
                             .stop_position = NaN,  // Do NOT use!
                             .watchdog_timeout = NaN,
-                            .velocity_limit = 32.0,
-                            .accel_limit = 32.0,
+                            .velocity_limit = 16.0,
+                            .accel_limit = 16.0,
                             .fixed_voltage_override = NaN};
 
 const QFmt q_fmt{[] {
@@ -34,8 +34,8 @@ const QFmt q_fmt{[] {
   fmt.position = kFloat;
   fmt.velocity = kFloat;
   fmt.torque = kFloat;
-  fmt.q_current = kIgnore;
-  fmt.d_current = kIgnore;
+  fmt.q_current = kFloat;
+  fmt.d_current = kFloat;
   fmt.abs_position = kFloat;
   fmt.motor_temperature = kFloat;
   fmt.trajectory_complete = kInt8;
@@ -48,4 +48,4 @@ const QFmt q_fmt{[] {
   return fmt;
 }()};
 
-}  // namespace basilisk::globals
+}  // namespace globals
