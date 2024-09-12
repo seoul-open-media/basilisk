@@ -4,7 +4,6 @@
 #include "../components/neokey.h"
 #include "imports.h"
 
-namespace basilisk {
 namespace initializers {
 
 template <typename InitFunc>
@@ -108,4 +107,3 @@ Initializer canfd_driver{[](const uint8_t bus) {
 }};
 
 }  // namespace initializers
-}  // namespace basilisk

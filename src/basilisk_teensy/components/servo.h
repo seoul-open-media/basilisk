@@ -7,7 +7,8 @@ namespace basilisk {
 
 class Servo : public Moteus {
  public:
-  Servo(int id, uint8_t bus, const PmFmt* pm_fmt, const QFmt* q_fmt)
+  Servo(const int& id, uint8_t bus,  //
+        const PmFmt* const pm_fmt, const QFmt* const q_fmt)
       : id_{id},
         Moteus{canfd_drivers[bus - 1],
                [&]() {
@@ -29,10 +30,6 @@ class Servo : public Moteus {
     return got_rpl;
   }
 
-  void SetPosition(const PmCmd& cmd) {
-    static_cast<Moteus*>(this)->SetPosition(cmd, pm_fmt_);
-  }
-
   QRpl GetReplyAux2PositionUncoiled() {
     auto rpl = last_result().values;
     rpl.abs_position += aux2_revs_;  // Uncoil aux2 position.
@@ -51,6 +48,11 @@ class Servo : public Moteus {
     prev_rpl_ = last_result().values;
   }
 
+  void SetPosition(const PmCmd& cmd) {
+    static_cast<Moteus*>(this)->SetPosition(cmd, pm_fmt_);
+  }
+
+ private:
   const int id_;
   const PmFmt* const pm_fmt_;
   const QFmt* const q_fmt_;

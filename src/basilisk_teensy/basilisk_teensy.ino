@@ -1,44 +1,64 @@
-// #include <beat.h>
-// #include <initializers.h>
+#include "components/footswitches.h"
+#include "components/imu.h"
+#include "components/lps.h"
+#include "helpers/imports.h"
+#include "helpers/utils.h"
 
-// #include "basilisk.h"
-// #include "executer.h"
-// #include "rpl_sndrs/serial_print_rs.h"
-// #include "rpl_sndrs/serial_plotter_rs.h"
-
-#include "components/specifics/neokey1x4_i2c0.h"
-#include "helpers/helpers.h"
-#include "servo_units/basilisk.h"
-
-using namespace basilisk;
-
-Basilisk b{1, 2};
-
-Neokey& nk = specifics::neokey1x4_i2c0;
+FootSwitches ftsw{23, 29};
+Imu imu{};
+Lps lps{300.0, 300.0, 300.0};
+utils::Beat temp_beat{100};
 
 void setup() {
-  initializers::serial.Init();
-  initializers::spi0.Init();
-  initializers::spi1.Init();
-  initializers::canfd_driver.Init(1);
-  initializers::i2c0.Init();
-  initializers::i2c1.Init();
-  initializers::neokey.Init(nk);
-
-  // neokey_cr.Setup();
-  // basilisk.ems_.SetPinMode();
-
-  // basilisk.CommandBoth([](Servo& s) { s.Stop(); });
+  Serial.begin(9600);
+  imu.Setup();
+  lps.Setup();
+  ftsw.Setup();
 }
 
-// Beat executer_beat{10};
-// Beat neokey_cr_beat{25};
-// Beat serial_print_rs_beat{500};
-// Beat serial_plotter_rs_beat{50};
-
 void loop() {
-  // if (neokey_cr_beat.Hit()) neokey_cr.Run();
-  // if (executer_beat.Hit()) executer.Run();
-  // if (serial_print_rs_beat.Hit()) SerialPrintReplySender();
-  // if (serial_plotter_rs_beat.Hit()) SerialPlotterReplySender();
+  // Serial.println("loop");
+  {
+    imu.Run();
+    lps.Run();
+  }
+
+  if (temp_beat.Hit()) {
+    ftsw.Poll();
+    Serial.print("ftsw.accums_[0]:");
+    Serial.print(ftsw.accums_[0]);
+    Serial.print(",");
+    Serial.print("ftsw.accums_[1]:");
+    Serial.print(ftsw.accums_[1]);
+    Serial.println();
+
+    Serial.print("imu.euler_[0]:");
+    Serial.print(imu.euler_[0]);
+    Serial.print(",");
+    Serial.print("imu.euler_[1]:");
+    Serial.print(imu.euler_[1]);
+    Serial.print(",");
+    Serial.print("imu.euler_[2]:");
+    Serial.print(imu.euler_[2]);
+    Serial.print(",");
+    Serial.print("imu.last_updated_time_:");
+    Serial.print(imu.last_updated_time_);
+    Serial.println();
+
+    Serial.print("lps.dists_raw_[0]:");
+    Serial.print(lps.dists_raw_[0]);
+    Serial.print(",");
+    Serial.print("lps.dists_raw_[1]:");
+    Serial.print(lps.dists_raw_[1]);
+    Serial.print(",");
+    Serial.print("lps.dists_raw_[2]:");
+    Serial.print(lps.dists_raw_[2]);
+    Serial.print(",");
+    Serial.print("lps.x_:");
+    Serial.print(lps.x_);
+    Serial.print(",");
+    Serial.print("lps.y_:");
+    Serial.print(lps.y_);
+    Serial.println();
+  }
 }

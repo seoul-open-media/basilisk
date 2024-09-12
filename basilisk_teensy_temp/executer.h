@@ -1,14 +1,16 @@
 #pragma once
 
-#include "basilisk.h"
 #include "cmd_rcvrs/neokey_cr.h"
-#include "exec_funcs/exec_funcs_includes.h"
+#include "servo_units/basilisk.h"
+// #include "exec_funcs/exec_funcs_includes.h"
+
+namespace basilisk {
 
 class Executer {
- public:
   using C = Basilisk::Command;
   using M = C::Mode;
 
+ public:
  private:
   C& c = basilisk.cmd_;
   M& m = c.mode;
@@ -110,3 +112,5 @@ class Executer {
     }
   }
 } executer;
+
+}  // namespace basilisk

@@ -2,7 +2,6 @@
 
 #include "imports.h"
 
-namespace basilisk {
 namespace utils {
 
 // Time is in milliseconds, stored as uint32_t.
@@ -27,4 +26,3 @@ class Beat {
 };
 
 }  // namespace utils
-}  // namespace basilisk

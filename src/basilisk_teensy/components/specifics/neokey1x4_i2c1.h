@@ -21,8 +21,7 @@
 #define I2C_BUS1 (&Wire1)
 #endif
 
-namespace basilisk {
-namespace specifics {
+namespace basilisk::specifics {
 
 Adafruit_NeoKey_1x4 neokey1x4_i2c1_mtx[NEOKEY_DIM_Y][NEOKEY_DIM_X / 4] = {
     Adafruit_NeoKey_1x4{0x30, I2C_BUS1}};
@@ -30,5 +29,4 @@ Adafruit_NeoKey_1x4 neokey1x4_i2c1_mtx[NEOKEY_DIM_Y][NEOKEY_DIM_X / 4] = {
 Neokey neokey1x4_i2c1{(Adafruit_NeoKey_1x4*)neokey1x4_i2c1_mtx,  //
                       NEOKEY_DIM_Y, NEOKEY_DIM_X / 4};
 
-}  // namespace specifics
-}  // namespace basilisk
+}  // namespace basilisk::specifics

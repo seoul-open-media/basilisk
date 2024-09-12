@@ -2,8 +2,6 @@
 
 #include "../helpers/imports.h"
 
-namespace basilisk {
-
 // The following pins are selected for the SeoulOpenMedia T4_CanFD board v1.5.
 // Only Buses 1 and 2 work for now.
 #define MCP2518FD_CS_BUS1 10
@@ -20,5 +18,3 @@ ACAN2517FD canfd_drivers[4] = {{MCP2518FD_CS_BUS1, SPI, MCP2518FD_INT_BUS1},
                                {MCP2518FD_CS_BUS2, SPI, MCP2518FD_INT_BUS2},
                                {MCP2518FD_CS_BUS3, SPI1, MCP2518FD_INT_BUS3},
                                {MCP2518FD_CS_BUS4, SPI1, MCP2518FD_INT_BUS4}};
-
-}  // namespace basilisk

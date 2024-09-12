@@ -18,37 +18,29 @@ class Basilisk {
   // Components: //
 
   Servo l_, r_;
-  Ems ems_;
+  Magnets ems_;
 
   //////////////////////////////
   // Basilisk Command struct: //
 
   struct Command {
     enum class Mode : uint8_t {
-      None,
-      WaitTime,
-      WaitMove,
+      Nop,
+      Wait,
       Stop,
       Em,
-      DExactM025,  // Not preserved after power off.
       SetRho,
       Walk,
       Diamond,
       Gee
     } mode;
 
-    struct WaitTime {
-      friend struct ModeRunners;
-
-      enum class FSMState : uint8_t { Wait } fsm_state = FSMState::Wait;
-
-      uint32_t duration;
+    struct Wait {
+      enum class FSMState : uint8_t { Init, Wait } fsm_state = FSMState::Init;
+      bool (*exit_condition)(Basilisk&);
       Mode exit_to_mode;
       uint8_t exit_to_fsm;
-
-     private:
-      uint32_t init_time;
-    } wait_time;
+    } wait;
 
     struct Stop {
       enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
@@ -56,13 +48,9 @@ class Basilisk {
 
     struct Em {
       enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
-      EmStrength strength[4] = {EmStrength::Max, EmStrength::Max,
-                                EmStrength::Max, EmStrength::Max};
+      MagnetStrength strength[4] = {MagnetStrength::Max, MagnetStrength::Max,
+                                MagnetStrength::Max, MagnetStrength::Max};
     } em;
-
-    struct DExactM025 {
-      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
-    } d_exact_m025;
 
     struct SetRho {
       enum class FSMState : uint8_t { Init, Wait } fsm_state = FSMState::Init;
@@ -70,9 +58,10 @@ class Basilisk {
     } set_rho;
 
     class Walk {
+      friend struct ModeRunners;
+
      public:
       Walk() {}
-
       Walk(double _stride, double _eightwalk_l, double _eightwalk_r,
            uint8_t _steps, bool _phase)
           : stride{_stride},
@@ -104,15 +93,14 @@ class Basilisk {
       bool phase = false;
 
      private:
-      friend struct ModeRunners;
-
       uint8_t current_step = 0;
     } walk;
 
     class Diamond {
+      friend struct ModeRunners;
+
      public:
       Diamond() {}
-
       Diamond(const double& _stride) : stride{_stride} {}
 
       enum class FSMState : uint8_t {
@@ -125,33 +113,28 @@ class Basilisk {
       double stride = 0.125;
 
      private:
-      friend struct ModeRunners;
-
       uint8_t current_step = 0;
 
       // rho_l and rho_r for Step 0, 1, 2, 3.
       double target_rho(uint8_t step) {
         switch (step) {
-          case 0: {
+          case 0:
             return stride;
-          } break;
-          case 1: {
+          case 1:
             return -0.5 - stride;
-          } break;
-          case 2: {
+          case 2:
             return -0.5 + stride;
-          } break;
-          case 3: {
+          case 3:
             return -stride;
-          } break;
-          default: {
+          default:
             return stride;
-          } break;
         }
       }
     } diamond;
 
     class Gee {
+      friend struct ModeRunners;
+
      public:
       Gee() {}
 
@@ -168,14 +151,12 @@ class Basilisk {
       double stride = 0.125;
 
       // Total steps counting both ankle shears and toe shears.
-      uint8_t steps = 4;
+      uint8_t steps = 8;
 
       // false = fix ankle; true = fix toe.
       bool phase = false;
 
      private:
-      friend struct ModeRunners;
-
       uint8_t current_step = 0;
     } gee;
   } cmd_;

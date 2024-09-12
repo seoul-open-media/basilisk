@@ -2,8 +2,7 @@
 
 #include "helpers/imports.h"
 
-namespace basilisk {
-namespace globals {
+namespace basilisk::globals {
 
 const PmFmt pm_fmt{.position = kFloat,
                    .velocity = kFloat,
@@ -49,5 +48,4 @@ const QFmt q_fmt{[] {
   return fmt;
 }()};
 
-}  // namespace globals
-}  // namespace basilisk
+}  // namespace basilisk::globals

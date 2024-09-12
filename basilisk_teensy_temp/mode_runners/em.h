@@ -29,15 +29,15 @@ using C = const Basilisk::Command::Em;
 using FSM = C::FSMState;
 
 C fix_all{.fsm_state = FSM::Init,
-          .strength = {EmStrength::Max,  //
-                       EmStrength::Max,  //
-                       EmStrength::Max,  //
-                       EmStrength::Max}};
+          .strength = {MagnetStrength::Max,  //
+                       MagnetStrength::Max,  //
+                       MagnetStrength::Max,  //
+                       MagnetStrength::Max}};
 
 C free_all{.fsm_state = FSM::Init,
-           .strength = {EmStrength::Weak,  //
-                        EmStrength::Weak,  //
-                        EmStrength::Weak,  //
-                        EmStrength::Weak}};
+           .strength = {MagnetStrength::Weak,  //
+                        MagnetStrength::Weak,  //
+                        MagnetStrength::Weak,  //
+                        MagnetStrength::Weak}};
 
 }  // namespace cmd_presets::em
