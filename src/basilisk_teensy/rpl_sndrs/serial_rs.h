@@ -37,15 +37,15 @@ void SerialReplySender(Basilisk& b) {
   Serial.println();
 
   Serial.print("time_since_last_fix[0]:");
-  Serial.print(b.mags_.TimeSinceLastFix(0), BIN);
+  Serial.print(b.mags_.time_since_last_fix_[0]);
   Serial.print(",");
   Serial.print("time_since_last_fix[1]:");
-  Serial.print(b.mags_.TimeSinceLastFix(1), BIN);
+  Serial.print(b.mags_.time_since_last_fix_[1]);
   Serial.print(",");
   Serial.print("time_since_last_fix[2]:");
-  Serial.print(b.mags_.TimeSinceLastFix(2), BIN);
+  Serial.print(b.mags_.time_since_last_fix_[2]);
   Serial.print(",");
   Serial.print("time_since_last_fix[3]:");
-  Serial.print(b.mags_.TimeSinceLastFix(3), BIN);
+  Serial.print(b.mags_.time_since_last_fix_[3]);
   Serial.println();
 }

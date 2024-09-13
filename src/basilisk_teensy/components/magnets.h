@@ -31,33 +31,27 @@ class Magnets {
   // Should be called in regular interval to track if any of the
   // electromagnets are being passed current for over 3 seconds.
   void Run() {
-    for (uint8_t i = 0; i < 4; i++) {
-      heavenfall_warning_[i] = (millis() - last_fix_time_[i] > 3000);
-    }
-  }
-
-  uint32_t TimeSinceLastFix(const uint8_t& id) {
-    if (id < 4) {
-      return millis() - last_fix_time_[id];
-    } else {
-      return -1;
+    for (uint8_t id = 0; id < 4; id++) {
+      if (fixing_[id]) last_fix_time_[id] = millis();
+      time_since_last_fix_[id] = millis() - last_fix_time_[id];
+      heavenfall_warning_[id] = (time_since_last_fix_[id] > 3000);
     }
   }
 
   void SetStrength(const uint8_t& id, const MagnetStrength& strength) {
     analogWrite(pins_[id], static_cast<int>(strength));
-    if (strength == MagnetStrength::Max) last_fix_time_[id] = millis();
+    fixing_[id] = (strength == MagnetStrength::Max);
   }
 
   void FixAll() {
-    for (auto pin : pins_) {
-      SetStrength(pin, MagnetStrength::Max);
+    for (uint8_t id = 0; id < 4; id++) {
+      SetStrength(id, MagnetStrength::Max);
     }
   }
 
   void FreeAll() {
-    for (auto pin : pins_) {
-      SetStrength(pin, MagnetStrength::Min);
+    for (uint8_t id = 0; id < 4; id++) {
+      SetStrength(id, MagnetStrength::Min);
     }
   }
 
@@ -102,6 +96,8 @@ class Magnets {
   }
 
   const uint8_t pins_[4];
+  bool fixing_[4] = {false, false, false, false};
   uint32_t last_fix_time_[4] = {0, 0, 0, 0};
+  uint32_t time_since_last_fix_[4] = {0, 0, 0, 0};
   bool heavenfall_warning_[4] = {false, false, false, false};
 };

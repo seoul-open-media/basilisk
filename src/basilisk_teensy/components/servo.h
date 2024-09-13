@@ -3,7 +3,7 @@
 #include "../helpers/imports.h"
 #include "canfd_drivers.h"
 
-class Servo : private Moteus {
+class Servo : public Moteus {
  public:
   Servo(const int& id, uint8_t bus,  //
         const PmFmt* const pm_fmt, const QFmt* const q_fmt)

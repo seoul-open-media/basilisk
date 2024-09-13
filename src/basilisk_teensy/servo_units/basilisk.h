@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../components/canfd_drivers.h"
 #include "../components/imu.h"
 #include "../components/lego_blocks.h"
 #include "../components/lps.h"
@@ -16,31 +17,29 @@ class Basilisk {
   // Components: //
 
   Servo l_, r_;
-  Lps lps_;
-  Imu imu_;
-  Magnets mags_;
-  LegoBlocks lego_;
+  Lps lps_;          // Run continuously.
+  Imu imu_;          // Run continuously.
+  Magnets mags_;     // Run in regular interval.
+  LegoBlocks lego_;  // Run in regular interval.
+  utils::Beat mags_beat_;
+  utils::Beat lego_beat_;
 
   /////////////////////
   // Configurations: //
 
-  const struct Configuration {
+  struct Configuration {
     struct {
-      const int id_l = 1, id_r = 2;
-      const uint8_t bus = 1;
-    } servo;
-    struct {
-      const double c = 300.0, x_c = 300.0, y_c = 300.0;
+      const double c, x_c, y_c;
     } lps;
     struct {
-      const uint8_t pin_la = 3, pin_lt = 4, pin_ra = 5, pin_rt = 6;
-      const uint32_t run_interval = 100;
+      const uint8_t pin_la, pin_lt, pin_ra, pin_rt;
+      const uint32_t run_interval;
     } magnets;
     struct {
-      const int pin_l = 23, pin_r = 29;
-      const uint32_t run_interval = 20;
+      const int pin_l, pin_r;
+      const uint32_t run_interval;
     } lego;
-  } cfg_;
+  };
 
   const PmCmd* const pm_cmd_template_;
 
@@ -48,25 +47,22 @@ class Basilisk {
   // Constructor: //
 
   Basilisk(const Configuration& cfg)
-      : cfg_{cfg},
-        l_{cfg_.servo.id_l, cfg_.servo.bus, &globals::pm_fmt, &globals::q_fmt},
-        r_{cfg_.servo.id_r, cfg_.servo.bus, &globals::pm_fmt, &globals::q_fmt},
+      : l_{1, 1, &globals::pm_fmt, &globals::q_fmt},
+        r_{2, 1, &globals::pm_fmt, &globals::q_fmt},
         pm_cmd_template_{&globals::pm_cmd_template},
-        lps_{cfg_.lps.c, cfg_.lps.x_c, cfg_.lps.y_c},
+        lps_{cfg.lps.c, cfg.lps.x_c, cfg.lps.y_c},
         imu_{},
-        mags_{cfg_.magnets.pin_la, cfg_.magnets.pin_lt,  //
-              cfg_.magnets.pin_ra, cfg_.magnets.pin_rt},
-        lego_{cfg_.lego.pin_l, cfg_.lego.pin_r} {}
+        mags_{cfg.magnets.pin_la, cfg.magnets.pin_lt,  //
+              cfg.magnets.pin_ra, cfg.magnets.pin_rt},
+        mags_beat_{cfg.magnets.run_interval},
+        lego_{cfg.lego.pin_l, cfg.lego.pin_r},
+        lego_beat_{cfg.lego.run_interval} {}
 
   ///////////////////
   // Setup method: //
 
   // Should be called before use.
   bool Setup() {
-    if (!CanFdDriverInitializer::Setup(cfg_.servo.bus)) {
-      Serial.println("Basilisk: CanFdDriver setup failed");
-      return false;
-    }
     if (!lps_.Setup()) {
       Serial.println("Basilisk: LPS setup failed");
       return false;
@@ -83,6 +79,14 @@ class Basilisk {
       Serial.println("Basilisk: LegoBlocks setup failed");
       return false;
     }
+    if (!CanFdDriverInitializer::Setup(1)) {
+      Serial.println("Basilisk: CanFdDriver setup failed");
+      return false;
+    }
+    CommandBoth([](Servo& s) { s.SetStop(); });
+    Serial.println("Basilisk: Both Servos Stopped");
+
+    Serial.println("Basilisk: All components setup succeeded");
     return true;
   }
 
@@ -93,35 +97,35 @@ class Basilisk {
     lps_.Run();
     imu_.Run();
 
-    static utils::Beat mags_run_beat{cfg_.magnets.run_interval};
-    if (mags_run_beat.Hit()) mags_.Run();
+    if (mags_beat_.Hit()) mags_.Run();
 
-    static utils::Beat lego_run_beat{cfg_.lego.run_interval};
-    if (lego_run_beat.Hit()) lego_.Run();
+    static utils::Beat lego_run_beat{20};
+    if (lego_beat_.Hit()) lego_.Run();
   }
 
   //////////////////////////////
   // Basilisk Command struct: //
 
-  enum class MuxCR : bool { Xbee, Neokey } mux_cr = MuxCR::Neokey;
+  enum class MuxCR : bool { Xbee, Neokey } mux_cr_ = MuxCR::Neokey;
 
   struct Command {
-    enum class Mode : uint8_t {
-      Nop_Init,        // -> Nop_Idle
-      Nop_Idle,        // .
+    enum class Mode {
+      Idle_Init,       // -> Idle_Nop
+      Idle_Nop,        // .
       Wait,            // -> ExitMode
-      Free,            // -> Wait(5s) -> Nop_Init
+      Free,            // -> Wait(3s) -> Idle_Init
       SetRho,          // -> ExitMode
+      Walk_Init,       // -> Walk_InitLeft
       Walk_InitLeft,   // -> SetRho -> Walk_InitRight
       Walk_InitRight,  // -> SetRho -> Walk_Step
-      Walk_Step,       // -> SetRho -> Walk_Step(++step) ~> Nop_Init
+      Walk_Step,       // -> SetRho -> Walk_Step(++step) ~> Idle_Init
       Diamond_Init,    // -> SetRho -> Diamond_Step
-      Diamond_Step,    // -> SetRho -> Diamond_Step(++step) ~> Nop_Init
+      Diamond_Step,    // -> SetRho -> Diamond_Step(++step) ~> Idle_Init
       Gee_Init,        // -> SetRho -> Gee_Step
-      Gee_Step,        // -> SetRho -> Gee_Step(++step) ~> Nop_Init
-      WalkToPos,       // ~> Nop_Init
-      WalkToDir
-    } mode;
+      Gee_Step,        // -> SetRho -> Gee_Step(++step) ~> Idle_Init
+      WalkToPos,       // ~> Idle_Init
+      WalkToDir        // .
+    } mode = Mode::Idle_Init;
 
     struct Wait {
       bool (*exit_condition)(Basilisk&);
@@ -131,6 +135,7 @@ class Basilisk {
     struct SetRho {
       friend struct ModeRunners;
 
+      bool (*exit_condition)(Basilisk&);
       Mode exit_to_mode;
 
       void SetRhos(const double& _tgt_rho_l, const double& _tgt_rho_r) {
@@ -217,6 +222,7 @@ class Basilisk {
           : stride{_stride}, steps{_steps} {}
 
       // Delta sigma between zero pose and shear pose.
+      // Negative value manifests as moving left, and positive right.
       double stride = 0.125;
 
       // Total steps counting both ankle shears and toe shears.
@@ -237,6 +243,19 @@ class Basilisk {
   void CommandBoth(ServoCommand c) {
     c(l_);
     c(r_);
+  }
+
+  void SetPositions(const double& rho_l, const double& rho_r) {
+    l_.SetPosition([&] {
+      auto pm_cmd = *pm_cmd_template_;
+      pm_cmd.position = rho_l;
+      return pm_cmd;
+    }());
+    r_.SetPosition([&] {
+      auto pm_cmd = *pm_cmd_template_;
+      pm_cmd.position = rho_r;
+      return pm_cmd;
+    }());
   }
 
   void Print() {
