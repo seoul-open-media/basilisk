@@ -103,44 +103,55 @@ class Basilisk {
   //////////////////////////////
   // Basilisk Command struct: //
 
+  enum class MuxCR : bool { Xbee, Neokey } mux_cr = MuxCR::Neokey;
+
   struct Command {
     enum class Mode : uint8_t {
-      Nop,
-      Wait,
-      Stop,
-      Em,
-      SetRho,
-      Walk,
-      Diamond,
-      Gee
+      Nop_Init,        // -> Nop_Idle
+      Nop_Idle,        // .
+      Wait,            // -> ExitMode
+      Free,            // -> Wait(5s) -> Nop_Init
+      SetRho,          // -> ExitMode
+      Walk_InitLeft,   // -> SetRho -> Walk_InitRight
+      Walk_InitRight,  // -> SetRho -> Walk_Step
+      Walk_Step,       // -> SetRho -> Walk_Step(++step) ~> Nop_Init
+      Diamond_Init,    // -> SetRho -> Diamond_Step
+      Diamond_Step,    // -> SetRho -> Diamond_Step(++step) ~> Nop_Init
+      Gee_Init,        // -> SetRho -> Gee_Step
+      Gee_Step,        // -> SetRho -> Gee_Step(++step) ~> Nop_Init
+      WalkToPos,       // ~> Nop_Init
+      WalkToDir
     } mode;
 
     struct Wait {
-      enum class FSMState : uint8_t { Init, Wait } fsm_state = FSMState::Init;
       bool (*exit_condition)(Basilisk&);
       Mode exit_to_mode;
-      uint8_t exit_to_fsm;
     } wait;
 
-    struct Stop {
-      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
-    } stop;
-
-    struct Em {
-      enum class FSMState : uint8_t { Init } fsm_state = FSMState::Init;
-      MagnetStrength strength[4] = {MagnetStrength::Max, MagnetStrength::Max,
-                                    MagnetStrength::Max, MagnetStrength::Max};
-    } em;
-
     struct SetRho {
-      enum class FSMState : uint8_t { Init, Wait } fsm_state = FSMState::Init;
-      double rho_l = -0.25, rho_r = -0.25;
-    } set_rho;
-
-    class Walk {
       friend struct ModeRunners;
 
-     public:
+      Mode exit_to_mode;
+
+      void SetRhos(const double& _tgt_rho_l, const double& _tgt_rho_r) {
+        tgt_rho_l =
+            isnan(_tgt_rho_l) ? NaN : constrain(_tgt_rho_l, -0.625, 0.125);
+        tgt_rho_r =
+            isnan(_tgt_rho_r) ? NaN : constrain(_tgt_rho_r, -0.625, 0.125);
+      }
+      void SetVel(const double& _vel) { vel = abs(_vel); }
+      void SetDampThr(const double& _damp_thr) { damp_thr = abs(_damp_thr); }
+
+     private:
+      double tgt_rho_l = -0.25, tgt_rho_r = -0.25;
+      double vel = 0.1;
+      double damp_thr = 0.1;
+      const double fix_thr = 0.01;
+    } set_rho;
+
+    struct Walk {
+      friend struct ModeRunners;
+
       Walk() {}
       Walk(double _stride, double _eightwalk_l, double _eightwalk_r,
            uint8_t _steps, bool _phase)
@@ -149,14 +160,6 @@ class Basilisk {
             eightwalk_r{_eightwalk_r},
             steps{_steps},
             phase{_phase} {}
-
-      enum class FSMState : uint8_t {
-        Init,
-        WaitInitLeft,
-        WaitInitRight,
-        Move,
-        WaitMove
-      } fsm_state = FSMState::Init;
 
       // Delta theta from walk-standby pose to right-foot-forward pose.
       // Negative value manifests as walking backwards.
@@ -169,25 +172,18 @@ class Basilisk {
       // Total steps counting both left and right footsteps.
       uint8_t steps = 4;
 
-      // true = moving left foot; false = moving right foot.
+      // false = moving right foot, true = moving left foot.
       bool phase = false;
 
      private:
       uint8_t current_step = 0;
     } walk;
 
-    class Diamond {
+    struct Diamond {
       friend struct ModeRunners;
 
-     public:
       Diamond() {}
       Diamond(const double& _stride) : stride{_stride} {}
-
-      enum class FSMState : uint8_t {
-        Init,
-        Step,
-        Wait,
-      } fsm_state = FSMState::Init;
 
       // Half of top-bottom angle of the diamond.
       double stride = 0.125;
@@ -196,7 +192,7 @@ class Basilisk {
       uint8_t current_step = 0;
 
       // rho_l and rho_r for Step 0, 1, 2, 3.
-      double target_rho(uint8_t step) {
+      double tgt_rho(uint8_t step) {
         switch (step) {
           case 0:
             return stride;
@@ -217,15 +213,8 @@ class Basilisk {
 
      public:
       Gee() {}
-
       Gee(const double& _stride, const uint8_t& _steps)
           : stride{_stride}, steps{_steps} {}
-
-      enum class FSMState : uint8_t {
-        Init,
-        Step,
-        Wait
-      } fsm_state = FSMState::Init;
 
       // Delta sigma between zero pose and shear pose.
       double stride = 0.125;
@@ -233,7 +222,7 @@ class Basilisk {
       // Total steps counting both ankle shears and toe shears.
       uint8_t steps = 8;
 
-      // false = fix ankle; true = fix toe.
+      // false = fix ankle, true = fix toe.
       bool phase = false;
 
      private:

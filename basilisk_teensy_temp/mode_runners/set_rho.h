@@ -12,8 +12,8 @@ void ExecFuncs::SetRho(Basilisk& b) {
     case FSM::Init: {
       Serial.println(F("ExecFuncs::SetRho(FSM::Init)"));
 
-      b.l_.Position(c.rho_l);
-      b.r_.Position(c.rho_r);
+      b.l_.Position(c.tgt_rho_l);
+      b.r_.Position(c.tgt_rho_r);
 
       fsm = FSM::Wait;
     } break;
@@ -37,8 +37,8 @@ namespace cmd_presets::set_rho {
 using C = const Basilisk::Command::SetRho;
 using FSM = C::FSMState;
 
-C m025{.fsm_state = FSM::Init, .rho_l = -0.25, .rho_r = -0.25};
+C m025{.fsm_state = FSM::Init, .tgt_rho_l = -0.25, .tgt_rho_r = -0.25};
 
-C zero{.fsm_state = FSM::Init, .rho_l = 0.0, .rho_r = 0.0};
+C zero{.fsm_state = FSM::Init, .tgt_rho_l = 0.0, .tgt_rho_r = 0.0};
 
 }  // namespace cmd_presets::set_rho

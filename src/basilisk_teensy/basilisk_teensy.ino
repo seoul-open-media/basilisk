@@ -3,8 +3,7 @@
 #include "rpl_sndrs/serial_rs.h"
 #include "servo_units/basilisk.h"
 
-Basilisk b{Basilisk::Configuration{
-    .servo{.bus = 1}, .lps{.c = 300.0, .x_c = 300.0, .y_c = 300.0}}};
+Basilisk b{Basilisk::Configuration{}};
 
 utils::Beat serial_plotter_rs_beat{100};
 

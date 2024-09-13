@@ -16,7 +16,7 @@ class Executer {
   M& m = c.mode;
 
   void ParseNeokeyCmd() {
-    switch (neokey_cmd) {
+    switch (nk_cmd) {
       case 0: {  // None
       } break;
       case 1: {  // Stop
@@ -76,7 +76,7 @@ class Executer {
         break;
     }
 
-    neokey_cmd = 0;
+    nk_cmd = 0;
   }
 
  public:
