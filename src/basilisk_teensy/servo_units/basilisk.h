@@ -113,22 +113,21 @@ class Basilisk {
 
   struct Command {
     enum class Mode {
-      Idle_Init,       // -> Idle_Nop
-      Idle_Nop,        // .
-      Wait,            // -> ExitMode
-      Free,            // -> Wait(3s) -> Idle_Init
-      SetPhi,          // -> ExitMode
-      SetMags,         // -> Wait -> ExitMode
-      Walk_Init,       // -> Walk_InitLeft
-      Walk_InitLeft,   // -> SetPhi -> Walk_InitRight
-      Walk_InitRight,  // -> SetPhi -> Walk_Step
-      Walk_Step,       // -> SetPhi -> Walk_Step(++step) ~> Idle_Init
-      Diamond_Init,    // -> SetPhi -> Diamond_Step
-      Diamond_Step,    // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
-      Gee_Init,        // -> SetPhi -> Gee_Step
-      Gee_Step,        // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
-      WalkToPos,       // ~> Idle_Init
-      WalkToDir        // .
+      Idle_Init,      // -> Idle_Nop
+      Idle_Nop,       // .
+      Wait,           // -> ExitMode
+      Free,           // -> Wait(3s) -> Idle_Init
+      SetPhi,         // -> ExitMode
+      SetMags,        // -> Wait -> ExitMode
+      Walk_Init,      // -> SetMags -> SetPhi(InitL) -> Walk_InitPhiR
+      Walk_InitPhiR,  // -> SetMags -> SetPhi(InitR) -> Walk_Step
+      Walk_Step,      // -> SetMags -> SetPhi -> Walk_Step(++step) ~> Idle_Init
+      Diamond_Init,   // -> SetPhi -> Diamond_Step
+      Diamond_Step,   // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
+      Gee_Init,       // -> SetPhi -> Gee_Step
+      Gee_Step,       // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
+      WalkToPos,      // ~> Idle_Init
+      BounceWalk      // .
     } mode = Mode::Idle_Init;
 
     struct Wait {
@@ -173,7 +172,7 @@ class Basilisk {
                                      MagnetStrength::Max, MagnetStrength::Max};
       bool expected_contact[2] = {true, true};
       uint8_t expected_consec_verif[2] = {32, 32};
-      uint32_t min_wait_time = 100;
+      uint32_t min_wait_time = 1000;
       uint32_t max_wait_time = 10000;
     } set_mags;
 

@@ -4,12 +4,13 @@
 
 void ModeRunners::Wait(Basilisk* b) {
   auto& m = b->cmd_.mode;
+  auto& c = b->cmd_.wait;
 
   switch (m) {
     case M::Wait: {
       Serial.println("ModeRunners::Wait()");
-      if (!b->cmd_.wait.exit_condition(b)) return;
-      m = b->cmd_.wait.exit_to_mode;
+      if (!c.exit_condition(b)) return;
+      m = c.exit_to_mode;
     } break;
     default:
       break;

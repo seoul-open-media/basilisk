@@ -4,18 +4,19 @@
 
 void ModeRunners::SetPhi(Basilisk* b) {
   auto& m = b->cmd_.mode;
+  auto& c = b->cmd_.set_phi;
 
   switch (m) {
     case M::SetPhi: {
-      auto& cmd = b->cmd_.set_phi;
+      Serial.println("ModeRunners::SetPhi");
 
-      bool exit[2] = {false, false};
+      bool exit[2] = {true, true};
 
       for (uint8_t i = 0; i < 2; i++) {
         auto* s = b->lr_[i];
-        const auto& tgt_outpos = cmd.tgt_phi[i];
-        auto tgt_outvel = cmd.tgt_phidot[i];
-        const auto& tgt_outacc = cmd.tgt_phiddot[i];
+        const auto& tgt_outpos = c.tgt_phi[i];
+        auto tgt_outvel = c.tgt_phidot[i];
+        const auto& tgt_outacc = c.tgt_phiddot[i];
 
         double tgt_rtrvel;
         double tgt_rtracc;
@@ -27,14 +28,14 @@ void ModeRunners::SetPhi(Basilisk* b) {
           const auto cur_outpos = s->GetReply().abs_position;
           const auto tgt_delta_outpos = tgt_outpos - cur_outpos;
 
-          if (abs(tgt_delta_outpos) >= cmd.fix_thr) {
-            tgt_outvel *= constrain(tgt_delta_outpos / cmd.damp_thr, -1.0, 1.0);
+          if (abs(tgt_delta_outpos) >= c.fix_thr) {
+            tgt_outvel *= constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0);
             tgt_rtrvel = b->gear_rat_ * tgt_outvel;
             tgt_rtracc = b->gear_rat_ * tgt_outacc;
+            exit[i] = false;
           } else {
             tgt_rtrvel = 0.0;
             tgt_rtracc = 0.0;
-            exit[i] = true;
           }
         }
 
@@ -48,7 +49,7 @@ void ModeRunners::SetPhi(Basilisk* b) {
       }
 
       if (exit[0] && exit[1]) {
-        m = b->cmd_.set_phi.exit_to_mode;
+        m = c.exit_to_mode;
       }
     } break;
     default:

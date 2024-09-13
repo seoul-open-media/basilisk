@@ -4,17 +4,22 @@
 
 void ModeRunners::SetMags(Basilisk* b) {
   auto& m = b->cmd_.mode;
+  auto& c = b->cmd_.set_mags;
 
   switch (m) {
     case M::SetMags: {
-      auto& cmd = b->cmd_.set_mags;
+      Serial.println("ModeRunners::SetMags");
 
       for (uint8_t id = 0; id < 4; id++) {
-        b->mags_.SetStrength(id, cmd.strengths[id]);
+        b->mags_.SetStrength(id, c.strengths[id]);
       }
 
       b->cmd_.wait.init_time = millis();
       b->cmd_.wait.exit_condition = [](Basilisk* b) {
+        if (millis() - b->cmd_.wait.init_time <
+            b->cmd_.set_mags.min_wait_time) {
+          return false;
+        }
         if (millis() - b->cmd_.wait.init_time >
             b->cmd_.set_mags.max_wait_time) {
           return true;
@@ -33,11 +38,9 @@ void ModeRunners::SetMags(Basilisk* b) {
             }
           }
         }
-
-        return millis() - b->cmd_.wait.init_time >
-               b->cmd_.set_mags.min_wait_time;
+        return true;
       };
-      b->cmd_.wait.exit_to_mode = cmd.exit_mode;
+      b->cmd_.wait.exit_to_mode = c.exit_mode;
       m = M::Wait;
     } break;
     default:
