@@ -54,7 +54,7 @@ expect {
   }
 }
 
-set offset_value [expr {-1 * $raw_value}]
+set offset_value [expr {-1024 - $raw_value}]
 send "conf set motor_position.sources.1.offset $offset_value\r"
 expect {
   "OK" { send_user "SUCCESS\n" }
