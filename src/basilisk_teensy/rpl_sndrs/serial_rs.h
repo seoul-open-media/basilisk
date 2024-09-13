@@ -5,10 +5,10 @@
 void SerialReplySender(Basilisk& b) {
   b.CommandBoth([](Servo& s) { s.Print(); });
 
-  Serial.print("rho_l:");
+  Serial.print("phi_l:");
   Serial.print(b.l_.GetReply().position);
   Serial.print(",");
-  Serial.print("rho_r:");
+  Serial.print("phi_r:");
   Serial.print(b.r_.GetReply().position);
   Serial.println();
 

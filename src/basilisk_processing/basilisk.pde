@@ -1,12 +1,12 @@
 class Basilisk {
   // (pRA - pLA) / b == e^{i * theta}
-  //                 == e^{i * (sigL + rhoL)}
-  //                 == e^{i * (sigR + rhoR)}
+  //                 == e^{i * (sigL + phiL)}
+  //                 == e^{i * (sigR + phiR)}
   // (pLT - pLA) / f == e^{i * sigL}
   // (pRT - pRA) / f == e^{i * sigR}
   private PVector pLA, pLT, pRA, pRT;  // Positions of left/right ankle/toe.
   public static final float bar = 100, foot = 40;    // Length of the bar and foot.
-  private float sigL, rhoL, theta, sigR, rhoR;  // Angles in revolutions.
+  private float sigL, phiL, theta, sigR, phiR;  // Angles in revolutions.
   private boolean magLA, magLT, magRA, magRT;   // Electromagnet on/off.
 
   public Basilisk(PVector _pLA, float _sigL, float _theta, float _sigR) {
@@ -19,16 +19,16 @@ class Basilisk {
     pRA = PVector.add(pLA, PVector.fromAngle(revToRad(theta)).mult(bar));
     pRT = PVector.add(pRA, PVector.fromAngle(revToRad(sigR)).mult(foot));
 
-    rhoL = theta - sigL;
-    rhoR = theta - sigR;
+    phiL = theta - sigL;
+    phiR = theta - sigR;
   }
 
-  public void setRhoL(float val) {
-    rhoL = val;
+  public void setPhiL(float val) {
+    phiL = val;
 
     if (!magLA && magRA) {  // Left foot fixed, right foot free.
-      sigR = sigL + rhoL - rhoR;
-      theta = sigL + rhoL;
+      sigR = sigL + phiL - phiR;
+      theta = sigL + phiL;
       pLT = PVector.add(pLA, PVector.fromAngle(revToRad(sigL)).mult(foot));
       pRA = PVector.add(pLA, PVector.fromAngle(revToRad(theta)).mult(bar));
       pRT = PVector.add(pRA, PVector.fromAngle(revToRad(sigR)).mult(foot));
@@ -71,8 +71,8 @@ class Basilisk {
     arrow(pRA, pRT, 0, "sigR=" + sigR, 2, 15);
     arrow(pLA, pRA, 30, "theta=" + theta, 4, 15);
 
-    spiral(pLA, sigL, theta, "rhoL=" + rhoL, 2, 15);
-    spiral(pRA, sigR, theta, "rhoR=" + rhoR, 2, 15);
+    spiral(pLA, sigL, theta, "phiL=" + phiL, 2, 15);
+    spiral(pRA, sigR, theta, "phiR=" + phiR, 2, 15);
   }
 }
 

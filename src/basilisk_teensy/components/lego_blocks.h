@@ -38,7 +38,20 @@ class LegoBlocks {
     uint64_t contact = 0;
     uint32_t last_contact_time = 0;
     bool Contact(uint8_t n) {
-      return contact >= (((utils::one_uint64 << n) - 1) << (64 - n));
+      if (n == 0 || n > 64) {
+        Serial.println("LegoBlocks::Contact: Bad argument");
+        return false;
+      }
+
+      return !(~contact >> (64 - n));
+    }
+    bool Detached(uint8_t n) {
+      if (n == 0 || n > 64) {
+        Serial.println("LegoBlocks::Detached: Bad argument");
+        return false;
+      }
+
+      return !(contact >> (64 - n));
     }
   } state_[2];
   uint32_t last_run_time = 0;

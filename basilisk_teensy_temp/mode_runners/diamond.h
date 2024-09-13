@@ -59,11 +59,11 @@ void ExecFuncs::Diamond(Basilisk& b) {
       }
       b.Print();
 
-      // Command both rhos to target.
-      Serial.print(F("Command both rhos to target: "));
-      Serial.println(c.tgt_rho(c.current_step));
+      // Command both phis to target.
+      Serial.print(F("Command both phis to target: "));
+      Serial.println(c.tgt_phi(c.current_step));
       b.CommandBoth(
-          [&](Servo& s) { s.Position(c.tgt_rho(c.current_step)); });
+          [&](Servo& s) { s.Position(c.tgt_phi(c.current_step)); });
       b.Print();
 
       // Increment current_step and enter FSM::Wait state.

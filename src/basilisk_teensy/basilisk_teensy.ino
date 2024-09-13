@@ -6,9 +6,8 @@
 #include "rpl_sndrs/serial_rs.h"
 #include "servo_units/basilisk.h"
 
-// Basilisk and its executer.
-
-struct Basilisk::Configuration cfg {
+// Basilisk configuration.
+struct Basilisk::Config cfg {
   .lps{.c = 300.0, .x_c = 300.0, .y_c = 300.0},
       .magnets{.pin_la = 3,
                .pin_lt = 4,
@@ -20,8 +19,9 @@ struct Basilisk::Configuration cfg {
   }
 };
 
-Basilisk* b = nullptr;
-Executer* exec = nullptr;
+// Basilisk and its executer.
+Basilisk b{cfg};
+Executer exec{&b};
 
 // CommandReceivers.
 Neokey nk = specifics::neokey3x4_i2c0;
@@ -29,21 +29,21 @@ NeokeyCommandReceiver nk_cr{nk};
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
+  while (!Serial) delay(100);
 
-  b = new Basilisk{cfg};
-  exec = new Executer{b};
-
-  b->Setup();
-  nk_cr.Setup(b);
+  b.Setup();
+  nk_cr.Setup(&b);
 }
 
 void loop() {
-  b->Run();
+  b.Run();
+
+  static utils::Beat nk_cr_beat{10};
+  if (nk_cr_beat.Hit()) nk_cr.Run();
 
   static utils::Beat executer_beat{10};
-  if (executer_beat.Hit()) exec->Run();
+  if (executer_beat.Hit()) exec.Run();
 
   static utils::Beat serial_plotter_rs_beat{100};
-  if (serial_plotter_rs_beat.Hit()) SerialReplySender(*b);
+  if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
 }

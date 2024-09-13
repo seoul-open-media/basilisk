@@ -35,13 +35,13 @@ class Executer {
         m = M::DExactM025;
         c.d_exact_m025 = C::DExactM025{};
       } break;
-      case 5: {  // SetRho: -0.25
-        m = M::SetRho;
-        c.set_rho = cmd_presets::set_rho::m025;
+      case 5: {  // SetPhi: -0.25
+        m = M::SetPhi;
+        c.set_phi = cmd_presets::set_phi::m025;
       } break;
-      case 6: {  // SetRho: 0.0
-        m = M::SetRho;
-        c.set_rho = cmd_presets::set_rho::zero;
+      case 6: {  // SetPhi: 0.0
+        m = M::SetPhi;
+        c.set_phi = cmd_presets::set_phi::zero;
       } break;
       case 7: {  // Square walk: 45 degree stride
         m = M::Walk;
@@ -95,8 +95,8 @@ class Executer {
       case M::DExactM025: {
         ExecFuncs::DExactM025(basilisk);
       } break;
-      case M::SetRho: {
-        ExecFuncs::SetRho(basilisk);
+      case M::SetPhi: {
+        ExecFuncs::SetPhi(basilisk);
       } break;
       case M::Walk: {
         ExecFuncs::Walk(basilisk);

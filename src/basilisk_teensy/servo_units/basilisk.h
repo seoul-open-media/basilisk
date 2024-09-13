@@ -17,6 +17,7 @@ class Basilisk {
   // Components: //
 
   Servo l_, r_;
+  Servo* lr_[2] = {nullptr, nullptr};
   Lps lps_;          // Run continuously.
   Imu imu_;          // Run continuously.
   Magnets mags_;     // Run in regular interval.
@@ -24,10 +25,10 @@ class Basilisk {
   utils::Beat mags_beat_;
   utils::Beat lego_beat_;
 
-  /////////////////////
-  // Configurations: //
+  ////////////////////
+  // Configuration: //
 
-  struct Configuration {
+  struct Config {
     struct {
       const double c, x_c, y_c;
     } lps;
@@ -42,13 +43,15 @@ class Basilisk {
   };
 
   const PmCmd* const pm_cmd_template_;
+  const double gear_rat_ = 21.0;  // rotor = output * gear_rat_
 
   //////////////////
   // Constructor: //
 
-  Basilisk(const Configuration& cfg)
+  Basilisk(const Config& cfg)
       : l_{1, 1, &globals::pm_fmt, &globals::q_fmt},
         r_{2, 1, &globals::pm_fmt, &globals::q_fmt},
+        lr_{&l_, &r_},
         pm_cmd_template_{&globals::pm_cmd_template},
         lps_{cfg.lps.c, cfg.lps.x_c, cfg.lps.y_c},
         imu_{},
@@ -114,45 +117,65 @@ class Basilisk {
       Idle_Nop,        // .
       Wait,            // -> ExitMode
       Free,            // -> Wait(3s) -> Idle_Init
-      SetRho,          // -> ExitMode
+      SetPhi,          // -> ExitMode
+      SetMags,         // -> Wait -> ExitMode
       Walk_Init,       // -> Walk_InitLeft
-      Walk_InitLeft,   // -> SetRho -> Walk_InitRight
-      Walk_InitRight,  // -> SetRho -> Walk_Step
-      Walk_Step,       // -> SetRho -> Walk_Step(++step) ~> Idle_Init
-      Diamond_Init,    // -> SetRho -> Diamond_Step
-      Diamond_Step,    // -> SetRho -> Diamond_Step(++step) ~> Idle_Init
-      Gee_Init,        // -> SetRho -> Gee_Step
-      Gee_Step,        // -> SetRho -> Gee_Step(++step) ~> Idle_Init
+      Walk_InitLeft,   // -> SetPhi -> Walk_InitRight
+      Walk_InitRight,  // -> SetPhi -> Walk_Step
+      Walk_Step,       // -> SetPhi -> Walk_Step(++step) ~> Idle_Init
+      Diamond_Init,    // -> SetPhi -> Diamond_Step
+      Diamond_Step,    // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
+      Gee_Init,        // -> SetPhi -> Gee_Step
+      Gee_Step,        // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
       WalkToPos,       // ~> Idle_Init
       WalkToDir        // .
     } mode = Mode::Idle_Init;
 
     struct Wait {
-      bool (*exit_condition)(Basilisk&);
+      uint32_t init_time;
+      bool (*exit_condition)(Basilisk*);
       Mode exit_to_mode;
     } wait;
 
-    struct SetRho {
+    struct SetPhi {
       friend struct ModeRunners;
 
-      bool (*exit_condition)(Basilisk&);
       Mode exit_to_mode;
 
-      void SetRhos(const double& _tgt_rho_l, const double& _tgt_rho_r) {
-        tgt_rho_l =
-            isnan(_tgt_rho_l) ? NaN : constrain(_tgt_rho_l, -0.625, 0.125);
-        tgt_rho_r =
-            isnan(_tgt_rho_r) ? NaN : constrain(_tgt_rho_r, -0.625, 0.125);
+      void SetPhis(const double& _tgt_phi_l, const double& _tgt_phi_r) {
+        tgt_phi[0] =
+            isnan(_tgt_phi_l) ? NaN : constrain(_tgt_phi_l, -0.625, 0.125);
+        tgt_phi[1] =
+            isnan(_tgt_phi_r) ? NaN : constrain(_tgt_phi_r, -0.625, 0.125);
       }
-      void SetVel(const double& _vel) { vel = abs(_vel); }
+      void SetPhiDots(const double& _phidot_l, const double& _phidot_r) {
+        tgt_phidot[0] = constrain(abs(_phidot_l), 0.0, 0.75);
+        tgt_phidot[1] = constrain(abs(_phidot_r), 0.0, 0.75);
+      }
+      void SetPhiDDots(const double& _phiddot_l, const double& _phiddot_r) {
+        tgt_phiddot[0] = constrain(abs(_phiddot_l), 0.0, 3.0);
+        tgt_phiddot[1] = constrain(abs(_phiddot_r), 0.0, 3.0);
+      }
       void SetDampThr(const double& _damp_thr) { damp_thr = abs(_damp_thr); }
 
      private:
-      double tgt_rho_l = -0.25, tgt_rho_r = -0.25;
-      double vel = 0.1;
+      double tgt_phi[2] = {-0.25, -0.25};  // [0]: l, [1]: r
+      double tgt_phidot[2] = {0.1, 0.1};   // [0]: l, [1]: r
+      double tgt_phiddot[2] = {0.1, 0.1};  // [0]: l, [1]: r
       double damp_thr = 0.1;
       const double fix_thr = 0.01;
-    } set_rho;
+    } set_phi;
+
+    struct SetMags {
+      Mode exit_mode;
+
+      MagnetStrength strengths[4] = {MagnetStrength::Max, MagnetStrength::Max,
+                                     MagnetStrength::Max, MagnetStrength::Max};
+      bool expected_contact[2] = {true, true};
+      bool expected_consec_verif[2] = {32, 32};
+      uint32_t min_wait_time = 100;
+      uint32_t max_wait_time = 10000;
+    } set_mags;
 
     struct Walk {
       friend struct ModeRunners;
@@ -196,8 +219,8 @@ class Basilisk {
      private:
       uint8_t current_step = 0;
 
-      // rho_l and rho_r for Step 0, 1, 2, 3.
-      double tgt_rho(uint8_t step) {
+      // phi_l and phi_r for Step 0, 1, 2, 3.
+      double tgt_phi(uint8_t step) {
         switch (step) {
           case 0:
             return stride;
@@ -241,21 +264,7 @@ class Basilisk {
 
   template <typename ServoCommand>
   void CommandBoth(ServoCommand c) {
-    c(l_);
-    c(r_);
-  }
-
-  void SetPositions(const double& rho_l, const double& rho_r) {
-    l_.SetPosition([&] {
-      auto pm_cmd = *pm_cmd_template_;
-      pm_cmd.position = rho_l;
-      return pm_cmd;
-    }());
-    r_.SetPosition([&] {
-      auto pm_cmd = *pm_cmd_template_;
-      pm_cmd.position = rho_r;
-      return pm_cmd;
-    }());
+    for (auto* s : lr_) c(*s);
   }
 
   void Print() {

@@ -5,5 +5,5 @@ void runGui() {
     basilisk.setElectromagnet(i, gui.toggle("electromagnets/em" + i) );
   }
   
-  basilisk.setRhoL(gui.slider("rhoL", -0.25, -1.25, 0.75));
+  basilisk.setPhiL(gui.slider("phiL", -0.25, -1.25, 0.75));
 }

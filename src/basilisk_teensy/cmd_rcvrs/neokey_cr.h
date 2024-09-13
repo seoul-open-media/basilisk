@@ -14,7 +14,7 @@ class NeokeyCommandReceiver {
     nk_cmd_ = key + 1;
 
     Serial.print(", nk_cmd_: ");
-    Serial.print(nk_cmd_);
+    Serial.println(nk_cmd_);
 
     b_->mux_cr_ = Basilisk::MuxCR::Neokey;
   };
@@ -22,7 +22,7 @@ class NeokeyCommandReceiver {
   // Should be called before use.
   bool Setup(Basilisk* b) {
     if (!b) {
-      Serial.println("NeokeyCommandReceiver: Wrong reference to Basilisk");
+      Serial.println("NeokeyCommandReceiver: Null pointer to Basilisk");
       return false;
     }
     b_ = b;
@@ -37,6 +37,8 @@ class NeokeyCommandReceiver {
     return true;
   }
 
+  // Should be called in regular interval short enough to ensure that
+  // no physical press of a button is missed.
   void Run() { nk_.Run(); }
 
   static void Parse() {
@@ -46,7 +48,7 @@ class NeokeyCommandReceiver {
     static auto& m = c.mode;
 
     switch (nk_cmd_) {
-      case 0: {  // Last Neokey Command already processed; don't touch.
+      case 0: {  // Last Neokey Command already processed, so don't touch.
         return;
       } break;
       case 1: {  // Idle (stop Servos, fix magnets)

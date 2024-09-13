@@ -10,7 +10,8 @@ struct ModeRunners {
   static void Idle(Basilisk*);
   static void Wait(Basilisk*);
   static void Free(Basilisk*);
-  static void SetRho(Basilisk*);
+  static void SetPhi(Basilisk*);
+  static void SetMags(Basilisk*);
   static void Walk(Basilisk*);
   static void Diamond(Basilisk*);
   static void Gee(Basilisk*);
@@ -20,7 +21,8 @@ struct ModeRunners {
       {M::Idle_Nop, &Idle},
       {M::Wait, &Wait},
       {M::Free, &Free},
-      {M::SetRho, &SetRho},
+      {M::SetPhi, &SetPhi},
+      {M::SetMags, &SetMags},
       {M::Walk_Init, &Walk},
       {M::Walk_InitLeft, &Walk},
       {M::Walk_InitRight, &Walk},

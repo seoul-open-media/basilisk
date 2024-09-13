@@ -81,8 +81,8 @@ void ExecFuncs::Walk(Basilisk& b) {
 
         b.Print();
 
-        // Control rhos.
-        Serial.println(F("Control rhos"));
+        // Control phis.
+        Serial.println(F("Control phis"));
         b.l_.Position(-0.25 - c.eightwalk_l - c.stride);
         b.r_.Position(-0.25 - c.eightwalk_r - c.stride);
         b.Print();
@@ -100,8 +100,8 @@ void ExecFuncs::Walk(Basilisk& b) {
 
         b.Print();
 
-        // Control rhos.
-        Serial.println(F("Control rhos"));
+        // Control phis.
+        Serial.println(F("Control phis"));
         b.l_.Position(-0.25 - c.eightwalk_l + c.stride);
         b.r_.Position(-0.25 - c.eightwalk_r + c.stride);
         b.Print();
