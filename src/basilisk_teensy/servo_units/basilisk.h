@@ -172,7 +172,7 @@ class Basilisk {
       MagnetStrength strengths[4] = {MagnetStrength::Max, MagnetStrength::Max,
                                      MagnetStrength::Max, MagnetStrength::Max};
       bool expected_contact[2] = {true, true};
-      bool expected_consec_verif[2] = {32, 32};
+      uint8_t expected_consec_verif[2] = {32, 32};
       uint32_t min_wait_time = 100;
       uint32_t max_wait_time = 10000;
     } set_mags;
