@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../helpers/imports.h"
+#include "lego_blocks.h"
 
 enum class MagnetStrength : uint8_t {
   Max = 0,
@@ -16,9 +17,10 @@ enum class MagnetStrength : uint8_t {
 
 class Magnets {
  public:
-  Magnets(const uint8_t& pin_la = 3, const uint8_t& pin_lt = 4,
+  Magnets(LegoBlocks* lego,  //
+          const uint8_t& pin_la = 3, const uint8_t& pin_lt = 4,
           const uint8_t& pin_ra = 5, const uint8_t& pin_rt = 6)
-      : pins_{pin_la, pin_lt, pin_ra, pin_rt} {}
+      : pins_{pin_la, pin_lt, pin_ra, pin_rt}, lego_{lego} {}
 
   // Must be called before use.
   bool Setup() {
@@ -41,6 +43,7 @@ class Magnets {
   void SetStrength(const uint8_t& id, const MagnetStrength& strength) {
     analogWrite(pins_[id], static_cast<int>(strength));
     fixing_[id] = (strength == MagnetStrength::Max);
+    lego_->Reset();
   }
 
   void FixAll() {
@@ -100,4 +103,5 @@ class Magnets {
   uint32_t last_fix_time_[4] = {0, 0, 0, 0};
   uint32_t time_since_last_fix_[4] = {0, 0, 0, 0};
   bool heavenfall_warning_[4] = {false, false, false, false};
+  LegoBlocks* lego_;
 };

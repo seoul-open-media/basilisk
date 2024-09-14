@@ -37,7 +37,8 @@ void ModeRunners::SetPhi(Basilisk* b) {
             tgt_rtracc = 0.0;
             exit[i] = true;
           } else {
-            tgt_outvel *= constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0);
+            tgt_outvel *= utils::signedpow(
+                constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0), 1.5);
             tgt_rtrvel = b->gear_rat_ * tgt_outvel;
             tgt_rtracc = b->gear_rat_ * tgt_outacc;
             exit[i] = false;

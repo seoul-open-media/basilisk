@@ -20,10 +20,10 @@ class Basilisk {
   Servo* lr_[2] = {nullptr, nullptr};
   Lps lps_;          // Run continuously.
   Imu imu_;          // Run continuously.
-  Magnets mags_;     // Run in regular interval.
   LegoBlocks lego_;  // Run in regular interval.
-  utils::Beat mags_beat_;
+  Magnets mags_;     // Run in regular interval.
   utils::Beat lego_beat_;
+  utils::Beat mags_beat_;
 
   ////////////////////
   // Configuration: //
@@ -55,11 +55,12 @@ class Basilisk {
         pm_cmd_template_{&globals::pm_cmd_template},
         lps_{cfg.lps.c, cfg.lps.x_c, cfg.lps.y_c},
         imu_{},
-        mags_{cfg.magnets.pin_la, cfg.magnets.pin_lt,  //
-              cfg.magnets.pin_ra, cfg.magnets.pin_rt},
-        mags_beat_{cfg.magnets.run_interval},
         lego_{cfg.lego.pin_l, cfg.lego.pin_r},
-        lego_beat_{cfg.lego.run_interval} {}
+        mags_{&lego_,                                  //
+              cfg.magnets.pin_la, cfg.magnets.pin_lt,  //
+              cfg.magnets.pin_ra, cfg.magnets.pin_rt},
+        lego_beat_{cfg.lego.run_interval},
+        mags_beat_{cfg.magnets.run_interval} {}
 
   ///////////////////
   // Setup method: //
@@ -99,10 +100,7 @@ class Basilisk {
   void Run() {
     lps_.Run();
     imu_.Run();
-
     if (mags_beat_.Hit()) mags_.Run();
-
-    static utils::Beat lego_run_beat{20};
     if (lego_beat_.Hit()) lego_.Run();
   }
 
@@ -120,14 +118,13 @@ class Basilisk {
       SetPhi_Init,   // -> Wait(50ms) -> SetPhi_Stop
       SetPhi_Stop,   // -> Exit
       SetMags,       // -> Wait -> Exit
-      Face,          // (L) -> SetMags -> SetPhi -> Face(R) => Exit
       Walk_Init,     // -> SetMags -> SetPhi(InitL) -> Walk_Step
       Walk_Step,     // -> SetMags -> SetPhi -> Walk_Step(++step) ~> Idle_Init
-                     // Todo: Walk_Init -> Face -> Walk_Step
       Diamond_Init,  // -> SetPhi -> Diamond_Step
       Diamond_Step,  // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
       Gee_Init,      // -> SetPhi -> Gee_Step
       Gee_Step,      // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
+      Face,          // (L) -> SetMags -> SetPhi -> Face(R) => Exit
       WalkToPos,     // ~> Idle_Init
       WalkToDir,     // ~> Idle_Init
       BounceWalk     // .

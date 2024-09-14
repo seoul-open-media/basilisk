@@ -19,20 +19,21 @@ void SerialReplySender(Basilisk& b) {
   Serial.print(b.lps_.y_);
   Serial.println();
 
-  Serial.print("roll:");
-  Serial.print(b.imu_.euler_[0], 3);
-  Serial.print(",");
-  Serial.print("pitch:");
-  Serial.print(b.imu_.euler_[1], 3);
-  Serial.print(",");
+  // Serial.print("roll:");
+  // Serial.print(b.imu_.euler_[0], 3);
+  // Serial.print(",");
+  // Serial.print("pitch:");
+  // Serial.print(b.imu_.euler_[1], 3);
+  // Serial.println();
+
   Serial.print("yaw:");
   Serial.print(b.imu_.GetYaw(true), 3);
   Serial.println();
 
-  Serial.print("contact_l:");
+  Serial.print("contact_l=");
   Serial.print(b.lego_.state_[0].contact, BIN);
   Serial.print(",");
-  Serial.print("contact_r:");
+  Serial.print("contact_r=");
   Serial.print(b.lego_.state_[1].contact, BIN);
   Serial.println();
 

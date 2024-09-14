@@ -6,6 +6,9 @@ void ModeRunners::Walk(Basilisk* b) {
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.walk;
 
+  static const double phidot_std = 0.15;
+  static const double phiddot_std = 0.5;
+
   switch (m) {
     case M::Walk_Init: {
       Serial.println("ModeRunners::Walk(Init)");
@@ -32,8 +35,8 @@ void ModeRunners::Walk(Basilisk* b) {
       b->cmd_.set_mags.max_wait_time = 3000;
       b->cmd_.set_mags.exit_to_mode = M::SetPhi_Init;
       b->cmd_.set_phi.SetPhis(-0.25 - c.eightwalk_l, NaN);
-      b->cmd_.set_phi.SetPhiDots(0.2, 0.0);
-      b->cmd_.set_phi.SetPhiDDots(1.0, 0.0);
+      b->cmd_.set_phi.SetPhiDots(phidot_std, 0.0);
+      b->cmd_.set_phi.SetPhiDDots(phiddot_std, 0.0);
       b->cmd_.set_phi.SetDampThr(0.1);
       b->cmd_.set_phi.exit_to_mode = M::Walk_Step;
       b->Print();
@@ -67,11 +70,10 @@ void ModeRunners::Walk(Basilisk* b) {
         b->cmd_.set_mags.exit_to_mode = M::SetPhi_Init;
         b->cmd_.set_phi.SetPhis(-0.25 - c.eightwalk_l - c.stride,
                                 -0.25 - c.eightwalk_r - c.stride);
-        b->cmd_.set_phi.SetPhiDots(0.2, 0.1);
-        b->cmd_.set_phi.SetPhiDDots(1.0, 0.1);
+        b->cmd_.set_phi.SetPhiDots(phidot_std, phidot_std);
+        b->cmd_.set_phi.SetPhiDDots(phiddot_std, phiddot_std);
         b->cmd_.set_phi.SetDampThr(0.1);
         b->cmd_.set_phi.exit_to_mode = M::Walk_Step;
-        b->Print();
       } else {
         Serial.println(F("Move right foot."));
 
@@ -89,12 +91,12 @@ void ModeRunners::Walk(Basilisk* b) {
         b->cmd_.set_mags.exit_to_mode = M::SetPhi_Init;
         b->cmd_.set_phi.SetPhis(-0.25 - c.eightwalk_l + c.stride,
                                 -0.25 - c.eightwalk_r + c.stride);
-        b->cmd_.set_phi.SetPhiDots(0.2, 0.1);
-        b->cmd_.set_phi.SetPhiDDots(1.0, 0.1);
+        b->cmd_.set_phi.SetPhiDots(phidot_std, phidot_std);
+        b->cmd_.set_phi.SetPhiDDots(phiddot_std, phiddot_std);
         b->cmd_.set_phi.SetDampThr(0.1);
         b->cmd_.set_phi.exit_to_mode = M::Walk_Step;
-        b->Print();
       }
+      b->Print();
 
       c.current_step++;
       c.phase = !c.phase;

@@ -20,32 +20,15 @@ class Servo : public Moteus {
                  return options;
                }()},
         pm_fmt_{pm_fmt},
-        q_fmt_{q_fmt},
-        prev_aux2_pos_coiled_{-0.25} {}
+        q_fmt_{q_fmt} {}
 
-  bool SetQuery() {
-    const auto got_rpl = static_cast<Moteus*>(this)->SetQuery(q_fmt_);
-    if (got_rpl) SetReply();
-    return got_rpl;
-  }
+  bool SetQuery() { return static_cast<Moteus*>(this)->SetQuery(q_fmt_); }
 
   // aux2 position uncoiled.
   QRpl GetReply() {
     auto rpl = last_result().values;
-    rpl.abs_position += aux2_revs_;  // Uncoil aux2 position.
+    if (rpl.abs_position > 0.25) rpl.abs_position -= 1.0;
     return rpl;
-  }
-
-  void SetReply() {
-    const auto new_aux2_pos_coiled = last_result().values.abs_position;
-    const auto delta_aux2_pos_coiled =
-        new_aux2_pos_coiled - prev_aux2_pos_coiled_;
-    if (delta_aux2_pos_coiled > 0.5) {
-      aux2_revs_--;
-    } else if (delta_aux2_pos_coiled < -0.5) {
-      aux2_revs_++;
-    }
-    prev_aux2_pos_coiled_ = new_aux2_pos_coiled;
   }
 
   void SetPosition(const PmCmd& cmd) {
@@ -56,13 +39,6 @@ class Servo : public Moteus {
   const int id_;
   const PmFmt* const pm_fmt_;
   const QFmt* const q_fmt_;
-  double prev_aux2_pos_coiled_;  // This field is solely for keeping
-                                 // aux2 position of the previous Reply
-                                 // in order to compare it to a new Reply
-                                 // to track aux2 revolutions, since
-                                 // the Moteus Arduino library silently
-                                 // updates `last_result_` within `SetQuery()`.
-  int aux2_revs_ = 0;
 
  public:
   void Print() {

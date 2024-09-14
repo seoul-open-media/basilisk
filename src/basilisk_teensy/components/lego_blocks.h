@@ -5,8 +5,8 @@
 
 /* Stores the history of feet contact to groud to two uint64_t's,
  * each for each foot in `state_[01].contact`. MSB contains recent data,
- * and LSB oldest, 1 representing contact and 0 detachment.
- * Check if contact has continued for n last poll by `state_.Contact(n)`.
+ * and LSB oldest, 1 representing contact and 0 detachment. There are helper
+ * methods in the state struct to verify meaningful contact.
  * Why named LegoBlocks? Cuz you scream when you step on them. */
 class LegoBlocks {
  public:
@@ -33,25 +33,39 @@ class LegoBlocks {
     last_run_time = millis();
   }
 
+  void Reset() { state_->contact = 0; }
+
   const int pins_[2];
   struct {
     uint64_t contact = 0;
     uint32_t last_contact_time = 0;
-    bool Contact(uint8_t n) {
+    bool ConsecutiveContact(uint8_t n) {
       if (n == 0 || n > 64) {
-        Serial.println("LegoBlocks::Contact: Bad argument");
+        Serial.println("LegoBlocks::ConsecutiveContact: Bad argument");
         return false;
       }
 
       return !(~contact >> (64 - n));
     }
-    bool Detached(uint8_t n) {
+    bool ConsecutiveDetachment(uint8_t n) {
       if (n == 0 || n > 64) {
-        Serial.println("LegoBlocks::Detached: Bad argument");
+        Serial.println("LegoBlocks::ConsecutiveDetachment: Bad argument");
         return false;
       }
 
       return !(contact >> (64 - n));
+    }
+    bool ProbablyContact(uint8_t n) {
+      if (n == 0 || n > 64) {
+        Serial.println("LegoBlocks::ProbablyContact: Bad argument");
+        return false;
+      }
+
+      uint8_t cnt = 0;
+      for (uint8_t i = 0; i < 64; i++) {
+        if (contact & (utils::one_uint64 << i)) cnt++;
+      }
+      return cnt >= n;
     }
   } state_[2];
   uint32_t last_run_time = 0;

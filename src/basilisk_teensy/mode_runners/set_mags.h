@@ -27,12 +27,12 @@ void ModeRunners::SetMags(Basilisk* b) {
 
         for (uint8_t lr = 0; lr < 2; lr++) {
           if (b->cmd_.set_mags.expected_contact[lr]) {
-            if (!b->lego_.state_[lr].Contact(
+            if (!b->lego_.state_[lr].ConsecutiveContact(
                     b->cmd_.set_mags.consec_verif[lr])) {
               return false;
             }
           } else {
-            if (!b->lego_.state_[lr].Detached(
+            if (!b->lego_.state_[lr].ConsecutiveDetachment(
                     b->cmd_.set_mags.consec_verif[lr])) {
               return false;
             }
