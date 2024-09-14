@@ -15,7 +15,7 @@ void ExecFuncs::Walk(Basilisk& b) {
 
       // Stop both Servos.
       Serial.println(F("Stop both Servos."));
-      b.CommandBoth([](Servo& s) { s.Stop(); });
+      b.CommandBoth([](Servo* s) { s.Stop(); });
       b.Print();
 
       // Reset current_step.
@@ -125,7 +125,7 @@ void ExecFuncs::Walk(Basilisk& b) {
         if (c.current_step < c.steps) {
           c.fsm_state = FSM::Move;
         } else {
-          b.CommandBoth([](Servo& s) { s.Stop(); });
+          b.CommandBoth([](Servo* s) { s.Stop(); });
           b.cmd_.mode = Basilisk::Command::Mode::None;
         }
       }

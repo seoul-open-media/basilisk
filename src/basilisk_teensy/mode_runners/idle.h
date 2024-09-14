@@ -10,7 +10,7 @@ void ModeRunners::Idle(Basilisk* b) {
   switch (m) {
     case M::Idle_Init: {
       Serial.println("ModeRunners::Idle(Init)");
-      b->CommandBoth([](Servo& s) { s.SetStop(); });
+      b->CommandBoth([](Servo* s) { s->SetStop(); });
       b->mags_.FixAll();
       m = M::Idle_Nop;
       nop_init = true;

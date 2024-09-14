@@ -12,7 +12,7 @@ void ExecFuncs::Stop(Basilisk& b) {
     case FSM::Init: {
       Serial.println(F("ExecFuncs::Stop(FSM::Init)"));
 
-      b.CommandBoth([](Servo& s) { s.Stop(); });
+      b.CommandBoth([](Servo* s) { s.Stop(); });
 
       b.cmd_.mode = Basilisk::Command::Mode::None;
     } break;

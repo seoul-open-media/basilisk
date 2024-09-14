@@ -3,13 +3,13 @@
 #include "../servo_units/basilisk.h"
 
 void SerialReplySender(Basilisk& b) {
-  b.CommandBoth([](Servo& s) { s.Print(); });
+  b.CommandBoth([](Servo* s) { s->Print(); });
 
   Serial.print("phi_l:");
-  Serial.print(b.l_.GetReply().position);
+  Serial.print(b.l_.GetReply().abs_position, 3);
   Serial.print(",");
   Serial.print("phi_r:");
-  Serial.print(b.r_.GetReply().position);
+  Serial.print(b.r_.GetReply().abs_position, 3);
   Serial.println();
 
   Serial.print("lpsx:");
@@ -20,13 +20,13 @@ void SerialReplySender(Basilisk& b) {
   Serial.println();
 
   Serial.print("roll:");
-  Serial.print(b.imu_.euler_[0]);
+  Serial.print(b.imu_.euler_[0], 3);
   Serial.print(",");
   Serial.print("pitch:");
-  Serial.print(b.imu_.euler_[1]);
+  Serial.print(b.imu_.euler_[1], 3);
   Serial.print(",");
   Serial.print("yaw:");
-  Serial.print(b.imu_.GetYaw(true));
+  Serial.print(b.imu_.GetYaw(true), 3);
   Serial.println();
 
   Serial.print("contact_l:");

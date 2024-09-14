@@ -22,7 +22,7 @@ void ExecFuncs::Gee(Basilisk& b) {
       c.current_step = 0;
 
       // Begin moving to zero pose and enter FSM::Wait.
-      b.CommandBoth([](Servo& s) { s.Position(-0.25); });
+      b.CommandBoth([](Servo* s) { s.Position(-0.25); });
       c.fsm_state = FSM::Wait;
     } break;
     case FSM::Wait: {
@@ -35,7 +35,7 @@ void ExecFuncs::Gee(Basilisk& b) {
         if (c.current_step < c.steps) {
           c.fsm_state = FSM::Step;
         } else {
-          b.CommandBoth([](Servo& s) { s.Stop(); });
+          b.CommandBoth([](Servo* s) { s.Stop(); });
           b.cmd_.mode = Basilisk::Command::Mode::None;
         }
       }

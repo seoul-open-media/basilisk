@@ -13,7 +13,7 @@ void ExecFuncs::DExactM025(Basilisk& b) {
     case FSM::Init: {
       Serial.println(F("ExecFuncs::DExactM025(FSM::Init)"));
 
-      b.CommandBoth([](Servo& s) {
+      b.CommandBoth([](Servo* s) {
         s.Stop();
         delay(50);
         s.d(F("d exact -0.25"));

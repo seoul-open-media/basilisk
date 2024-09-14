@@ -22,7 +22,7 @@ void ExecFuncs::SetPhi(Basilisk& b) {
 
       // Query is done at Executer::Run before entering FSM-based stage.
       if (b.BothComplete(4)) {
-        b.CommandBoth([](Servo& s) { s.Stop(); });
+        b.CommandBoth([](Servo* s) { s.Stop(); });
 
         b.cmd_.mode = Basilisk::Command::Mode::None;
       }

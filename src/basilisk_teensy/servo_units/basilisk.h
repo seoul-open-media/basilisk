@@ -86,7 +86,7 @@ class Basilisk {
       Serial.println("Basilisk: CanFdDriver setup failed");
       return false;
     }
-    CommandBoth([](Servo& s) { s.SetStop(); });
+    CommandBoth([](Servo* s) { s->SetStop(); });
     Serial.println("Basilisk: Both Servos Stopped");
 
     Serial.println("Basilisk: All components setup succeeded");
@@ -113,32 +113,33 @@ class Basilisk {
 
   struct Command {
     enum class Mode {
-      Idle_Init,      // -> Idle_Nop
-      Idle_Nop,       // .
-      Wait,           // -> ExitMode
-      Free,           // -> Wait(3s) -> Idle_Init
-      SetPhi,         // -> ExitMode
-      SetMags,        // -> Wait -> ExitMode
-      Walk_Init,      // -> SetMags -> SetPhi(InitL) -> Walk_InitPhiR
-      Walk_InitPhiR,  // -> SetMags -> SetPhi(InitR) -> Walk_Step
-      Walk_Step,      // -> SetMags -> SetPhi -> Walk_Step(++step) ~> Idle_Init
-      Diamond_Init,   // -> SetPhi -> Diamond_Step
-      Diamond_Step,   // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
-      Gee_Init,       // -> SetPhi -> Gee_Step
-      Gee_Step,       // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
-      WalkToPos,      // ~> Idle_Init
-      BounceWalk      // .
+      Idle_Init,     // -> Idle_Nop
+      Idle_Nop,      // .
+      Wait,          // -> Exit
+      Free,          // -> Wait(3s) -> Idle_Init
+      SetPhi_Init,   // -> Wait(50ms) -> SetPhi_Stop
+      SetPhi_Stop,   // -> Exit
+      SetMags,       // -> Wait -> Exit
+      Face,          // (L) -> SetMags -> SetPhi -> Face(R) => Exit
+      Walk_Init,     // -> SetMags -> SetPhi(InitL) -> Walk_Step
+      Walk_Step,     // -> SetMags -> SetPhi -> Walk_Step(++step) ~> Idle_Init
+                     // Todo: Walk_Init -> Face -> Walk_Step
+      Diamond_Init,  // -> SetPhi -> Diamond_Step
+      Diamond_Step,  // -> SetPhi -> Diamond_Step(++step) ~> Idle_Init
+      Gee_Init,      // -> SetPhi -> Gee_Step
+      Gee_Step,      // -> SetPhi -> Gee_Step(++step) ~> Idle_Init
+      WalkToPos,     // ~> Idle_Init
+      WalkToDir,     // ~> Idle_Init
+      BounceWalk     // .
     } mode = Mode::Idle_Init;
 
     struct Wait {
-      uint32_t init_time;
-      bool (*exit_condition)(Basilisk*);
       Mode exit_to_mode;
+      bool (*exit_condition)(Basilisk*);
+      uint32_t init_time;
     } wait;
 
     struct SetPhi {
-      friend struct ModeRunners;
-
       Mode exit_to_mode;
 
       void SetPhis(const double& _tgt_phi_l, const double& _tgt_phi_r) {
@@ -148,16 +149,18 @@ class Basilisk {
             isnan(_tgt_phi_r) ? NaN : constrain(_tgt_phi_r, -0.625, 0.125);
       }
       void SetPhiDots(const double& _phidot_l, const double& _phidot_r) {
-        tgt_phidot[0] = constrain(abs(_phidot_l), 0.0, 0.75);
-        tgt_phidot[1] = constrain(abs(_phidot_r), 0.0, 0.75);
+        tgt_phidot[0] = min(abs(_phidot_l), 0.75);
+        tgt_phidot[1] = min(abs(_phidot_r), 0.75);
       }
       void SetPhiDDots(const double& _phiddot_l, const double& _phiddot_r) {
-        tgt_phiddot[0] = constrain(abs(_phiddot_l), 0.0, 3.0);
-        tgt_phiddot[1] = constrain(abs(_phiddot_r), 0.0, 3.0);
+        tgt_phiddot[0] = min(abs(_phiddot_l), 3.0);
+        tgt_phiddot[1] = min(abs(_phiddot_r), 3.0);
       }
       void SetDampThr(const double& _damp_thr) { damp_thr = abs(_damp_thr); }
 
      private:
+      friend struct ModeRunners;
+
       double tgt_phi[2] = {-0.25, -0.25};  // [0]: l, [1]: r
       double tgt_phidot[2] = {0.1, 0.1};   // [0]: l, [1]: r
       double tgt_phiddot[2] = {0.1, 0.1};  // [0]: l, [1]: r
@@ -166,15 +169,24 @@ class Basilisk {
     } set_phi;
 
     struct SetMags {
-      Mode exit_mode;
-
+      Mode exit_to_mode;
       MagnetStrength strengths[4] = {MagnetStrength::Max, MagnetStrength::Max,
                                      MagnetStrength::Max, MagnetStrength::Max};
       bool expected_contact[2] = {true, true};
-      uint8_t expected_consec_verif[2] = {32, 32};
-      uint32_t min_wait_time = 1000;
+      uint8_t consec_verif[2] = {32, 32};
+      uint32_t min_wait_time = 100;
       uint32_t max_wait_time = 10000;
     } set_mags;
+
+    struct Face {
+      Mode exit_to_mode;
+      double yaw;  // NaN means current yaw.
+
+     private:
+      friend struct ModeRunners;
+
+      bool phase = false;
+    } face;
 
     struct Walk {
       friend struct ModeRunners;
@@ -263,13 +275,13 @@ class Basilisk {
 
   template <typename ServoCommand>
   void CommandBoth(ServoCommand c) {
-    for (auto* s : lr_) c(*s);
+    for (auto* s : lr_) c(s);
   }
 
   void Print() {
-    CommandBoth([](Servo& s) {
-      s.SetQuery();
-      s.Print();
+    CommandBoth([](Servo* s) {
+      s->SetQuery();
+      s->Print();
     });
   }
 };

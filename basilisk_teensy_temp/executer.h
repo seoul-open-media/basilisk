@@ -36,11 +36,11 @@ class Executer {
         c.d_exact_m025 = C::DExactM025{};
       } break;
       case 5: {  // SetPhi: -0.25
-        m = M::SetPhi;
+        m = M::SetPhi_Init;
         c.set_phi = cmd_presets::set_phi::m025;
       } break;
       case 6: {  // SetPhi: 0.0
-        m = M::SetPhi;
+        m = M::SetPhi_Init;
         c.set_phi = cmd_presets::set_phi::zero;
       } break;
       case 7: {  // Square walk: 45 degree stride
@@ -83,7 +83,7 @@ class Executer {
   void Run() {
     ParseNeokeyCmd();
 
-    basilisk.CommandBoth([](Servo& s) { s.Query(); });
+    basilisk.CommandBoth([](Servo* s) { s.Query(); });
 
     switch (m) {
       case M::Stop: {
@@ -95,7 +95,7 @@ class Executer {
       case M::DExactM025: {
         ExecFuncs::DExactM025(basilisk);
       } break;
-      case M::SetPhi: {
+      case M::SetPhi_Init: {
         ExecFuncs::SetPhi(basilisk);
       } break;
       case M::Walk: {

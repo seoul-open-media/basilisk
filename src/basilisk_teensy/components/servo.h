@@ -20,7 +20,8 @@ class Servo : public Moteus {
                  return options;
                }()},
         pm_fmt_{pm_fmt},
-        q_fmt_{q_fmt} {}
+        q_fmt_{q_fmt},
+        prev_aux2_pos_coiled_{-0.25} {}
 
   bool SetQuery() {
     const auto got_rpl = static_cast<Moteus*>(this)->SetQuery(q_fmt_);
@@ -72,17 +73,17 @@ class Servo : public Moteus {
     Serial.print(F(" / mod "));
     Serial.print(static_cast<int>(rpl.mode));
     Serial.print(F(" / pos "));
-    Serial.print(rpl.position);
+    Serial.print(rpl.position, 3);
     Serial.print(F(" / vel "));
-    Serial.print(rpl.velocity);
+    Serial.print(rpl.velocity, 3);
     Serial.print(F(" / trq "));
-    Serial.print(rpl.torque);
+    Serial.print(rpl.torque, 3);
     Serial.print(F(" / qcr "));
     Serial.print(rpl.q_current);
     Serial.print(F(" / dcr "));
     Serial.print(rpl.d_current);
     Serial.print(F(" / a2p "));
-    Serial.print(rpl.abs_position);
+    Serial.print(rpl.abs_position, 3);
     Serial.print(F(" / mtp "));
     Serial.print(rpl.motor_temperature);
     Serial.print(F(" / tjc "));
@@ -96,9 +97,9 @@ class Servo : public Moteus {
     Serial.print(F(" / flt "));
     Serial.print(rpl.fault);
     Serial.print(F(" / a2v "));
-    Serial.print(rpl.extra[0].value);
+    Serial.print(rpl.extra[0].value, 3);
     Serial.print(F(" / evl "));
-    Serial.print(rpl.extra[1].value);
+    Serial.print(static_cast<uint8_t>(rpl.extra[1].value), BIN);
     Serial.println();
   }
 };

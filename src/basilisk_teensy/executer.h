@@ -8,7 +8,7 @@ class Executer {
   Executer(Basilisk* b) : b_{b} {}
 
   void Run() {
-    b_->CommandBoth([](Servo& s) { s.SetQuery(); });
+    b_->CommandBoth([](Servo* s) { s->SetQuery(); });
 
     switch (b_->mux_cr_) {
       case Basilisk::MuxCR::Neokey: {

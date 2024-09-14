@@ -28,7 +28,7 @@ void setup() {
   // neokey_cr.Setup();
   // basilisk.ems_.SetPinMode();
 
-  // basilisk.CommandBoth([](Servo& s) { s.Stop(); });
+  // basilisk.CommandBoth([](Servo* s) { s.Stop(); });
 }
 
 // Beat executer_beat{10};

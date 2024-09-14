@@ -1,6 +1,7 @@
 #pragma once
 
 #include "diamond.h"
+#include "face.h"
 #include "free.h"
 #include "gee.h"
 #include "idle.h"
