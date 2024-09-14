@@ -55,17 +55,26 @@ class LegoBlocks {
 
       return !(contact >> (64 - n));
     }
-    bool ProbablyContact(uint8_t n) {
-      if (n == 0 || n > 64) {
-        Serial.println("LegoBlocks::ProbablyContact: Bad argument");
-        return false;
-      }
-
+    uint8_t CountContact() {
       uint8_t cnt = 0;
       for (uint8_t i = 0; i < 64; i++) {
         if (contact & (utils::one_uint64 << i)) cnt++;
       }
-      return cnt >= n;
+      return cnt;
+    }
+    bool ProbableContact(uint8_t n) {
+      if (n == 0 || n > 64) {
+        Serial.println("LegoBlocks::ProbableContact: Bad argument");
+        return false;
+      }
+      return CountContact() >= n;
+    }
+    bool ProbableDetachment(uint8_t n) {
+      if (n == 0 || n > 64) {
+        Serial.println("LegoBlocks::ProbableDetachment: Bad argument");
+        return false;
+      }
+      return 64 - CountContact() >= n;
     }
   } state_[2];
   uint32_t last_run_time = 0;
