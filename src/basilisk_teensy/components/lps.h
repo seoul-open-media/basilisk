@@ -67,6 +67,19 @@ class Lps {
     }
   }
 
+ private:
+  void SetXY() {
+    const auto a = dists_sm_[0].get();
+    const auto b = dists_sm_[1].get();
+    const auto c = dists_sm_[2].get();
+
+    x_ = (sq(a) - sq(b) + sq(cfg_.c)) / (2 * cfg_.c);
+    y_ = cfg_.y_c - sqrt(sq(c) - sq(x_ - cfg_.x_c));
+
+    last_xy_update_ = millis();
+  }
+
+ public:
   uint8_t dists_raw_[3] = {0, 0, 0};
   union {
     uint8_t bytes[3];
@@ -80,16 +93,4 @@ class Lps {
   const struct {
     const double c, x_c, y_c;
   } cfg_;
-
- private:
-  void SetXY() {
-    const auto a = dists_sm_[0].get();
-    const auto b = dists_sm_[1].get();
-    const auto c = dists_sm_[2].get();
-
-    x_ = (sq(a) - sq(b) + sq(cfg_.c)) / (2 * cfg_.c);
-    y_ = cfg_.y_c - sqrt(sq(c) - sq(x_ - cfg_.x_c));
-
-    last_xy_update_ = millis();
-  }
 };

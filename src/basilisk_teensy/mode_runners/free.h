@@ -10,12 +10,13 @@ void ModeRunners::Free(Basilisk* b) {
       Serial.println("ModeRunners::Free()");
       b->CommandBoth([](Servo* s) { s->SetStop(); });
       b->mags_.FreeAll();
-      b->cmd_.wait.init_time = millis();
+
+      m = M::Wait;
       b->cmd_.wait.exit_condition = [](Basilisk* b) {
         return (millis() - b->cmd_.wait.init_time > 3000);
       };
       b->cmd_.wait.exit_to_mode = M::Idle_Init;
-      m = M::Wait;
+      b->cmd_.wait.init_time = millis();
     } break;
     default:
       break;

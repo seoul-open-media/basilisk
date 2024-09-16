@@ -11,6 +11,10 @@ enum class MagnetStrength : uint8_t {
   Min = 255,
 };
 
+MagnetStrength Bool2MS(bool fix) {
+  return fix ? MagnetStrength::Max : MagnetStrength::Min;
+}
+
 // Part | LeftAnkle | LeftToe | RightAnkle | RightToe
 // ID   | 0         | 1       | 2          | 3
 // Pin  | 3         | 4       | 5          | 6

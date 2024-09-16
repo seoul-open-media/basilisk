@@ -1,11 +1,12 @@
 #pragma once
 
-#include "diamond.h"
-#include "face.h"
 #include "free.h"
-#include "gee.h"
 #include "idle.h"
+#include "pivot.h"
 #include "set_mags.h"
-#include "set_phi.h"
+#include "set_phis.h"
 #include "wait.h"
 #include "walk.h"
+
+// #include "diamond.h"
+// #include "gee.h"

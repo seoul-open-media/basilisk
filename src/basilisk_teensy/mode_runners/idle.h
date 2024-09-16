@@ -4,7 +4,6 @@
 
 void ModeRunners::Idle(Basilisk* b) {
   auto& m = b->cmd_.mode;
-
   static bool nop_init = false;
 
   switch (m) {

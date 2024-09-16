@@ -6,6 +6,8 @@
 #include <Smoothed.h>
 #include <math.h>
 
+#include "utils.h"
+
 using namespace mjbots::moteus;
 using PmCmd = PositionMode::Command;
 using PmFmt = PositionMode::Format;

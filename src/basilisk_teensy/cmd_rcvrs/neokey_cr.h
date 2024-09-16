@@ -57,34 +57,34 @@ class NeokeyCommandReceiver {
       case 2: {  // Free magnets
         m = M::Free;
       } break;
-      case 3: {  // SquareWalk
-        m = M::Walk_Init;
-        c.walk = C::Walk{0.125, 0.0, 0.0, 8, false};
-      } break;
-      case 4: {  // CatWalk
-        m = M::Walk_Init;
-        c.walk = C::Walk{0.25, 0.0, 0.0, 4, false};
-      } break;
-      case 5: {  // BabyWalk
-        m = M::Walk_Init;
-        c.walk = C::Walk{10.0 / 360.0, 0.0, 0.0, 16, false};
-      } break;
-      case 6: {  // EightWalk
-        m = M::Walk_Init;
-        c.walk = C::Walk{0.125, 0.125, -0.125, 8, false};
-      } break;
-      case 7: {  // SquareDiamond
-        m = M::Diamond_Init;
-        c.diamond = C::Diamond{0.125};
-      } break;
-      case 8: {  // LeftGee
-        m = M::Gee_Init;
-        c.gee = C::Gee{-0.125, 8};
-      } break;
-      case 9: {  // RightGee
-        m = M::Gee_Init;
-        c.gee = C::Gee{-0.125, 8};
-      } break;
+      // case 3: {  // SquareWalk
+      //   m = M::Walk_Init;
+      //   c.walk = C::Walk{0.125, 0.0, 0.0, 8, false};
+      // } break;
+      // case 4: {  // CatWalk
+      //   m = M::Walk_Init;
+      //   c.walk = C::Walk{0.25, 0.0, 0.0, 4, false};
+      // } break;
+      // case 5: {  // BabyWalk
+      //   m = M::Walk_Init;
+      //   c.walk = C::Walk{10.0 / 360.0, 0.0, 0.0, 16, false};
+      // } break;
+      // case 6: {  // EightWalk
+      //   m = M::Walk_Init;
+      //   c.walk = C::Walk{0.125, 0.125, -0.125, 8, false};
+      // } break;
+      // case 7: {  // SquareDiamond
+      //   m = M::Diamond_Init;
+      //   c.diamond = C::Diamond{0.125};
+      // } break;
+      // case 8: {  // LeftGee
+      //   m = M::Gee_Init;
+      //   c.gee = C::Gee{-0.125, 8};
+      // } break;
+      // case 9: {  // RightGee
+      //   m = M::Gee_Init;
+      //   c.gee = C::Gee{-0.125, 8};
+      // } break;
       default: {  // Whatever left keys are assigned Idle Mode.
         m = M::Idle_Init;
       } break;
