@@ -22,6 +22,7 @@ void ModeRunners::Pivot(Basilisk* b) {
 
       init_yaw = b->imu_.GetYaw(true);
       tgt_yaw = c.tgt_yaw(b);
+      if (isnan(tgt_yaw)) tgt_yaw = b->imu_.GetYaw(true);
 
       // Check if we need to set didimbal.
       if (c.bend[didim_idx].isnan()) {
@@ -76,7 +77,13 @@ void ModeRunners::Pivot(Basilisk* b) {
       const auto sgnd_stride = c.stride * (c.didimbal == BOOL_L ? 1.0 : -1.0);
       interm_yaw = b->imu_.GetYaw(true);
       const auto interm_error = interm_yaw - init_yaw;
-      phis.tgt_phi[didim_idx] = sgnd_stride - c.bend[didim_idx] - interm_error;
+      if (isnan(c.bend[didim_idx])) {
+        phis.tgt_phi[didim_idx] = b->s_[didim_idx]->GetReply().abs_position +
+                                  sgnd_stride + tgt_yaw - init_yaw;
+      } else {
+        phis.tgt_phi[didim_idx] =
+            sgnd_stride - c.bend[didim_idx] - interm_error;
+      }
       phis.tgt_phi[kick_idx] = -c.bend[kick_idx] + sgnd_stride;
       phis.tgt_phispeed[didim_idx] = c.speed;
       phis.tgt_phispeed[kick_idx] = c.speed;

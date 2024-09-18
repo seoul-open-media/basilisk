@@ -326,8 +326,21 @@ class Basilisk {
     } walk_to_pos;
 
     struct Sufi {
+      LR init_didimbal;
+      double tgt_yaw;
       double stride;
-    };
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccel acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint8_t steps;
+
+     private:
+      friend struct ModeRunners;
+      Pivot pivots[2];
+      uint32_t min_durs[2];
+      uint32_t max_durs[2];
+    } sufi;
 
     // struct Diamond {
     //   friend struct ModeRunners;
