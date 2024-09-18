@@ -3,10 +3,11 @@
 #include "../servo_units/basilisk.h"
 
 struct BasiliskOneshots {
+  static void CRMuxXbee(Basilisk*);
   static void SetBaseYaw(Basilisk*);
 
   static inline const std::map<uint8_t, void (*)(Basilisk*)> oneshots = {
-      {0, &SetBaseYaw}};
+      {0, &CRMuxXbee}, {1, &SetBaseYaw}};
 
   static void Shoot(Basilisk* b) {
     for (uint8_t oneshot = 0; oneshot < 8; oneshot++) {

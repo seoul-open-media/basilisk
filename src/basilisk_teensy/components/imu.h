@@ -53,6 +53,8 @@ class Imu {
           for (int i = 0; i < 3; i++) {
             euler_[i] = atof(temp[i]) / 360.0;
           }
+          euler_[2] *= -1.0;  // Translate to vertical up = +z
+                              // right hand system.
           const auto delta_yaw_coiled = euler_[2] - prev_yaw_coiled;
           if (delta_yaw_coiled > 0.5) {
             yaw_revs_--;

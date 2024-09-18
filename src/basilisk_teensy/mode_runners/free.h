@@ -7,13 +7,13 @@ void ModeRunners::Free(Basilisk* b) {
 
   switch (m) {
     case M::Free: {
-      Serial.println("ModeRunners::Free()");
-      b->CommandBoth([](Servo* s) { s->SetStop(); });
-      b->mags_.FreeAll();
+      Serial.println("ModeRunners::Free");
 
+      b->CommandBoth([](Servo* s) { s->SetStop(); });
+      b->mags_.ReleaseAll();
       m = M::Wait;
       b->cmd_.wait.exit_condition = [](Basilisk* b) {
-        return (millis() - b->cmd_.wait.init_time > 3000);
+        return millis() - b->cmd_.wait.init_time > 3000;
       };
       b->cmd_.wait.exit_to_mode = M::Idle_Init;
       b->cmd_.wait.init_time = millis();

@@ -28,8 +28,16 @@
 
 class Lps {
  public:
-  Lps(const double& c, const double& x_c, const double& y_c)
-      : cfg_{.c = c, .x_c = x_c, .y_c = y_c} {}
+  Lps(const double& c, const double& x_c, const double& y_c,  //
+      const double& minx, const double& maxx,                 //
+      const double& miny, const double& maxy)
+      : cfg_{.c = c,
+             .x_c = x_c,
+             .y_c = y_c,
+             .minx = minx,
+             .maxx = maxx,
+             .miny = miny,
+             .maxy = maxy} {}
 
   // Must be called before use.
   bool Setup() {
@@ -80,6 +88,11 @@ class Lps {
   }
 
  public:
+  bool Bound() {
+    return cfg_.minx < x_ && x_ < cfg_.maxx &&  //
+           cfg_.miny < y_ && y_ < cfg_.maxy;
+  }
+
   uint8_t dists_raw_[3] = {0, 0, 0};
   union {
     uint8_t bytes[3];
@@ -91,6 +104,7 @@ class Lps {
   double x_ = 0.0, y_ = 0.0;
   uint32_t last_xy_update_ = 0;
   const struct {
-    const double c, x_c, y_c;
+    double c, x_c, y_c;
+    double minx, maxx, miny, maxy;
   } cfg_;
 };

@@ -9,7 +9,13 @@
 // Basilisk configuration.
 struct Basilisk::Configuration cfg {
   .servo{.id_l = 1, .id_r = 2, .bus = 1},
-      .lps{.c = 300.0, .x_c = 300.0, .y_c = 300.0},
+      .lps{.c = 300.0,
+           .x_c = 300.0,
+           .y_c = 300.0,
+           .minx = 50.0,
+           .maxx = 250.0,
+           .miny = 50.0,
+           .maxy = 250.0},
       .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
       .mags {
     .pin_la = 3, .pin_lt = 4, .pin_ra = 5, .pin_rt = 6, .run_interval = 100
@@ -41,6 +47,6 @@ void loop() {
   static Beat executer_beat{10};
   if (executer_beat.Hit()) exec.Run();
 
-  static Beat serial_plotter_rs_beat{100};
+  static Beat serial_plotter_rs_beat{250};
   if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
 }

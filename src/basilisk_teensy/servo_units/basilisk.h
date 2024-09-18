@@ -22,13 +22,9 @@ class Basilisk {
   Imu imu_;          // Run every loop().
   LegoBlocks lego_;  // Run in regular interval.
   Magnets mags_;     // Run in regular interval.
-  Beat lego_beat_;
-  Beat mags_beat_;
-  const double gr_ = 21.0;  // delta_rotor = delta_output * gear_ratio
-  const PmCmd* const pm_cmd_template_;
 
-  ////////////////////
-  // Configuration: //
+  ///////////////////////////////////
+  // Configurations & constructor: //
 
   struct Configuration {
     struct {
@@ -37,6 +33,7 @@ class Basilisk {
     } servo;
     struct {
       double c, x_c, y_c;
+      double minx, maxx, miny, maxy;
     } lps;
     struct {
       int pin_l = 23, pin_r = 29;
@@ -46,51 +43,55 @@ class Basilisk {
       uint8_t pin_la = 3, pin_lt = 4, pin_ra = 5, pin_rt = 6;
       uint32_t run_interval = 100;
     } mags;
-  };
+  } cfg_;
 
-  //////////////////
-  // Constructor: //
+  const double gr_ = 21.0;  // delta_rotor = delta_output * gear_ratio
+  const PmCmd* const pm_cmd_template_;
 
   Basilisk(const Configuration& cfg)
-      : l_{cfg.servo.id_l, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
+      : cfg_{cfg},
+        l_{cfg.servo.id_l, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         r_{cfg.servo.id_r, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         lr_{&l_, &r_},
         pm_cmd_template_{&globals::pm_cmd_template},
-        lps_{cfg.lps.c, cfg.lps.x_c, cfg.lps.y_c},
+        lps_{cfg.lps.c,    cfg.lps.x_c,  cfg.lps.y_c,  //
+             cfg.lps.minx, cfg.lps.maxx, cfg.lps.miny, cfg.lps.maxy},
         imu_{},
         lego_{cfg.lego.pin_l, cfg.lego.pin_r},
         mags_{&lego_,                            //
               cfg.mags.pin_la, cfg.mags.pin_lt,  //
-              cfg.mags.pin_ra, cfg.mags.pin_rt},
-        lego_beat_{cfg.lego.run_interval},
-        mags_beat_{cfg.mags.run_interval} {}
+              cfg.mags.pin_ra, cfg.mags.pin_rt} {}
 
-  ///////////////////
-  // Setup method: //
+  ////////////////////////////////////////////////////////////
+  // Setup method (should be called in setup() before use): //
 
-  // Should be called before use.
   bool Setup() {
-    if (!CanFdDriverInitializer::Setup(1)) {
+    if (!CanFdDriverInitializer::Setup(cfg_.servo.bus)) {
       Serial.println("Basilisk: CanFdDriver setup failed");
       return false;
     }
+
     CommandBoth([](Servo* s) {
       s->SetStop();
       s->Print();
     });
     Serial.println("Basilisk: Both Servos Stopped, Queried and Printed");
+
     if (!lps_.Setup()) {
       Serial.println("Basilisk: LPS setup failed");
       return false;
     }
+
     if (!imu_.Setup()) {
       Serial.println("Basilisk: IMU setup failed");
       return false;
     }
+
     if (!lego_.Setup()) {
       Serial.println("Basilisk: LegoBlocks setup failed");
       return false;
     }
+
     if (!mags_.Setup()) {
       Serial.println("Basilisk: Magnets setup failed");
       return false;
@@ -106,38 +107,109 @@ class Basilisk {
   void Run() {
     lps_.Run();
     imu_.Run();
+    static Beat lego_beat_{cfg_.lego.run_interval};
     if (lego_beat_.Hit()) lego_.Run();
+    static Beat mags_beat_{cfg_.mags.run_interval};
     if (mags_beat_.Hit()) mags_.Run();
   }
 
   //////////////////////////////
   // Basilisk Command struct: //
 
-  enum class MuxCR : bool { Xbee, Neokey } mux_cr_ = MuxCR::Neokey;
+  enum class CRMux : bool { Xbee, Neokey } crmux_ = CRMux::Neokey;
 
   struct Command {
-    uint8_t oneshots;  // bit 0: SetBaseYaw
+    uint8_t oneshots;  // bit 0: CRMuxXbee
+                       // bit 1: SetBaseYaw
 
-    enum class Mode {
-      Idle_Init,     // -> Idle_Nop
-      Idle_Nop,      // .
-      Wait,          // -> Exit
-      Free,          // -> Wait -> Idle
-      SetMags,       // -> Wait -> Exit
-      SetPhis_Init,  // -> Wait -> SetPhis_Stop
-      SetPhis_Stop,  // -> Exit
-      Pivot_Init,    // -> SetMags -> SetPhis -> Pivot_Kick  // Set didimbal.
-      Pivot_Kick,    // -> SetMags -> SetPhis -> Exit
-      Walk,          // -> Pivot -> Walk(++step) ~> Idle
-      ///////////////////////////////////////////////////////////////////
-      // Diamond_Init,  // -> SetPhis -> Diamond_Step
-      // Diamond_Step,  // -> SetPhis -> Diamond_Step(++step) ~> Idle_Init
-      // Gee_Init,      // -> SetPhis -> Gee_Step
-      // Gee_Step,      // -> SetPhis -> Gee_Step(++step) ~> Idle_Init
-      // Spin,          // -> Face -> Spin(++step) ~> Idle_Init
-      // WalkToDir,     // -> SetMags -> SetPhis -> WalkToDir(++step) ~>
-      // Idle_Init WalkToPos,     // -> SetMags -> SetPhis -> WalkToPos(++step)
-      // ~> Idle_Init BounceWalk,    // . Orbit          // .
+    enum class Mode : uint8_t {
+      // A child Mode cannot be future-chained after its parent Mode.
+      // No loop should be formed in a future-chain.
+
+      /* Idle: Kill everything. Relax.
+       * - Stop both Servos, attach all magnets,
+       * - then do nothing. */
+      Idle_Init,  // -> Idle_Nop
+      Idle_Nop,   // .
+
+      /* Wait: Wait for some condition to be met.
+       *       One of the future-chain-able Modes.
+       * - Loop until given condition is met,
+       * - then exit to designated Mode. */
+      Wait,  // -> Exit
+
+      /* Free: Stop and release magnets so you can lift it up from the ground.
+       *       Magnets will be reactivated when 3 seconds has passed. Only for
+       *       convenience in development or emergency during deployment.
+       * - Stop both Servos, release all magnets,
+       * - then wait 3 seconds,
+       * - then exit to Idle Mode. */
+      Free,  // -> Wait -> Idle
+
+      /* SetMags: Control magnets.
+       *          One of the future-chain-able Modes.
+       * - Attach or release individual magnets,
+       * - then wait for contact/detachment verification,
+       * - then exit to designated Mode. */
+      SetMags_Init,  // -> SetMags_Wait
+      SetMags_Wait,  // -> Exit
+
+      /* SetPhis: Control Servos to achieve target phis.
+       *          One of the future-chain-able Modes.
+       * - Reset fix cycles count,
+       * - then PositionMode-Command Servos continuously with .position
+       *   set to NaN, .velocity and .accel_limit set to computed as follows:
+       *   tgt_rtrvel = tgt_phi == NaN || abs(tgt_delta_phi) < fix_thr ? 0 :
+       *                21 * tgt_phispeed * (tgt_delta_phi >  damp_thr ?  1 :
+       *                                     tgt_delta_phi < -damp_thr ? -1 :
+       *                                     tgt_delta_phi / damp_thr);
+       *   tgt_rtracc = 21 * tgt_phiacc;
+       *   Fix cycles count is incremented every cycle where tgt_rtrvel == 0
+       *   and reset elsewhere. Wait until fix cycles count reaches threshold
+       *   for both Servos,
+       * - then exit to designated Mode.
+       * - Phi and duration will be clamped throughout. */
+      SetPhis_Init,  // -> SetPhis_Move
+      SetPhis_Move,  // -> Exit
+
+      /* Pivot: Pivot one foot (kickbal) about the other (didimbal).
+       *        The single fundamental element of all Basilisk movement except
+       *        for Gee. One of the future-chain-able Modes.
+       *
+       * - Attach and fix kickbal, release didimbal, and set
+       *   phi_didim = init_yaw - tgt_yaw - bend_didim
+       *   so that sig_didim = init_yaw - phi_didim
+       *                     = tgt_yaw + bend_didim,
+       * - then attach didimbal, release kickbal and set
+       *   phi_didim = -bend_didim +- stride
+       *   phi_kick  = -bend_kick  +- stride
+       *   so that yaw = sig_didim + phi_didim
+       *               = tgt_yaw +- stride,
+       *   and sig_kick = yaw - phi_kick
+       *                = tgt_yaw + bend_kick,
+       * - then exit to designated Mode.
+       * - Phi and duration will be clamped throughout. */
+      Pivot_Init,  // -> SetMags -> SetPhis -> Pivot_Kick
+      Pivot_Kick,  // -> SetMags -> SetPhis -> Exit
+
+      /* PivSeq: Perform a series of Pivots with time intervals. */
+      PivSeq_Init,  // -> PivSeq_Step
+      PivSeq_Step,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
+
+      /* Walk variants: Instances of PivSeq */
+      WalkToDir,
+
+      BounceWalk,
+      WalkToPos,
+      Orbit,
+      RandomWalk,
+      Diamond_Init,
+      Diamond_Step,
+
+      /* Gee: Gee, gee, gee, gee, baby, baby, baby. */
+      Shear_Init,
+      Shear_Move,
+      Gee,
     } mode = Mode::Idle_Init;
 
     struct Wait {
@@ -149,40 +221,84 @@ class Basilisk {
     struct SetMags {
       Mode exit_to_mode;
       MagnetStrength strengths[4];
-      bool expected_contact[2];  // true: contact, false: detachment
-      N64 verif_thr;
-      uint32_t min_wait_time;
-      uint32_t max_wait_time;
+      bool expected_state[2];     // [0]: l, [1]: r
+                                  // true: contact, false: detachment
+      N64 verif_thr;              // Exit condition priority:
+      uint32_t min_dur, max_dur;  // max_dur > min_dur > lego_verification
+
+     private:
+      friend struct ModeRunners;
+      uint32_t init_time;
     } set_mags;
 
     struct SetPhis {
       Mode exit_to_mode;
-      Phi tgt_phi[2];          // [0]: l, [1]: r
-      PhiDot tgt_phidot[2];    // [0]: l, [1]: r
-      PhiDDot tgt_phiddot[2];  // [0]: l, [1]: r
-      double damp_thr = 0.1;
-      double fix_thr = 0.01;
+      Phi tgt_phi[2];            // [0]: l, [1]: r
+      PhiSpeed tgt_phispeed[2];  // [0]: l, [1]: r
+      PhiAccel tgt_phiacc[2];    // [0]: l, [1]: r
+      double damp_thr;
+      double fix_thr;
+      uint8_t fix_cycles_thr;     // Exit condition priority:
+      uint32_t min_dur, max_dur;  // max_dur > min_dur = fixed_enough
+
+     private:
+      friend struct ModeRunners;
+      uint32_t init_time;
+      uint8_t fix_cycles[2];
     } set_phis;
 
     struct Pivot {
       Mode exit_to_mode;
-      double tgt_yaw;  // NaN means current yaw.
-      Phi stride;      // Forward this much more from tgt_yaw.
-                       // Negative value manifests as walking backwards.
-      Phi bend[2];     // = tgt_sig - tgt_yaw. NaN possible.
       LR didimbal;     // Foot to pivot about.
+      double tgt_yaw;  // NaN means the initial yaw when Pivot starts.
+      double stride;   // Forward this much more from tgt_yaw.
+                       // Negative value manifests as walking backwards.
+      Phi bend[2];     // [0]: l, [1]: r
+                       // tgt_sig == tgt_yaw + bend
+                       // or bend == -tgt_phi
+                       // NaN means preserve initial phi.
+      PhiSpeed speed;
+      PhiAccel accel;
+      uint32_t min_dur, max_dur;
+
+     private:
+      friend struct ModeRunners;
+      uint32_t init_time;
     } pivot;
 
-    struct Walk {
-      Pivot pivot[2];
-      uint8_t tot_steps;  // Counting both left and right steps.
-      LR init_didimbal;
+    struct PivSeq {
+      Mode exit_to_mode;
+      bool (*exit_condition)(Basilisk*);
+      Pivot* pivots;           // exit_to_mode, minmax_dur will be
+                               // written by PivSeq.
+      uint32_t* min_durs;      // It is the PivSeq's clients responsibility to
+      uint32_t* max_durs;      // cleanup memory.
+      uint8_t size;            // Perform 0...(loop_begin_idx - 1) once, then
+      uint8_t loop_begin_idx;  // perform (loop_begin_idx)...(size - 1) in loop,
+      uint8_t steps;           // until steps steps are made in total.
 
      private:
       friend struct ModeRunners;
       uint8_t cur_step;
-      LR cur_didimbal;
-    } walk;
+      uint8_t cur_idx;
+    } pivseq;
+
+    struct WalkToDir {
+      LR init_didimbal;
+      double tgt_yaw;
+      double stride;
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccel accel;
+      uint32_t min_stepdur, max_stepdur;
+      uint8_t steps;
+
+     private:
+      friend struct ModeRunners;
+      Pivot pivots[2];
+      uint32_t min_durs[2];
+      uint32_t max_durs[2];
+    } walk_to_dir;
 
     // struct Diamond {
     //   friend struct ModeRunners;
@@ -219,7 +335,7 @@ class Basilisk {
     //   double stride = 0.125;
     //   // Total steps counting both ankle shears and toe shears.
     //   uint8_t steps = 8;
-    //   // false = fix ankle, true = fix toe.
+    //   // false = attach ankle, true = attach toe.
     //   bool phase = false;
     //  private:
     //   uint8_t current_step = 0;
@@ -227,6 +343,7 @@ class Basilisk {
   } cmd_;
 
   struct Reply {
+    Mode* mode;
     double* lpsx;
     double* lpsy;
     double* yaw;

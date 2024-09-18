@@ -10,18 +10,24 @@ class Executer {
   void Run() {
     b_->CommandBoth([](Servo* s) { s->SetQuery(); });
 
-    switch (b_->mux_cr_) {
-      case Basilisk::MuxCR::Neokey: {
+    switch (b_->crmux_) {
+      case Basilisk::CRMux::Neokey: {
         NeokeyCommandReceiver::Parse();
         NeokeyCommandReceiver::nk_cmd_ = 0;
       } break;
-      case Basilisk::MuxCR::Xbee: {
+      case Basilisk::CRMux::Xbee: {
       } break;
       default:
         break;
     }
 
-    ModeRunners::mode_runners.at(b_->cmd_.mode)(b_);
+    auto* maybe_mode_runner = SafeAt(ModeRunners::mode_runners, b_->cmd_.mode);
+    if (maybe_mode_runner) {
+      (*maybe_mode_runner)(b_);
+    } else {
+      Serial.println("Mode NOT registered to ModeRunners::mode_runners");
+      while (1);
+    }
   }
 
  private:

@@ -37,16 +37,16 @@ void SerialReplySender(Basilisk& b) {
   Serial.print(b.lego_.state_[1].contact, BIN);
   Serial.println();
 
-  Serial.print("time_since_last_fix[0]:");
-  Serial.print(b.mags_.time_since_last_fix_[0]);
+  Serial.print("time_since_last_attach[0]:");
+  Serial.print(b.mags_.time_since_last_attach_[0]);
   Serial.print(",");
-  Serial.print("time_since_last_fix[1]:");
-  Serial.print(b.mags_.time_since_last_fix_[1]);
+  Serial.print("time_since_last_attach[1]:");
+  Serial.print(b.mags_.time_since_last_attach_[1]);
   Serial.print(",");
-  Serial.print("time_since_last_fix[2]:");
-  Serial.print(b.mags_.time_since_last_fix_[2]);
+  Serial.print("time_since_last_attach[2]:");
+  Serial.print(b.mags_.time_since_last_attach_[2]);
   Serial.print(",");
-  Serial.print("time_since_last_fix[3]:");
-  Serial.print(b.mags_.time_since_last_fix_[3]);
+  Serial.print("time_since_last_attach[3]:");
+  Serial.print(b.mags_.time_since_last_attach_[3]);
   Serial.println();
 }

@@ -7,21 +7,31 @@
 using LR = bool;
 #define BOOL_L (false)
 #define BOOL_R (true)
+#define IDX_L (0)
+#define IDX_R (1)
+#define IDX_LR {0, 1}
+
+#define BOOL_ATTACH (true)
+#define BOOL_RELEASE (false)
 
 const uint64_t one_uint64 = static_cast<uint64_t>(1);
+
+void pp(uint8_t& n) {
+  if (n < 255) n++;
+}
 
 double signedpow(const double& base, const float& exponent) {
   const auto y = pow(abs(base), exponent);
   return base >= 0 ? y : -y;
 }
 
-template <typename K, typename V>
-V* SafeAt(const std::map<K, V>& map, const K& key) {
-  const auto it = map.find(key);
+template <typename K, typename V>  // Assumes that V is a pointer type.
+V SafeAt(const std::map<K, V>& map, const K& key) {
+  auto it = map.find(key);
   if (it == map.end()) {
     return nullptr;
   } else {
-    return &(it->second);
+    return it->second;
   }
 }
 
@@ -120,6 +130,7 @@ struct Vec2 {
 
 template <typename T>
 T clamp(const T& val, const T& lb, const T& ub) {
+  if (val != val) return NaN;
   if (val < lb) return lb;
   if (val > ub) return ub;
   return val;
@@ -132,10 +143,20 @@ class clamped {
     val_ = clamp(new_val, lb(), ub());
     return *this;
   }
-  clamped& operator=(const clamped& other) = delete;
-  clamped& operator=(clamped&& other) = delete;
+
+  clamped& operator=(const clamped& other) {
+    val_ = clamp(other.val_, lb(), ub());
+    return *this;
+  }
+
+  clamped& operator=(clamped&& other) {
+    val_ = clamp(other.val_, lb(), ub());
+    return *this;
+  }
 
   operator T() { return val_; }
+
+  bool isnan() { return val_ != val_; }
 
  protected:
   T val_;
@@ -154,22 +175,33 @@ class Phi : public clamped<double> {
   double ub() const final { return 0.375; }
 };
 
-class PhiDot : public clamped<double> {
+class PhiSpeed : public clamped<double> {
  public:
-  PhiDot(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
+  PhiSpeed(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
 
  private:
   double lb() const override { return 0.0; }
   double ub() const override { return 0.25; }
 };
 
-class PhiDDot : public clamped<double> {
+class PhiAccel : public clamped<double> {
  public:
-  PhiDDot(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
+  PhiAccel(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
 
  private:
   double lb() const override { return 0.0; }
   double ub() const override { return 2.0; }
+};
+
+class PhiThreshold : public clamped<double> {
+ public:
+  PhiThreshold(const double& init_val = 0.0) {
+    val_ = clamp(init_val, lb(), ub());
+  }
+
+ private:
+  double lb() const override { return 0.0; }
+  double ub() const override { return 1.0; }
 };
 
 class N64 : public clamped<uint8_t> {

@@ -2,7 +2,7 @@
 
 #include "mode_runners.h"
 
-// void ModeRunners::Diamond(Basilisk* b) {
+void ModeRunners::Diamond(Basilisk* b) {
 //   auto& m = b->cmd_.mode;
 //   auto& c = b->cmd_.diamond;
 
@@ -18,4 +18,4 @@
 //     default:
 //       break;
 //   }
-// }
+}

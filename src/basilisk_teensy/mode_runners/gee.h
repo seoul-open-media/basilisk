@@ -2,4 +2,4 @@
 
 #include "mode_runners.h"
 
-// void ModeRunners::Gee(Basilisk* b) {}
+void ModeRunners::Gee(Basilisk* b) {}

@@ -8,11 +8,11 @@ enum class MagnetStrength : uint8_t {
   Strong = 63,
   Medium = 127,
   Weak = 191,
-  Min = 255,
+  Min = 255
 };
 
-MagnetStrength Bool2MS(bool fix) {
-  return fix ? MagnetStrength::Max : MagnetStrength::Min;
+MagnetStrength Bool2MS(const bool& attach) {
+  return attach ? MagnetStrength::Max : MagnetStrength::Min;
 }
 
 // Part | LeftAnkle | LeftToe | RightAnkle | RightToe
@@ -29,7 +29,7 @@ class Magnets {
   // Must be called before use.
   bool Setup() {
     for (const auto& pin : pins_) pinMode(pin, OUTPUT);
-    FixAll();
+    AttachAll();
     Serial.println("Magnets: Setup complete");
     return true;
   }
@@ -38,74 +38,34 @@ class Magnets {
   // electromagnets are being passed current for over 3 seconds.
   void Run() {
     for (uint8_t id = 0; id < 4; id++) {
-      if (fixing_[id]) last_fix_time_[id] = millis();
-      time_since_last_fix_[id] = millis() - last_fix_time_[id];
-      heavenfall_warning_[id] = (time_since_last_fix_[id] > 3000);
+      if (attaching_[id]) last_attach_time_[id] = millis();
+      time_since_last_attach_[id] = millis() - last_attach_time_[id];
+      heavenfall_warning_[id] = (time_since_last_attach_[id] > 3000);
     }
   }
 
   void SetStrength(const uint8_t& id, const MagnetStrength& strength) {
     analogWrite(pins_[id], static_cast<int>(strength));
-    fixing_[id] = (strength == MagnetStrength::Max);
+    attaching_[id] = (strength == MagnetStrength::Max);
     lego_->Reset();
   }
 
-  void FixAll() {
+  void AttachAll() {
     for (uint8_t id = 0; id < 4; id++) {
       SetStrength(id, MagnetStrength::Max);
     }
   }
 
-  void FreeAll() {
+  void ReleaseAll() {
     for (uint8_t id = 0; id < 4; id++) {
       SetStrength(id, MagnetStrength::Min);
     }
   }
 
-  void FixLeft() {
-    SetStrength(0, MagnetStrength::Max);
-    SetStrength(1, MagnetStrength::Max);
-  }
-
-  void FreeLeft() {
-    SetStrength(0, MagnetStrength::Min);
-    SetStrength(1, MagnetStrength::Min);
-  }
-
-  void FixRight() {
-    SetStrength(2, MagnetStrength::Max);
-    SetStrength(3, MagnetStrength::Max);
-  }
-
-  void FreeRight() {
-    SetStrength(2, MagnetStrength::Min);
-    SetStrength(3, MagnetStrength::Min);
-  }
-
-  void FixAnkles() {
-    SetStrength(0, MagnetStrength::Max);
-    SetStrength(2, MagnetStrength::Max);
-  }
-
-  void FreeAnkles() {
-    SetStrength(0, MagnetStrength::Min);
-    SetStrength(2, MagnetStrength::Min);
-  }
-
-  void FixToes() {
-    SetStrength(1, MagnetStrength::Max);
-    SetStrength(3, MagnetStrength::Max);
-  }
-
-  void FreeToes() {
-    SetStrength(1, MagnetStrength::Min);
-    SetStrength(3, MagnetStrength::Min);
-  }
-
   const uint8_t pins_[4];
-  bool fixing_[4] = {false, false, false, false};
-  uint32_t last_fix_time_[4] = {0, 0, 0, 0};
-  uint32_t time_since_last_fix_[4] = {0, 0, 0, 0};
+  bool attaching_[4] = {false, false, false, false};
+  uint32_t last_attach_time_[4] = {0, 0, 0, 0};
+  uint32_t time_since_last_attach_[4] = {0, 0, 0, 0};
   bool heavenfall_warning_[4] = {false, false, false, false};
   LegoBlocks* lego_;
 };
