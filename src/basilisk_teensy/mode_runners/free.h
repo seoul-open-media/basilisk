@@ -7,8 +7,7 @@ void ModeRunners::Free(Basilisk* b) {
 
   switch (m) {
     case M::Free: {
-      Serial.println("ModeRunners::Free");
-
+      // Serial.println("ModeRunners::Free");
       b->CommandBoth([](Servo* s) { s->SetStop(); });
       b->mags_.ReleaseAll();
       m = M::Wait;

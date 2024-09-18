@@ -2,12 +2,15 @@
 
 #include "cmd_rcvrs/neokey_cr.h"
 #include "mode_runners/mode_runners_matome.h"
+#include "oneshots/oneshots_matome.h"
 
 class Executer {
  public:
   Executer(Basilisk* b) : b_{b} {}
 
   void Run() {
+    BasiliskOneshots::Shoot(b_);
+
     b_->CommandBoth([](Servo* s) { s->SetQuery(); });
 
     switch (b_->crmux_) {

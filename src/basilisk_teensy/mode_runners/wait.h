@@ -8,8 +8,7 @@ void ModeRunners::Wait(Basilisk* b) {
 
   switch (m) {
     case M::Wait: {
-      Serial.println("ModeRunners::Wait");
-
+      // Serial.println("ModeRunners::Wait(Init)");
       if (c.exit_condition(b)) m = c.exit_to_mode;
     } break;
     default:

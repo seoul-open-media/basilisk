@@ -68,10 +68,10 @@ class Lps {
         }
         latency_ = LPS_SERIAL.read();
         if (!error_.matome) SetXY();
+        last_raw_update_ = millis();
       } else {
-        while (LPS_SERIAL.available()) LPS_SERIAL.read();
+        for (int i = 0; i < 4; i++) LPS_SERIAL.read();
       }
-      last_raw_update_ = millis();
     }
   }
 
@@ -88,6 +88,8 @@ class Lps {
   }
 
  public:
+  Vec2 GetPos() { return Vec2{x_, y_}; }
+
   bool Bound() {
     return cfg_.minx < x_ && x_ < cfg_.maxx &&  //
            cfg_.miny < y_ && y_ < cfg_.maxy;

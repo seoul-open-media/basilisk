@@ -40,7 +40,8 @@ V SafeAt(const std::map<K, V>& map, const K& key) {
 class Beat {
  public:
   Beat(const uint32_t& interval)
-      : next_beat_{millis() + interval}, interval_{interval} {}
+      : next_beat_{millis() + interval + random(interval)},
+        interval_{interval} {}
 
   bool Hit() {
     if (millis() >= next_beat_) {
@@ -58,6 +59,8 @@ class Beat {
 
 struct Vec2 {
   double x, y;
+
+  Vec2() : x{0.0}, y{0.0} {}
 
   Vec2(const double& _x, const double& _y) : x{_x}, y{_y} {}
 
@@ -171,8 +174,8 @@ class Phi : public clamped<double> {
   using clamped::operator=;
 
  private:
-  double lb() const final { return -0.375; }
-  double ub() const final { return 0.375; }
+  double lb() const final { return -0.3; }
+  double ub() const final { return 0.3; }
 };
 
 class PhiSpeed : public clamped<double> {
@@ -200,7 +203,7 @@ class PhiThreshold : public clamped<double> {
   }
 
  private:
-  double lb() const override { return 0.0; }
+  double lb() const override { return 0.001; }
   double ub() const override { return 1.0; }
 };
 

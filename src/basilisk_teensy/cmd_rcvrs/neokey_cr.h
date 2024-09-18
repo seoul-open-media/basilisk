@@ -8,15 +8,13 @@ class NeokeyCommandReceiver {
   NeokeyCommandReceiver(Neokey& nk) : nk_{nk} {}
 
   void (*callback_)(uint16_t key) = [](uint16_t key) {
-    Serial.print("NeokeyCommandReceiver: Key rose: ");
-    Serial.print(key);
-
     nk_cmd_ = key + 1;
-
-    Serial.print(", nk_cmd_: ");
-    Serial.println(nk_cmd_);
-
     b_->crmux_ = Basilisk::CRMux::Neokey;
+
+    // Serial.print("NeokeyCommandReceiver: Key rose: ");
+    // Serial.print(key);
+    // Serial.print(", nk_cmd_: ");
+    // Serial.println(nk_cmd_);
   };
 
   // Should be called before use.
@@ -38,7 +36,7 @@ class NeokeyCommandReceiver {
   }
 
   // Should be called in regular interval short enough to ensure that
-  // no physical press of a button is missed.
+  // no physical press of a button is missed between.
   void Run() { nk_.Run(); }
 
   static void Parse() {
@@ -58,67 +56,72 @@ class NeokeyCommandReceiver {
         m = M::Free;
       } break;
       case 3: {
+        b_->cmd_.oneshots |= (1 << 1);
+      } break;
+      case 4: {
         m = M::Pivot_Init;
         c.pivot.didimbal = BOOL_L;
-        c.pivot.tgt_yaw = NaN;
+        c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
         c.pivot.stride = 0.125;
         c.pivot.bend[0] = 0.0;
         c.pivot.bend[1] = 0.0;
         c.pivot.speed = 0.1;
-        c.pivot.accel = 1.0;
+        c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
-        c.pivot.max_dur = 5000;
+        c.pivot.max_dur = -1;
+        c.pivot.exit_to_mode = M::Idle_Init;
       } break;
-      case 4: {
+      case 5: {
+        m = M::Pivot_Init;
+        c.pivot.didimbal = BOOL_R;
+        c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
+        c.pivot.stride = 0.125;
+        c.pivot.bend[0] = 0.0;
+        c.pivot.bend[1] = 0.0;
+        c.pivot.speed = 0.1;
+        c.pivot.acclim = 1.0;
+        c.pivot.min_dur = 0;
+        c.pivot.max_dur = -1;
+        c.pivot.exit_to_mode = M::Idle_Init;
+      } break;
+      case 6: {
+        m = M::Pivot_Init;
+        c.pivot.didimbal = BOOL_L;
+        c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
+        c.pivot.stride = -0.125;
+        c.pivot.bend[0] = 0.0;
+        c.pivot.bend[1] = 0.0;
+        c.pivot.speed = 0.1;
+        c.pivot.acclim = 1.0;
+        c.pivot.min_dur = 0;
+        c.pivot.max_dur = -1;
+        c.pivot.exit_to_mode = M::Idle_Init;
+      } break;
+      case 7: {
+        m = M::Pivot_Init;
+        c.pivot.didimbal = BOOL_R;
+        c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
+        c.pivot.stride = -0.125;
+        c.pivot.bend[0] = 0.0;
+        c.pivot.bend[1] = 0.0;
+        c.pivot.speed = 0.1;
+        c.pivot.acclim = 1.0;
+        c.pivot.min_dur = 0;
+        c.pivot.max_dur = -1;
+        c.pivot.exit_to_mode = M::Idle_Init;
+      } break;
+      case 8: {
         m = M::WalkToDir;
         c.walk_to_dir.init_didimbal = BOOL_L;
         c.walk_to_dir.tgt_yaw = 0.0;
-        c.walk_to_dir.stride = 0.0625;
+        c.walk_to_dir.stride = 0.1;
         c.walk_to_dir.bend[IDX_L] = 0.0;
         c.walk_to_dir.bend[IDX_R] = 0.0;
         c.walk_to_dir.speed = 0.1;
-        c.walk_to_dir.accel = 1.0;
-        c.walk_to_dir.min_stepdur = 0;
-        c.walk_to_dir.max_stepdur = 3000;
-        c.walk_to_dir.steps = 6;
-      } break;
-      case 5: {
-        m = M::PivSeq_Init;
-        c.pivseq.exit_condition = [](Basilisk*) { return false; };
-        void* memory = operator new(2 * sizeof(Basilisk::Command::Pivot));
-        c.pivseq.pivots = static_cast<Basilisk::Command::Pivot*>(memory);
-        for (int i = 0; i < 2; i++) {
-          new (c.pivseq.pivots + i) Basilisk::Command::Pivot{};
-        }
-        c.pivseq.min_durs =
-            static_cast<uint32_t*>(malloc(2 * sizeof(uint32_t)));
-        c.pivseq.max_durs =
-            static_cast<uint32_t*>(malloc(2 * sizeof(uint32_t)));
-
-        c.pivseq.pivots[0].didimbal = BOOL_L;
-        c.pivseq.pivots[0].tgt_yaw = 0.0;
-        c.pivseq.pivots[0].stride = 0.125;
-        c.pivseq.pivots[0].bend[0] = 0.0;
-        c.pivseq.pivots[0].bend[1] = 0.0;
-        c.pivseq.pivots[0].speed = 0.1;
-        c.pivseq.pivots[0].accel = 1.0;
-        c.pivseq.min_durs[0] = 0;
-        c.pivseq.max_durs[0] = 5000;
-
-        c.pivseq.pivots[1].didimbal = BOOL_R;
-        c.pivseq.pivots[1].tgt_yaw = 0.0;
-        c.pivseq.pivots[1].stride = 0.125;
-        c.pivseq.pivots[1].bend[0] = 0.0;
-        c.pivseq.pivots[1].bend[1] = 0.0;
-        c.pivseq.pivots[1].speed = 0.1;
-        c.pivseq.pivots[1].accel = 1.0;
-        c.pivseq.min_durs[1] = 0;
-        c.pivseq.max_durs[1] = 5000;
-
-        c.pivseq.size = 2;
-        c.pivseq.loop_begin_idx = 0;
-        c.pivseq.steps = 2;
-        c.pivseq.exit_to_mode = M::Idle_Init;
+        c.walk_to_dir.acclim = 1.0;
+        c.walk_to_dir.min_stepdur = 2000;
+        c.walk_to_dir.max_stepdur = 2000;
+        c.walk_to_dir.steps = -1;
       } break;
 
       // case 4: {  // CatWalk

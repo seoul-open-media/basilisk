@@ -8,22 +8,20 @@ void ModeRunners::PivSeq(Basilisk* b) {
 
   switch (m) {
     case M::PivSeq_Init: {
-      Serial.println("ModeRunners::PivSeq(Init)");
-
+      // Serial.println("ModeRunners::PivSeq(Init)");
       c.cur_step = 0;
       c.cur_idx = 0;
       m = M::PivSeq_Step;
     } break;
     case M::PivSeq_Step: {
-      Serial.print("ModeRunners::PivSeq(Step: ");
-      Serial.print(c.cur_step);
-      Serial.println(")");
+      // Serial.print("ModeRunners::PivSeq(Step: ");
+      // Serial.print(c.cur_step);
+      // Serial.println(")");
 
       if (c.exit_condition(b) || c.cur_step >= c.steps) {
         m = c.exit_to_mode;
         return;
       }
-
       if (c.cur_idx >= c.size) {
         c.cur_idx = c.loop_begin_idx;
       }

@@ -70,10 +70,10 @@ class Imu {
   }
 
   double GetYaw(bool rel) {  // false: Absolute, true: RelToBase
-    if (!rel) {
-      return euler_[2] + yaw_revs_;
-    } else {
+    if (rel) {
       return euler_[2] + yaw_revs_ - base_yaw_;
+    } else {
+      return euler_[2] + yaw_revs_;
     }
   }
 

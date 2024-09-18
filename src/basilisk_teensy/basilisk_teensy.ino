@@ -32,10 +32,11 @@ NeokeyCommandReceiver nk_cr{nk};
 
 void setup() {
   Serial.begin(9600);
-  delay(1000);
+  delay(250);
 
   b.Setup();
   nk_cr.Setup(&b);
+  delay(250);
 }
 
 void loop() {

@@ -8,8 +8,7 @@ void ModeRunners::SetMags(Basilisk* b) {
 
   switch (m) {
     case M::SetMags_Init: {
-      Serial.println("ModeRunners::SetMags(Init)");
-
+      // Serial.println("ModeRunners::SetMags(Init)");
       for (uint8_t id = 0; id < 4; id++) {
         b->mags_.SetStrength(id, c.strengths[id]);
       }
@@ -18,7 +17,6 @@ void ModeRunners::SetMags(Basilisk* b) {
     } break;
     case M::SetMags_Wait: {
       // Serial.println("ModeRunners::SetMags(Wait)");
-
       if ([&] {
             if (millis() - c.init_time > c.max_dur) {
               return true;

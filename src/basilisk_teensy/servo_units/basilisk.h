@@ -17,7 +17,7 @@ class Basilisk {
   // Components: //
 
   Servo l_, r_;
-  Servo* lr_[2] = {nullptr, nullptr};
+  Servo* s_[2] = {nullptr, nullptr};
   Lps lps_;          // Run every loop().
   Imu imu_;          // Run every loop().
   LegoBlocks lego_;  // Run in regular interval.
@@ -37,7 +37,7 @@ class Basilisk {
     } lps;
     struct {
       int pin_l = 23, pin_r = 29;
-      uint32_t run_interval = 20;
+      uint32_t run_interval = 10;
     } lego;
     struct {
       uint8_t pin_la = 3, pin_lt = 4, pin_ra = 5, pin_rt = 6;
@@ -52,7 +52,7 @@ class Basilisk {
       : cfg_{cfg},
         l_{cfg.servo.id_l, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         r_{cfg.servo.id_r, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
-        lr_{&l_, &r_},
+        s_{&l_, &r_},
         pm_cmd_template_{&globals::pm_cmd_template},
         lps_{cfg.lps.c,    cfg.lps.x_c,  cfg.lps.y_c,  //
              cfg.lps.minx, cfg.lps.maxx, cfg.lps.miny, cfg.lps.maxy},
@@ -133,7 +133,7 @@ class Basilisk {
       Idle_Nop,   // .
 
       /* Wait: Wait for some condition to be met.
-       *       One of the future-chain-able Modes.
+       *       Future-chain-able.
        * - Loop until given condition is met,
        * - then exit to designated Mode. */
       Wait,  // -> Exit
@@ -147,15 +147,16 @@ class Basilisk {
       Free,  // -> Wait -> Idle
 
       /* SetMags: Control magnets.
-       *          One of the future-chain-able Modes.
+       *          Future-chain-able.
        * - Attach or release individual magnets,
        * - then wait for contact/detachment verification,
-       * - then exit to designated Mode. */
+       * - then exit to designated Mode.
+       * - Duration will be clamped. */
       SetMags_Init,  // -> SetMags_Wait
       SetMags_Wait,  // -> Exit
 
       /* SetPhis: Control Servos to achieve target phis.
-       *          One of the future-chain-able Modes.
+       *          Future-chain-able.
        * - Reset fix cycles count,
        * - then PositionMode-Command Servos continuously with .position
        *   set to NaN, .velocity and .accel_limit set to computed as follows:
@@ -163,7 +164,7 @@ class Basilisk {
        *                21 * tgt_phispeed * (tgt_delta_phi >  damp_thr ?  1 :
        *                                     tgt_delta_phi < -damp_thr ? -1 :
        *                                     tgt_delta_phi / damp_thr);
-       *   tgt_rtracc = 21 * tgt_phiacc;
+       *   tgt_rtracclim = 21 * tgt_phiacclim;
        *   Fix cycles count is incremented every cycle where tgt_rtrvel == 0
        *   and reset elsewhere. Wait until fix cycles count reaches threshold
        *   for both Servos,
@@ -174,7 +175,8 @@ class Basilisk {
 
       /* Pivot: Pivot one foot (kickbal) about the other (didimbal).
        *        The single fundamental element of all Basilisk movement except
-       *        for Gee. One of the future-chain-able Modes.
+       *        for Gee.
+       *        Future-chain-able.
        *
        * - Attach and fix kickbal, release didimbal, and set
        *   phi_didim = init_yaw - tgt_yaw - bend_didim
@@ -192,21 +194,24 @@ class Basilisk {
       Pivot_Init,  // -> SetMags -> SetPhis -> Pivot_Kick
       Pivot_Kick,  // -> SetMags -> SetPhis -> Exit
 
-      /* PivSeq: Perform a series of Pivots with time intervals. */
+      /* PivSeq: Perform a series of Pivots with time intervals.
+       *         Future-chain-able. */
       PivSeq_Init,  // -> PivSeq_Step
       PivSeq_Step,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
 
-      /* Walk variants: Instances of PivSeq */
-      WalkToDir,
+      /* Walk variants: Instances of PivSeq. */
+      WalkToDir,  // -> PivSeq -> Idle
+      WalkToPos,  // -> PivSeq -> Idle
 
-      BounceWalk,
-      WalkToPos,
+      Sufi,
       Orbit,
+      BounceWalk,
       RandomWalk,
+
       Diamond_Init,
       Diamond_Step,
 
-      /* Gee: Gee, gee, gee, gee, baby, baby, baby. */
+      /* Gee: */
       Shear_Init,
       Shear_Move,
       Gee,
@@ -233,11 +238,11 @@ class Basilisk {
 
     struct SetPhis {
       Mode exit_to_mode;
-      Phi tgt_phi[2];            // [0]: l, [1]: r
-      PhiSpeed tgt_phispeed[2];  // [0]: l, [1]: r
-      PhiAccel tgt_phiacc[2];    // [0]: l, [1]: r
-      double damp_thr;
-      double fix_thr;
+      Phi tgt_phi[2];             // [0]: l, [1]: r
+      PhiSpeed tgt_phispeed[2];   // [0]: l, [1]: r
+      PhiAccel tgt_phiacclim[2];  // [0]: l, [1]: r
+      PhiThreshold damp_thr;
+      PhiThreshold fix_thr;
       uint8_t fix_cycles_thr;     // Exit condition priority:
       uint32_t min_dur, max_dur;  // max_dur > min_dur = fixed_enough
 
@@ -249,16 +254,18 @@ class Basilisk {
 
     struct Pivot {
       Mode exit_to_mode;
-      LR didimbal;     // Foot to pivot about.
-      double tgt_yaw;  // NaN means the initial yaw when Pivot starts.
-      double stride;   // Forward this much more from tgt_yaw.
-                       // Negative value manifests as walking backwards.
-      Phi bend[2];     // [0]: l, [1]: r
-                       // tgt_sig == tgt_yaw + bend
-                       // or bend == -tgt_phi
-                       // NaN means preserve initial phi.
+      LR didimbal;                   // Foot to pivot about.
+      double (*tgt_yaw)(Basilisk*);  // Evaluated at Pivot_Init
+                                     // and used throughout Mode.
+      // (*.*)
+      double stride;  // Forward this much more from tgt_yaw.
+                      // Negative value manifests as walking backwards.
+      Phi bend[2];    // [0]: l, [1]: r
+                      // tgt_sig == tgt_yaw + bend
+                      // or bend == -tgt_phi
+                      // NaN means preserve initial phi.
       PhiSpeed speed;
-      PhiAccel accel;
+      PhiAccel acclim;
       uint32_t min_dur, max_dur;
 
      private:
@@ -285,11 +292,11 @@ class Basilisk {
 
     struct WalkToDir {
       LR init_didimbal;
-      double tgt_yaw;
+      double tgt_yaw;  // NaN = initial yaw at WalkToDir_Init.
       double stride;
       Phi bend[2];
       PhiSpeed speed;
-      PhiAccel accel;
+      PhiAccel acclim;
       uint32_t min_stepdur, max_stepdur;
       uint8_t steps;
 
@@ -299,6 +306,28 @@ class Basilisk {
       uint32_t min_durs[2];
       uint32_t max_durs[2];
     } walk_to_dir;
+
+    struct WalkToPos {
+      LR init_didimbal;
+      Vec2 tgt_pos;
+      double prox_thr;
+      double stride;
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccel acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint8_t steps;
+
+     private:
+      friend struct ModeRunners;
+      Pivot pivots[2];
+      uint32_t min_durs[2];
+      uint32_t max_durs[2];
+    } walk_to_pos;
+
+    struct Sufi {
+      double stride;
+    };
 
     // struct Diamond {
     //   friend struct ModeRunners;
@@ -354,7 +383,7 @@ class Basilisk {
 
   template <typename ServoCommand>
   void CommandBoth(ServoCommand c) {
-    for (auto* s : lr_) c(s);
+    for (auto* s : s_) c(s);
   }
 
   void Print() {

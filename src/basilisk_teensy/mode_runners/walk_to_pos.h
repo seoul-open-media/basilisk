@@ -2,24 +2,25 @@
 
 #include "mode_runners.h"
 
-void ModeRunners::WalkToDir(Basilisk* b) {
+void ModeRunners::WalkToPos(Basilisk* b) {
   auto& m = b->cmd_.mode;
-  auto& c = b->cmd_.walk_to_dir;
+  auto& c = b->cmd_.walk_to_pos;
   auto& pivseq = b->cmd_.pivseq;
 
   switch (m) {
-    case M::WalkToDir: {
-      // Serial.println("ModeRunners::WalkToDir");
-
-      if (isnan(c.tgt_yaw)) c.tgt_yaw = b->imu_.GetYaw(true);
+    case M::WalkToPos: {
+      // Serial.println("ModeRunners::WalkToPos");
 
       m = M::PivSeq_Init;
-      pivseq.exit_condition = [](Basilisk*) { return false; };
+      pivseq.exit_condition = [](Basilisk* b) {
+        return b->cmd_.walk_to_pos.tgt_pos.dist(b->lps_.GetPos()) <
+               abs(b->cmd_.walk_to_pos.prox_thr);
+      };
       c.pivots[0].didimbal = c.init_didimbal;
       c.pivots[1].didimbal = !c.init_didimbal;
       for (const uint8_t step : {0, 1}) {
         c.pivots[step].tgt_yaw = [](Basilisk* b) {
-          return b->cmd_.walk_to_dir.tgt_yaw;
+          return (b->cmd_.walk_to_pos.tgt_pos - b->lps_.GetPos()).arg();
         };
         c.pivots[step].bend[IDX_L] = c.bend[IDX_L];
         c.pivots[step].bend[IDX_R] = c.bend[IDX_R];
