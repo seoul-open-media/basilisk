@@ -27,6 +27,7 @@ class Basilisk {
   // Configurations & constructor: //
 
   struct Configuration {
+    uint8_t suid;  // 1 <= ID of this Basilisk <= 13
     struct {
       int id_l = 1, id_r = 2;
       uint8_t bus = 1;
@@ -126,7 +127,7 @@ class Basilisk {
       // A child Mode cannot be future-chained after its parent Mode.
       // No loop should be formed in a future-chain.
 
-      Preset,
+      DoPreset,
 
       /* Idle: Kill everything. Relax.
        * - Stop both Servos, attach all magnets,
@@ -222,6 +223,10 @@ class Basilisk {
       Gee,
     } mode = Mode::Idle_Init;
 
+    struct DoPreset {
+      uint16_t idx;
+    } do_preset;
+
     struct Wait {
       Mode exit_to_mode;
       bool (*exit_condition)(Basilisk*);
@@ -287,6 +292,9 @@ class Basilisk {
                                           // between Pivots.
                                           // Exit condition priority:
                                           // exit_condition > steps
+
+      // Pivot (*pivot_gtr)(Basilisk*, uint8_t);
+
       Pivot* pivots;  // exit_to_mode and minmax_dur will be written by PivSeq.
       uint32_t* min_durs;      // It is the PivSeq's clients responsibility to
       uint32_t* max_durs;      // cleanup memory.

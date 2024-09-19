@@ -13,6 +13,13 @@ void ModeRunners::WalkToDir(Basilisk* b) {
 
       if (isnan(c.tgt_yaw)) c.tgt_yaw = b->imu_.GetYaw(true);
 
+      // pivseq.pivot_gtr = [](Basilisk* b, uint8_t) {
+      //   Basilisk::Command::Pivot p;
+      //   p.tgt_yaw = nullptr;
+      //   p.exit_condition = nullptr;
+      //   return p;
+      // };
+
       m = M::PivSeq_Init;
       pivseq.exit_condition = [](Basilisk*) { return false; };
       c.pivots[0].didimbal = c.init_didimbal;

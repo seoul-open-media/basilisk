@@ -10,14 +10,14 @@ class Executer {
   Executer(Basilisk* b) : b_{b} {}
 
   void Run() {
+    if (!XbeeCommandReceiver::receiving_ &&
+        XbeeCommandReceiver::xbee_cmd_.decoded.oneshots & 1) {
+      b_->cmd_.oneshots |= 1;
+    }
+
     BasiliskOneshots::Shoot(b_);
 
     b_->CommandBoth([](Servo* s) { s->SetQuery(); });
-
-    // if ()
-    // {
-    //   /* code */
-    // }
 
     switch (b_->crmux_) {
       case Basilisk::CRMux::Neokey: {
@@ -25,6 +25,8 @@ class Executer {
         NeokeyCommandReceiver::nk_cmd_ = 0;
       } break;
       case Basilisk::CRMux::Xbee: {
+        XbeeCommandReceiver::Parse();
+        XbeeCommandReceiver::waiting_parse_ = false;
       } break;
       default:
         break;

@@ -9,15 +9,16 @@
 
 // Basilisk configuration.
 struct Basilisk::Configuration cfg {
-  .servo{.id_l = 1, .id_r = 2, .bus = 1},
-      .lps{.c = 300.0,
-           .x_c = 300.0,
-           .y_c = 300.0,
-           .minx = 50.0,
-           .maxx = 250.0,
-           .miny = 50.0,
-           .maxy = 250.0},
-      .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
+  .suid = 1,  //
+      .servo{.id_l = 1, .id_r = 2, .bus = 1},
+  .lps{.c = 300.0,
+       .x_c = 300.0,
+       .y_c = 300.0,
+       .minx = 50.0,
+       .maxx = 250.0,
+       .miny = 50.0,
+       .maxy = 250.0},
+  .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
       .mags {
     .pin_la = 3, .pin_lt = 4, .pin_ra = 5, .pin_rt = 6, .run_interval = 100
   }
@@ -28,18 +29,20 @@ Basilisk b{cfg};
 Executer exec{&b};
 
 // CommandReceivers.
+XbeeCommandReceiver xb_cr;
 Neokey nk = specifics::neokey3x4_i2c0;
 NeokeyCommandReceiver nk_cr{nk};
-XbeeCommandReceiver xb_cr;
 
 void setup() {
   Serial.begin(9600);
   delay(250);
 
   b.Setup();
-  nk_cr.Setup(&b);
   xb_cr.Setup(&b);
+  nk_cr.Setup(&b);
   delay(250);
+
+  Serial.println(b.cfg_.suid);
 }
 
 void loop() {

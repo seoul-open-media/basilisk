@@ -7,6 +7,7 @@
 struct ModeRunners {
   using M = Basilisk::Command::Mode;
 
+  static void DoPreset(Basilisk*);
   static void Idle(Basilisk*);
   static void Wait(Basilisk*);
   static void Free(Basilisk*);
@@ -19,6 +20,7 @@ struct ModeRunners {
   static void Sufi(Basilisk*);
 
   inline static const std::map<M, void (*)(Basilisk*)> mode_runners = {
+      {M::DoPreset, &DoPreset},
       {M::Idle_Init, &Idle},
       {M::Idle_Nop, &Idle},
       {M::Wait, &Wait},

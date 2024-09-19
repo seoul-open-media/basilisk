@@ -26,8 +26,8 @@ class XbeeCommandReceiver {
   void Run() {
     static uint8_t start = 0;
 
-    if (!receiving) {
-      if (XBEE_SERIAL.available()) {
+    if (!receiving_) {
+      if (XBEE_SERIAL.available() > 0) {
         uint8_t rbyte = XBEE_SERIAL.read();
         if (rbyte == 255) {
           start++;
@@ -35,36 +35,46 @@ class XbeeCommandReceiver {
           start = 0;
         }
 
-        if (start < 4) return;
-        receiving = true;
+        if (start >= 4) receiving_ = true;
       }
     } else {
-      if (XBEE_SERIAL.available() >= sizeof(xbee_cmd_)) {
-        for (int i = 0; i < sizeof(xbee_cmd_); i++) {
+      if (XBEE_SERIAL.available() > 0 &&
+          static_cast<uint32_t>(XBEE_SERIAL.available()) >= sizeof(xbee_cmd_)) {
+        for (uint8_t i = 0; i < sizeof(xbee_cmd_); i++) {
           xbee_cmd_.raw_bytes[i] = XBEE_SERIAL.read();
         }
-        receiving = false;
+        receiving_ = false;
+        waiting_parse_ = true;
         start = 0;
       }
     }
   }
 
   static void Parse() {
-    if (receiving) {
-      waiting_parse = true;
+    if (receiving_) return;
+    if (xbee_cmd_.decoded.suid != b_->cfg_.suid &&
+        xbee_cmd_.decoded.suid != 0) {
       return;
     }
 
     using C = Basilisk::Command;
     using M = C::Mode;
+    static auto& x = xbee_cmd_.decoded;
     static auto& c = b_->cmd_;
     static auto& m = c.mode;
 
-    if (xbee_cmd_.decoded.oneshots & 1) {
+    c.oneshots = x.oneshots;
+    c.mode = static_cast<M>(x.mode);
+    switch (m) {
+      case M::DoPreset: {
+        c.do_preset.idx = x.u.preset.idx;
+      } break;
+      default:
+        break;
     }
   }
 
-  static union RecvBuf {
+  inline static union RecvBuf {
     struct Decoded {
       uint8_t suid;
       uint8_t oneshots;
@@ -78,8 +88,8 @@ class XbeeCommandReceiver {
     uint8_t raw_bytes[sizeof(decoded)];
   } xbee_cmd_;
 
-  inline static bool receiving = false;
-  inline static bool waiting_parse = false;
+  inline static bool receiving_ = false;
+  inline static bool waiting_parse_ = false;
 
  private:
   inline static Basilisk* b_ = nullptr;
