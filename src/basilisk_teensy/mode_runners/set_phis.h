@@ -47,7 +47,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
                       c.tgt_phispeed[f] *
                       signedpow(
                           constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0),
-                          0.75);
+                          0.875);
                   /* dx/dt = -x^p where x(t=0) = 1 gives:
                    * x = e^{-t} for p = 1
                    * x = (1 - (1 - p)t)^{1 / (1 - p)} elsewhere
