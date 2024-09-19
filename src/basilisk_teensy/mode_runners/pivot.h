@@ -22,7 +22,7 @@ void ModeRunners::Pivot(Basilisk* b) {
 
       init_yaw = b->imu_.GetYaw(true);
       tgt_yaw = c.tgt_yaw(b);
-      if (isnan(tgt_yaw)) tgt_yaw = b->imu_.GetYaw(true);
+      if (isnan(tgt_yaw)) tgt_yaw = init_yaw;
 
       // Check if we need to set didimbal.
       if (c.bend[didim_idx].isnan()) {
@@ -30,7 +30,7 @@ void ModeRunners::Pivot(Basilisk* b) {
         return;
       }
 
-      // Release didimbal, attach kickbal.
+      // Release didimbal, attach kickbal, set phi_didim.
       m = M::SetMags_Init;
       const bool attach_l = c.didimbal != BOOL_L;
       const bool attach_r = c.didimbal != BOOL_R;
@@ -56,6 +56,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.fix_cycles_thr = 5;
       phis.min_dur = 0;
       phis.max_dur = c.max_dur / 4;
+      phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = M::Pivot_Kick;
     } break;
     case M::Pivot_Kick: {
@@ -79,10 +80,10 @@ void ModeRunners::Pivot(Basilisk* b) {
       const auto interm_error = interm_yaw - init_yaw;
       if (isnan(c.bend[didim_idx])) {
         phis.tgt_phi[didim_idx] = b->s_[didim_idx]->GetReply().abs_position +
-                                  sgnd_stride + tgt_yaw - init_yaw;
+                                  tgt_yaw - init_yaw + sgnd_stride;
       } else {
         phis.tgt_phi[didim_idx] =
-            sgnd_stride - c.bend[didim_idx] - interm_error;
+            -c.bend[didim_idx] + sgnd_stride - interm_error;
       }
       phis.tgt_phi[kick_idx] = -c.bend[kick_idx] + sgnd_stride;
       phis.tgt_phispeed[didim_idx] = c.speed;

@@ -1,4 +1,5 @@
 #include "cmd_rcvrs/neokey_cr.h"
+#include "cmd_rcvrs/xbee_cr.h"
 #include "components/specifics/neokey3x4_i2c0.h"
 #include "executer.h"
 #include "helpers/imports.h"
@@ -29,6 +30,7 @@ Executer exec{&b};
 // CommandReceivers.
 Neokey nk = specifics::neokey3x4_i2c0;
 NeokeyCommandReceiver nk_cr{nk};
+XbeeCommandReceiver xb_cr;
 
 void setup() {
   Serial.begin(9600);
@@ -36,11 +38,14 @@ void setup() {
 
   b.Setup();
   nk_cr.Setup(&b);
+  xb_cr.Setup(&b);
   delay(250);
 }
 
 void loop() {
   b.Run();
+
+  xb_cr.Run();
 
   static Beat nk_cr_beat{10};
   if (nk_cr_beat.Hit()) nk_cr.Run();
@@ -49,5 +54,5 @@ void loop() {
   if (executer_beat.Hit()) exec.Run();
 
   static Beat serial_plotter_rs_beat{250};
-  if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
+  // if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
 }

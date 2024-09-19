@@ -35,6 +35,17 @@ V SafeAt(const std::map<K, V>& map, const K& key) {
   }
 }
 
+double nearest_pmn(const double& tgt, double var) {
+  if (isnan(tgt) || isnan(var)) return (0.0 / 0.0);
+  if (var == tgt) return var;
+  if (var > tgt) {
+    while (var > tgt + 0.5) var -= 1.0;
+  } else {
+    while (var < tgt - 0.5) var += 1.0;
+  }
+  return var;
+}
+
 // Time is in milliseconds, stored as uint32_t.
 // Continuously usable up to approximately 50 days.
 class Beat {

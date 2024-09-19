@@ -16,7 +16,7 @@ void ModeRunners::Sufi(Basilisk* b) {
 
       m = M::PivSeq_Init;
       pivseq.exit_condition = [](Basilisk* b) {
-        return abs(b->imu_.GetYaw(true) - b->cmd_.sufi.tgt_yaw) < 0.1;
+        return abs(b->imu_.GetYaw(true) - b->cmd_.sufi.dest_yaw) < 0.1;
       };
       c.pivots[0].didimbal = c.init_didimbal;
       c.pivots[1].didimbal = !c.init_didimbal;

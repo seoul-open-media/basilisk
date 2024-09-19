@@ -126,6 +126,8 @@ class Basilisk {
       // A child Mode cannot be future-chained after its parent Mode.
       // No loop should be formed in a future-chain.
 
+      Preset,
+
       /* Idle: Kill everything. Relax.
        * - Stop both Servos, attach all magnets,
        * - then do nothing. */
@@ -177,6 +179,9 @@ class Basilisk {
        *        The single fundamental element of all Basilisk movement except
        *        for Gee.
        *        Future-chain-able.
+       *        IsigD + IphiD = Ipsi = IsigK + IphiK
+       *     -> (Tpsi + bD) + ? = Ipsi = IsigK + IphiK  (set didimbal)
+       *     -> (Tpsi + bD) + ? = Tpsi +- s = (Tpsi + bK) + ?  (kick)
        *
        * - Attach and fix kickbal, release didimbal, and set
        *   phi_didim = init_yaw - tgt_yaw - bend_didim
@@ -202,8 +207,8 @@ class Basilisk {
       /* Walk variants: Instances of PivSeq. */
       WalkToDir,  // -> PivSeq -> Idle
       WalkToPos,  // -> PivSeq -> Idle
-
       Sufi,
+
       Orbit,
       BounceWalk,
       RandomWalk,
@@ -243,8 +248,9 @@ class Basilisk {
       PhiAccel tgt_phiacclim[2];  // [0]: l, [1]: r
       PhiThreshold damp_thr;
       PhiThreshold fix_thr;
-      uint8_t fix_cycles_thr;     // Exit condition priority:
-      uint32_t min_dur, max_dur;  // max_dur > min_dur = fixed_enough
+      uint8_t fix_cycles_thr;             // Exit condition priority:
+      uint32_t min_dur, max_dur;          // max_dur > exit_condition
+      bool (*exit_condition)(Basilisk*);  // > (min_dur && fixed_enough)
 
      private:
       friend struct ModeRunners;
@@ -256,17 +262,19 @@ class Basilisk {
       Mode exit_to_mode;
       LR didimbal;                   // Foot to pivot about.
       double (*tgt_yaw)(Basilisk*);  // Evaluated at Pivot_Init
-                                     // and used throughout Mode.
-      // (*.*)
+                                     // and used throughout Pivot.
+      // (*.*) oO(***)
       double stride;  // Forward this much more from tgt_yaw.
                       // Negative value manifests as walking backwards.
       Phi bend[2];    // [0]: l, [1]: r
                       // tgt_sig == tgt_yaw + bend
-                      // or bend == -tgt_phi
-                      // NaN means preserve initial phi.
+                      // or bend == -tgt_phi (at stride 0)
+                      // NaN means preserve initial sig for didimbal,
+                      // initial phi for kickbal.
       PhiSpeed speed;
       PhiAccel acclim;
-      uint32_t min_dur, max_dur;
+      uint32_t min_dur, max_dur;          // Exit condition priority:
+      bool (*exit_condition)(Basilisk*);  // max_dur > exit_condition > min_dur
 
      private:
       friend struct ModeRunners;
@@ -275,9 +283,11 @@ class Basilisk {
 
     struct PivSeq {
       Mode exit_to_mode;
-      bool (*exit_condition)(Basilisk*);
-      Pivot* pivots;           // exit_to_mode, minmax_dur will be
-                               // written by PivSeq.
+      bool (*exit_condition)(Basilisk*);  // Evaluated every interval
+                                          // between Pivots.
+                                          // Exit condition priority:
+                                          // exit_condition > steps
+      Pivot* pivots;  // exit_to_mode and minmax_dur will be written by PivSeq.
       uint32_t* min_durs;      // It is the PivSeq's clients responsibility to
       uint32_t* max_durs;      // cleanup memory.
       uint8_t size;            // Perform 0...(loop_begin_idx - 1) once, then
@@ -327,7 +337,7 @@ class Basilisk {
 
     struct Sufi {
       LR init_didimbal;
-      double tgt_yaw;
+      double dest_yaw;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
