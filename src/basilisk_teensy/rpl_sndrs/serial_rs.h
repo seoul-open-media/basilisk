@@ -23,24 +23,24 @@ void SerialReplySender(Basilisk& b) {
   // Serial.println();
 
   // LPS debug
-  Serial.print("b.lps_.dists_raw_[0]:");
-  Serial.print(b.lps_.dists_raw_[0]);
-  Serial.print(",");
-  Serial.print("b.lps_.error_.bytes[0]:");
-  Serial.print(b.lps_.error_.bytes[0]);
-  Serial.print(",");
-  Serial.print("b.lps_.dists_raw_[1]:");
-  Serial.print(b.lps_.dists_raw_[1]);
-  Serial.print(",");
-  Serial.print("b.lps_.error_.bytes[1]:");
-  Serial.print(b.lps_.error_.bytes[1]);
-  Serial.print(",");
-  Serial.print("b.lps_.dists_raw_[2]:");
-  Serial.print(b.lps_.dists_raw_[2]);
-  Serial.print(",");
-  Serial.print("b.lps_.error_.bytes[2]:");
-  Serial.print(b.lps_.error_.bytes[2]);
-  Serial.println();
+  // Serial.print("b.lps_.dists_raw_[0]:");
+  // Serial.print(b.lps_.dists_raw_[0]);
+  // Serial.print(",");
+  // Serial.print("b.lps_.error_.bytes[0]:");
+  // Serial.print(b.lps_.error_.bytes[0]);
+  // Serial.print(",");
+  // Serial.print("b.lps_.dists_raw_[1]:");
+  // Serial.print(b.lps_.dists_raw_[1]);
+  // Serial.print(",");
+  // Serial.print("b.lps_.error_.bytes[1]:");
+  // Serial.print(b.lps_.error_.bytes[1]);
+  // Serial.print(",");
+  // Serial.print("b.lps_.dists_raw_[2]:");
+  // Serial.print(b.lps_.dists_raw_[2]);
+  // Serial.print(",");
+  // Serial.print("b.lps_.error_.bytes[2]:");
+  // Serial.print(b.lps_.error_.bytes[2]);
+  // Serial.println();
 
   // IMU orientation
   // Serial.print("roll:");

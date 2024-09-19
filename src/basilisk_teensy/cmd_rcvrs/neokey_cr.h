@@ -120,7 +120,7 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.speed = 0.1;
         c.walk_to_dir.acclim = 1.0;
         c.walk_to_dir.min_stepdur = 2000;
-        c.walk_to_dir.max_stepdur = 2000;
+        c.walk_to_dir.max_stepdur = 8000;
         c.walk_to_dir.steps = -1;
       } break;
 

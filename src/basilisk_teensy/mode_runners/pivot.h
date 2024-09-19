@@ -6,7 +6,6 @@ void ModeRunners::Pivot(Basilisk* b) {
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.pivot;
   static double init_yaw;
-  static double interm_yaw;
   static double tgt_yaw;
 
   const uint8_t didim_idx = c.didimbal == BOOL_L ? IDX_L : IDX_R;
@@ -53,7 +52,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phiacclim[kick_idx] = 0.0;
       phis.damp_thr = 0.025;
       phis.fix_thr = 0.01;
-      phis.fix_cycles_thr = 5;
+      phis.fix_cycles_thr = 10;
       phis.min_dur = 0;
       phis.max_dur = c.max_dur / 4;
       phis.exit_condition = c.exit_condition;
@@ -76,15 +75,8 @@ void ModeRunners::Pivot(Basilisk* b) {
       mags.max_dur = 200;
       mags.exit_to_mode = M::SetPhis_Init;
       const auto sgnd_stride = c.stride * (c.didimbal == BOOL_L ? 1.0 : -1.0);
-      interm_yaw = b->imu_.GetYaw(true);
-      const auto interm_error = interm_yaw - init_yaw;
-      if (isnan(c.bend[didim_idx])) {
-        phis.tgt_phi[didim_idx] = b->s_[didim_idx]->GetReply().abs_position +
-                                  tgt_yaw - init_yaw + sgnd_stride;
-      } else {
-        phis.tgt_phi[didim_idx] =
-            -c.bend[didim_idx] + sgnd_stride - interm_error;
-      }
+      phis.tgt_phi[didim_idx] = b->s_[didim_idx]->GetReply().abs_position +
+                                tgt_yaw - b->imu_.GetYaw(true) + sgnd_stride;
       phis.tgt_phi[kick_idx] = -c.bend[kick_idx] + sgnd_stride;
       phis.tgt_phispeed[didim_idx] = c.speed;
       phis.tgt_phispeed[kick_idx] = c.speed;
@@ -92,7 +84,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phiacclim[kick_idx] = c.acclim;
       phis.damp_thr = 0.025;
       phis.fix_thr = 0.01;
-      phis.fix_cycles_thr = 5;
+      phis.fix_cycles_thr = 10;
       phis.min_dur = c.min_dur > (millis() - c.init_time)
                          ? c.min_dur - (millis() - c.init_time)
                          : 0;

@@ -293,7 +293,7 @@ class Basilisk {
                                           // Exit condition priority:
                                           // exit_condition > steps
 
-      // Pivot (*pivot_gtr)(Basilisk*, uint8_t);
+      std::vector<Pivot> pivots_vec;
 
       Pivot* pivots;  // exit_to_mode and minmax_dur will be written by PivSeq.
       uint32_t* min_durs;      // It is the PivSeq's clients responsibility to

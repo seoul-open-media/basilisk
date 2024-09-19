@@ -41,8 +41,6 @@ void setup() {
   xb_cr.Setup(&b);
   nk_cr.Setup(&b);
   delay(250);
-
-  Serial.println(b.cfg_.suid);
 }
 
 void loop() {
@@ -57,5 +55,5 @@ void loop() {
   if (executer_beat.Hit()) exec.Run();
 
   static Beat serial_plotter_rs_beat{250};
-  // if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
+  if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
 }

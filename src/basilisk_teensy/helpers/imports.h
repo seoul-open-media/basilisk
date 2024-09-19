@@ -6,6 +6,8 @@
 #include <Smoothed.h>
 #include <math.h>
 
+#include <vector>
+
 #include "utils.h"
 
 using namespace mjbots::moteus;
