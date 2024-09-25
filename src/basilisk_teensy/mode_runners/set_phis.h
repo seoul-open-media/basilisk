@@ -16,7 +16,8 @@ void ModeRunners::SetPhis(Basilisk* b) {
     case M::SetPhis_Move: {
       // Serial.println("ModeRunners::SetPhis(Move)");
       if ([&] {
-            if (millis() - c.init_time > c.max_dur) {
+            if (millis() - c.init_time > c.max_dur ||
+                (c.exit_condition && c.exit_condition(b))) {
               return true;
             }
 
@@ -47,7 +48,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
                       c.tgt_phispeed[f] *
                       signedpow(
                           constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0),
-                          0.875);
+                          0.8125);
                   /* dx/dt = -x^p where x(t=0) = 1 gives:
                    * x = e^{-t} for p = 1
                    * x = (1 - (1 - p)t)^{1 / (1 - p)} elsewhere

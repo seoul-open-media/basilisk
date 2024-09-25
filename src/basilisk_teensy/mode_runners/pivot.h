@@ -93,6 +93,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.max_dur = c.max_dur > (millis() - c.init_time)
                          ? c.max_dur - (millis() - c.init_time)
                          : 0;
+      phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = c.exit_to_mode;
     } break;
     default:

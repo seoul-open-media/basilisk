@@ -111,17 +111,17 @@ class NeokeyCommandReceiver {
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;
       case 8: {
-        m = M::WalkToDir;
-        c.walk_to_dir.init_didimbal = BOOL_L;
-        c.walk_to_dir.tgt_yaw = 0.0;
-        c.walk_to_dir.stride = 0.1;
-        c.walk_to_dir.bend[IDX_L] = 0.0;
-        c.walk_to_dir.bend[IDX_R] = 0.0;
-        c.walk_to_dir.speed = 0.1;
-        c.walk_to_dir.acclim = 1.0;
-        c.walk_to_dir.min_stepdur = 2000;
-        c.walk_to_dir.max_stepdur = 8000;
-        c.walk_to_dir.steps = -1;
+        // m = M::WalkToDir;
+        // c.walk_to_dir.init_didimbal = BOOL_L;
+        // c.walk_to_dir.tgt_yaw = 0.0;
+        // c.walk_to_dir.stride = 0.1;
+        // c.walk_to_dir.bend[IDX_L] = 0.0;
+        // c.walk_to_dir.bend[IDX_R] = 0.0;
+        // c.walk_to_dir.speed = 0.1;
+        // c.walk_to_dir.acclim = 1.0;
+        // c.walk_to_dir.min_stepdur = 2000;
+        // c.walk_to_dir.max_stepdur = 8000;
+        // c.walk_to_dir.steps = -1;
       } break;
 
       // case 4: {  // CatWalk

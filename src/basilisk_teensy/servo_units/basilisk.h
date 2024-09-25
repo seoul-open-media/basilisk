@@ -205,10 +205,13 @@ class Basilisk {
       PivSeq_Init,  // -> PivSeq_Step
       PivSeq_Step,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
 
-      /* Walk variants: Instances of PivSeq. */
-      WalkToDir,  // -> PivSeq -> Idle
-      WalkToPos,  // -> PivSeq -> Idle
-      Sufi,
+      /* Walk: Instance of PivSeq implementing bipedalism. */
+      Walk,  // -> PivSeq -> Idle
+
+      /* Walk Variants: Instances of Walk. */
+      WalkToDir,  // -> Walk -> Idle
+      WalkToPos,  // -> Walk -> Idle
+      Sufi,       // -> Walk -> Idle
 
       Orbit,
       BounceWalk,
@@ -254,7 +257,7 @@ class Basilisk {
       PhiThreshold damp_thr;
       PhiThreshold fix_thr;
       uint8_t fix_cycles_thr;             // Exit condition priority:
-      uint32_t min_dur, max_dur;          // max_dur > exit_condition
+      uint32_t min_dur, max_dur;          // (max_dur || exit_condition)
       bool (*exit_condition)(Basilisk*);  // > (min_dur && fixed_enough)
 
      private:
@@ -268,7 +271,7 @@ class Basilisk {
       LR didimbal;                   // Foot to pivot about.
       double (*tgt_yaw)(Basilisk*);  // Evaluated at Pivot_Init
                                      // and used throughout Pivot.
-      // (*.*) oO(***)
+      // (*.*) oO(Ignore me.)
       double stride;  // Forward this much more from tgt_yaw.
                       // Negative value manifests as walking backwards.
       Phi bend[2];    // [0]: l, [1]: r
@@ -278,8 +281,10 @@ class Basilisk {
                       // initial phi for kickbal.
       PhiSpeed speed;
       PhiAccel acclim;
-      uint32_t min_dur, max_dur;          // Exit condition priority:
-      bool (*exit_condition)(Basilisk*);  // max_dur > exit_condition > min_dur
+      uint32_t min_dur, max_dur;
+      bool (*exit_condition)(Basilisk*);  // Passed down to SetPhis.
+                                          // Exit condition priority:
+                                          // max_dur > exit_condition > min_dur
 
      private:
       friend struct ModeRunners;
@@ -288,41 +293,49 @@ class Basilisk {
 
     struct PivSeq {
       Mode exit_to_mode;
-      bool (*exit_condition)(Basilisk*);  // Evaluated every interval
-                                          // between Pivots.
+      Pivot (*pivots)(Basilisk*, int);  // exit_to_mode will be
+                                        // overwritten by PivSeq.
+      uint32_t (*intervals)(Basilisk*, int);
+      int loop_begin_idx;  // Perform 0...(loop_begin_idx - 1) once, then
+      int loop_end_idx;    // perform (loop_begin_idx)...(loop_end_idx - 1) in
+      int steps;           // loop, until steps steps are made in total.
+      bool (*exit_condition)(Basilisk*);  // This is exit condition
+                                          // evaluated every interval
+                                          // between Pivots. Exit condition
+                                          // while Pivoting should be set
+                                          // at Pivot::exit_condition.
                                           // Exit condition priority:
                                           // exit_condition > steps
 
-      std::vector<Pivot> pivots_vec;
-
-      Pivot* pivots;  // exit_to_mode and minmax_dur will be written by PivSeq.
-      uint32_t* min_durs;      // It is the PivSeq's clients responsibility to
-      uint32_t* max_durs;      // cleanup memory.
-      uint8_t size;            // Perform 0...(loop_begin_idx - 1) once, then
-      uint8_t loop_begin_idx;  // perform (loop_begin_idx)...(size - 1) in loop,
-      uint8_t steps;           // until steps steps are made in total.
-
      private:
       friend struct ModeRunners;
-      uint8_t cur_step;
-      uint8_t cur_idx;
+      int cur_step;
+      int cur_idx;
     } pivseq;
+
+    struct Walk {
+      LR init_didimbal;
+      double (*tgt_yaw[2])(Basilisk*);    // [0]: l, [1]: r (didimbal)
+      double (*stride[2])(Basilisk*);     // [0]: l, [1]: r (didimbal)
+      Phi bend[2];                        // [0]: l, [1]: r (didimbal)
+      PhiSpeed speed[2];                  // [0]: l, [1]: r (didimbal)
+      PhiAccel acclim[2];                 // [0]: l, [1]: r (didimbal)
+      bool (*exit_condition)(Basilisk*);  // Passed down to PivSeq AND Pivot.
+      uint8_t steps;
+      uint32_t min_stepdur[2], max_stepdur[2];  // [0]: l, [1]: r (didimbal)
+      uint32_t interval[2];                     // [0]: l, [1]: r (didimbal)
+    } walk;
 
     struct WalkToDir {
       LR init_didimbal;
-      double tgt_yaw;  // NaN = initial yaw at WalkToDir_Init.
+      double tgt_yaw;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint32_t min_stepdur, max_stepdur;
       uint8_t steps;
-
-     private:
-      friend struct ModeRunners;
-      Pivot pivots[2];
-      uint32_t min_durs[2];
-      uint32_t max_durs[2];
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
     } walk_to_dir;
 
     struct WalkToPos {
@@ -333,31 +346,22 @@ class Basilisk {
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint32_t min_stepdur, max_stepdur;
       uint8_t steps;
-
-     private:
-      friend struct ModeRunners;
-      Pivot pivots[2];
-      uint32_t min_durs[2];
-      uint32_t max_durs[2];
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
     } walk_to_pos;
 
     struct Sufi {
       LR init_didimbal;
       double dest_yaw;
+      double prox_thr;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint32_t min_stepdur, max_stepdur;
       uint8_t steps;
-
-     private:
-      friend struct ModeRunners;
-      Pivot pivots[2];
-      uint32_t min_durs[2];
-      uint32_t max_durs[2];
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
     } sufi;
 
     // struct Diamond {

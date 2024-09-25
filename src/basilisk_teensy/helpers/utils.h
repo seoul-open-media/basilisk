@@ -153,6 +153,10 @@ T clamp(const T& val, const T& lb, const T& ub) {
 template <typename T>
 class clamped {
  public:
+  clamped() { val_ = 0; }
+
+  clamped(const clamped& other) { val_ = other.val_; }
+
   clamped& operator=(const T& new_val) {
     val_ = clamp(new_val, lb(), ub());
     return *this;
@@ -193,6 +197,8 @@ class PhiSpeed : public clamped<double> {
  public:
   PhiSpeed(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
 
+  using clamped::operator=;
+
  private:
   double lb() const override { return 0.0; }
   double ub() const override { return 0.25; }
@@ -201,6 +207,8 @@ class PhiSpeed : public clamped<double> {
 class PhiAccel : public clamped<double> {
  public:
   PhiAccel(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
+
+  using clamped::operator=;
 
  private:
   double lb() const override { return 0.0; }
@@ -212,6 +220,8 @@ class PhiThreshold : public clamped<double> {
   PhiThreshold(const double& init_val = 0.0) {
     val_ = clamp(init_val, lb(), ub());
   }
+
+  using clamped::operator=;
 
  private:
   double lb() const override { return 0.001; }

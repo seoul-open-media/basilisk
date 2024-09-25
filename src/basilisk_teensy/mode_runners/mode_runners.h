@@ -15,6 +15,7 @@ struct ModeRunners {
   static void SetPhis(Basilisk*);
   static void Pivot(Basilisk*);
   static void PivSeq(Basilisk*);
+  static void Walk(Basilisk*);
   static void WalkToDir(Basilisk*);
   static void WalkToPos(Basilisk*);
   static void Sufi(Basilisk*);
@@ -33,6 +34,7 @@ struct ModeRunners {
       {M::Pivot_Kick, &Pivot},
       {M::PivSeq_Init, &PivSeq},
       {M::PivSeq_Step, &PivSeq},
+      {M::Walk, &Walk},
       {M::WalkToDir, &WalkToDir},
       {M::WalkToPos, &WalkToPos},
       {M::Sufi, &Sufi},
