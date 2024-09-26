@@ -24,11 +24,11 @@ void ModeRunners::Sufi(Basilisk* b) {
       }
       w.stride[IDX_L] = [](Basilisk* b) {
         auto& c = b->cmd_.sufi;
-        return -c.stride;
+        return c.stride;
       };
       w.stride[IDX_R] = [](Basilisk* b) {
         auto& c = b->cmd_.sufi;
-        return c.stride;
+        return -c.stride;
       };
       w.steps = c.steps;
       w.exit_condition = [](Basilisk* b) {

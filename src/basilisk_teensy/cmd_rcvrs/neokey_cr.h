@@ -63,11 +63,11 @@ class NeokeyCommandReceiver {
         c.pivot.didimbal = BOOL_L;
         c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
         c.pivot.stride = 0.125;
-        c.pivot.bend[0] = 0.0;
-        c.pivot.bend[1] = 0.0;
+        c.pivot.bend[IDX_L] = 0.0;
+        c.pivot.bend[IDX_R] = 0.0;
         c.pivot.speed = 0.1;
         c.pivot.acclim = 1.0;
-        c.pivot.min_dur = -1;
+        c.pivot.min_dur = 0;
         c.pivot.max_dur = -1;
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;
@@ -76,8 +76,8 @@ class NeokeyCommandReceiver {
         c.pivot.didimbal = BOOL_R;
         c.pivot.tgt_yaw = [](Basilisk*) { return 0.0; };
         c.pivot.stride = 0.125;
-        c.pivot.bend[0] = 0.0;
-        c.pivot.bend[1] = 0.0;
+        c.pivot.bend[IDX_L] = 0.0;
+        c.pivot.bend[IDX_R] = 0.0;
         c.pivot.speed = 0.1;
         c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
@@ -120,7 +120,8 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.speed = 0.1;
         c.walk_to_dir.acclim = 1.0;
         c.walk_to_dir.min_stepdur = 1000;
-        c.walk_to_dir.max_stepdur = 10000;
+        c.walk_to_dir.max_stepdur = 3000;
+        c.walk_to_dir.interval = 0;
         c.walk_to_dir.steps = 16;
       } break;
       case 9: {
@@ -132,25 +133,25 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.bend[IDX_R] = 0.0;
         c.walk_to_dir.speed = 0.1;
         c.walk_to_dir.acclim = 1.0;
-        c.walk_to_dir.steps = 8;
         c.walk_to_dir.min_stepdur = 1000;
-        c.walk_to_dir.max_stepdur = 10000;
+        c.walk_to_dir.max_stepdur = 3000;
         c.walk_to_dir.interval = 0;
+        c.walk_to_dir.steps = 16;
       } break;
       case 10: {
         m = M::Sufi;
         c.sufi.init_didimbal = BOOL_L;
         c.sufi.dest_yaw = 0.5;
-        c.sufi.exit_thr = 0.02;
+        c.sufi.exit_thr = 0.01;
         c.sufi.stride = 0.05;
         c.sufi.bend[IDX_L] = 0.0;
         c.sufi.bend[IDX_R] = 0.0;
         c.sufi.speed = 0.1;
         c.sufi.acclim = 1.0;
-        c.sufi.steps = 16;
         c.sufi.min_stepdur = 2000;
         c.sufi.max_stepdur = 8000;
         c.sufi.interval = 200;
+        c.sufi.steps = -1;
       } break;
       case 11: {
         m = M::SetPhis_Init;
