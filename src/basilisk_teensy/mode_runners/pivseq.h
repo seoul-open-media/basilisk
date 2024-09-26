@@ -3,9 +3,10 @@
 #include "mode_runners.h"
 
 void ModeRunners::PivSeq(Basilisk* b) {
+  static int cur_step;
+
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.pivseq;
-  static int cur_step;
 
   switch (m) {
     case M::PivSeq_Init: {
@@ -29,7 +30,7 @@ void ModeRunners::PivSeq(Basilisk* b) {
       b->cmd_.pivot.exit_to_mode = M::Wait;
       b->cmd_.wait.init_time = millis();
       b->cmd_.wait.exit_condition = [](Basilisk* b) {
-        return millis() - b->cmd_.wait.init_time >
+        return millis() - b->cmd_.wait.init_time >=
                b->cmd_.pivseq.intervals(b, cur_step);
       };
       b->cmd_.wait.exit_to_mode = M::PivSeq_Step;

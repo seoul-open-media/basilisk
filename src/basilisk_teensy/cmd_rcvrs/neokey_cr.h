@@ -141,7 +141,7 @@ class NeokeyCommandReceiver {
         m = M::Sufi;
         c.sufi.init_didimbal = BOOL_L;
         c.sufi.dest_yaw = 0.5;
-        c.sufi.stop_thr = 0.02;
+        c.sufi.exit_thr = 0.02;
         c.sufi.stride = 0.05;
         c.sufi.bend[IDX_L] = 0.0;
         c.sufi.bend[IDX_R] = 0.0;
@@ -161,7 +161,7 @@ class NeokeyCommandReceiver {
         c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
         c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
         c.set_phis.damp_thr = 0.05;
-        c.set_phis.stop_thr = 0.01;
+        c.set_phis.fix_thr = 0.01;
         c.set_phis.min_dur = 2000;
         c.set_phis.max_dur = 100000;
         c.set_phis.exit_condition = [](Basilisk*) { return false; };
@@ -175,7 +175,7 @@ class NeokeyCommandReceiver {
         c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
         c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
         c.set_phis.damp_thr = 0.05;
-        c.set_phis.stop_thr = 0.01;
+        c.set_phis.fix_thr = 0.01;
         c.set_phis.min_dur = 2000;
         c.set_phis.max_dur = 100000;
         c.set_phis.exit_condition = [](Basilisk*) { return false; };

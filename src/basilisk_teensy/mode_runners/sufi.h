@@ -5,14 +5,13 @@
 void ModeRunners::Sufi(Basilisk* b) {
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.sufi;
-  auto& pivseq = b->cmd_.pivseq;
+  auto& w = b->cmd_.walk;
 
   switch (m) {
     case M::Sufi: {
       // Serial.println("ModeRunners::Sufi");
 
       m = M::Walk;
-      auto& w = b->cmd_.walk;
       w.init_didimbal = c.init_didimbal;
       for (uint8_t f : IDX_LR) {
         w.tgt_yaw[f] = [](Basilisk* b) { return NaN; };
@@ -34,7 +33,7 @@ void ModeRunners::Sufi(Basilisk* b) {
       w.steps = c.steps;
       w.exit_condition = [](Basilisk* b) {
         auto& c = b->cmd_.sufi;
-        return abs(b->imu_.GetYaw(true) - c.dest_yaw) < c.stop_thr;
+        return abs(b->imu_.GetYaw(true) - c.dest_yaw) < c.exit_thr;
       };
     } break;
     default:

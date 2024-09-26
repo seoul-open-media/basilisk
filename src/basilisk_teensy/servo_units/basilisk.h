@@ -162,39 +162,29 @@ class Basilisk {
        *          Future-chain-able.
        * - PositionMode-Command Servos continuously with .position
        *   set to NaN, .velocity and .accel_limit set to computed as follows:
-       *     tgt_rtrvel = tgt_phi == NaN || abs(tgt_delta_phi) < stop_thr ? 0 :
+       *     tgt_rtrvel = tgt_phi == NaN || abs(tgt_delta_phi) < fix_thr ? 0 :
        *                  21 * tgt_phispeed * (tgt_delta_phi >  damp_thr ?  1 :
        *                                       tgt_delta_phi < -damp_thr ? -1 :
        *                                       tgt_delta_phi / damp_thr);
        *     tgt_rtracclim = 21 * tgt_phiacclim;
-       *   Servo will be Fixed throughout Mode if target was NaN. If not, it
-       *   will be Stopped once at the first cycle where target phi is reached
-       *   enough and not commanded afterwards. Wait until both Servos are
-       *   either being Stopped or Fixed,
+       *   Fix cycles count is incremented every cycle where tgt_rtrvel == 0
+       *   and reset elsewhere. Wait until fix cycles count reaches threshold
+       *   for both Servos,
        * - then exit to designated Mode.
        * - Phi and duration will be clamped throughout. */
       SetPhis_Init,  // -> SetPhis_Move
       SetPhis_Move,  // -> Exit
 
       /* Pivot: Pivot one foot (kickbal) about the other (didimbal).
-       *        The single fundamental element of all Basilisk movement except
-       *        for Gee.
+       *        The single fundamental element of all Basilisk movement
+       *        except Gee.
        *        Future-chain-able.
        *        IsigD + IphiD = Ipsi = IsigK + IphiK
        *     -> (Tpsi + bD) + ? = Ipsi = IsigK + IphiK  (set didimbal)
        *     -> (Tpsi + bD) + ? = Tpsi +- s = (Tpsi + bK) + ?  (kick)
        *
-       * - Attach and fix kickbal, release didimbal, and set
-       *   phi_didim = init_yaw - tgt_yaw - bend_didim
-       *   so that sig_didim = init_yaw - phi_didim
-       *                     = tgt_yaw + bend_didim,
-       * - then attach didimbal, release kickbal and set
-       *   phi_didim = -bend_didim +- stride
-       *   phi_kick  = -bend_kick  +- stride
-       *   so that yaw = sig_didim + phi_didim
-       *               = tgt_yaw +- stride,
-       *   and sig_kick = yaw - phi_kick
-       *                = tgt_yaw + bend_kick,
+       * - Attach and fix kickbal, release didimbal, and set phi_didim,
+       * - then attach didimbal, release kickbal and set both phis,
        * - then exit to designated Mode.
        * - Phi and duration will be clamped throughout. */
       Pivot_Init,  // -> SetMags -> SetPhis -> Pivot_Kick
@@ -205,7 +195,7 @@ class Basilisk {
       PivSeq_Init,  // -> PivSeq_Step
       PivSeq_Step,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
 
-      /* Walk: Instance of PivSeq implementing bipedalism. */
+      /* Walk: An instance of PivSeq implementing bipedalism. */
       Walk,  // -> PivSeq -> Idle
 
       /* Walk Variants: Instances of Walk. */
@@ -213,6 +203,7 @@ class Basilisk {
       WalkToPos,  // -> Walk -> Idle
       Sufi,       // -> Walk -> Idle
 
+      PivSpin,
       Orbit,
       BounceWalk,
       RandomWalk,
@@ -246,14 +237,15 @@ class Basilisk {
     } set_mags;
 
     struct SetPhis {
-      Phi tgt_phi[2];             // [0]: l, [1]: r
-      PhiSpeed tgt_phispeed[2];   // [0]: l, [1]: r
-      PhiAccel tgt_phiacclim[2];  // [0]: l, [1]: r
-      PhiThreshold damp_thr;
-      PhiThreshold stop_thr;
-      uint32_t min_dur, max_dur;          // Exit condition priority:
-      bool (*exit_condition)(Basilisk*);  // (max_dur || exit_condition)
-                                          // > (min_dur && tgts_reached)
+      Phi tgt_phi[2];  // [0]: l, [1]: r
+                       // NaN means fix phi (speed and acclim ignored).
+      PhiSpeed tgt_phispeed[2];    // [0]: l, [1]: r
+      PhiAccLim tgt_phiacclim[2];  // [0]: l, [1]: r
+      PhiThr damp_thr;
+      PhiThr fix_thr;
+      uint8_t fixing_cycles_thr;          // Exit condition priority:
+      uint32_t min_dur, max_dur;          // (max_dur || exit_condition)
+      bool (*exit_condition)(Basilisk*);  // > (min_dur && fixed_enough)
       Mode exit_to_mode;
     } set_phis;
 
@@ -261,7 +253,8 @@ class Basilisk {
       LR didimbal;                   // Foot to pivot about.
       double (*tgt_yaw)(Basilisk*);  // Evaluated at Pivot_Init
                                      // and used throughout Pivot.
-      // (*.*) oO(Ignore me.)
+                                     // NaN means yaw at Pivot_Init.
+      // (*.*) oO(Ignore me...)
       double stride;  // Forward this much more from tgt_yaw.
                       // Negative value manifests as walking backwards.
       Phi bend[2];    // [0]: l, [1]: r
@@ -270,7 +263,7 @@ class Basilisk {
                       // NaN means preserve initial sig for didimbal,
                       // initial phi for kickbal.
       PhiSpeed speed;
-      PhiAccel acclim;
+      PhiAccLim acclim;
       uint32_t min_dur, max_dur;
       bool (*exit_condition)(Basilisk*);  // Passed down to SetPhis.
                                           // Exit condition priority:
@@ -282,13 +275,14 @@ class Basilisk {
       Pivot (*pivots)(Basilisk*, int);  // exit_to_mode will be
                                         // overwritten by PivSeq.
       uint32_t (*intervals)(Basilisk*, int);
-      int steps;                          // Exit condition priority:
-                                          // exit_condition > steps
+      int steps;                          // Counting both feet.
       bool (*exit_condition)(Basilisk*);  // This is exit condition
                                           // evaluated every interval
                                           // between Pivots. Exit condition
                                           // while Pivoting should be set
                                           // at Pivot::exit_condition.
+                                          // Exit condition priority:
+                                          // exit_condition > steps
       Mode exit_to_mode;
     } pivseq;
 
@@ -298,7 +292,7 @@ class Basilisk {
       double (*stride[2])(Basilisk*);           // [0]: l, [1]: r (didimbal)
       Phi bend[2];                              // [0]: l, [1]: r (didimbal)
       PhiSpeed speed[2];                        // [0]: l, [1]: r (didimbal)
-      PhiAccel acclim[2];                       // [0]: l, [1]: r (didimbal)
+      PhiAccLim acclim[2];                      // [0]: l, [1]: r (didimbal)
       uint32_t min_stepdur[2], max_stepdur[2];  // [0]: l, [1]: r (didimbal)
       uint32_t interval[2];                     // [0]: l, [1]: r (didimbal)
       uint8_t steps;                            // Counting both feet.
@@ -311,7 +305,7 @@ class Basilisk {
       double stride;
       Phi bend[2];
       PhiSpeed speed;
-      PhiAccel acclim;
+      PhiAccLim acclim;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
       uint8_t steps;
@@ -324,7 +318,7 @@ class Basilisk {
       double stride;
       Phi bend[2];
       PhiSpeed speed;
-      PhiAccel acclim;
+      PhiAccLim acclim;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
       uint8_t steps;
@@ -333,11 +327,11 @@ class Basilisk {
     struct Sufi {
       LR init_didimbal;
       double dest_yaw;
-      double stop_thr;
+      double exit_thr;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
-      PhiAccel acclim;
+      PhiAccLim acclim;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
       uint8_t steps;

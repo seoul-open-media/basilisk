@@ -5,13 +5,13 @@
 void ModeRunners::WalkToPos(Basilisk* b) {
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.walk_to_pos;
+  auto& w = b->cmd_.walk;
 
   switch (m) {
     case M::WalkToPos: {
       // Serial.println("ModeRunners::WalkToPos");
 
       m = M::Walk;
-      auto& w = b->cmd_.walk;
       w.init_didimbal = c.init_didimbal;
       for (uint8_t f : IDX_LR) {
         w.tgt_yaw[f] = [](Basilisk* b) {
@@ -20,7 +20,7 @@ void ModeRunners::WalkToPos(Basilisk* b) {
           return tgt_delta_pos.arg();
         };
         w.stride[f] = [](Basilisk* b) {
-          auto& c = b->cmd_.walk_to_pos;
+          const auto& c = b->cmd_.walk_to_pos;
           return c.stride;
         };
         w.bend[f] = c.bend[f];

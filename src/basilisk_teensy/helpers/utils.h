@@ -4,6 +4,10 @@
 
 #include <map>
 
+#ifndef NaN
+#define NaN (0.0 / 0.0)
+#endif
+
 using LR = bool;
 #define BOOL_L (false)
 #define BOOL_R (true)
@@ -36,7 +40,7 @@ V SafeAt(const std::map<K, V>& map, const K& key) {
 }
 
 double nearest_pmn(const double& tgt, double var) {
-  if (isnan(tgt) || isnan(var)) return (0.0 / 0.0);
+  if (isnan(tgt) || isnan(var)) return NaN;
   if (var == tgt) return var;
   if (var > tgt) {
     while (var > tgt + 0.5) var -= 1.0;
@@ -102,7 +106,7 @@ struct Vec2 {
   }
 
   Vec2 operator/(const double& scalar) const {
-    if (scalar == 0.0) return Vec2{0.0, 0.0};
+    if (scalar == 0.0) return Vec2{NaN, NaN};
     return Vec2(x / scalar, y / scalar);
   }
 
@@ -204,22 +208,22 @@ class PhiSpeed : public clamped<double> {
   double ub() const override { return 0.25; }
 };
 
-class PhiAccel : public clamped<double> {
+class PhiAccLim : public clamped<double> {
  public:
-  PhiAccel(const double& init_val = 0.0) { val_ = clamp(init_val, lb(), ub()); }
+  PhiAccLim(const double& init_val = 1.0) {
+    val_ = clamp(init_val, lb(), ub());
+  }
 
   using clamped::operator=;
 
  private:
-  double lb() const override { return 0.0; }
+  double lb() const override { return 0.1; }
   double ub() const override { return 2.0; }
 };
 
-class PhiThreshold : public clamped<double> {
+class PhiThr : public clamped<double> {
  public:
-  PhiThreshold(const double& init_val = 0.0) {
-    val_ = clamp(init_val, lb(), ub());
-  }
+  PhiThr(const double& init_val = 0.01) { val_ = clamp(init_val, lb(), ub()); }
 
   using clamped::operator=;
 

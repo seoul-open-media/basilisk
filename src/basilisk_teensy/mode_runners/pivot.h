@@ -9,17 +9,18 @@ void ModeRunners::Pivot(Basilisk* b) {
 
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.pivot;
+  auto& mags = b->cmd_.set_mags;
+  auto& phis = b->cmd_.set_phis;
 
   const uint8_t didim_idx = c.didimbal == BOOL_L ? IDX_L : IDX_R;
   const uint8_t kick_idx = c.didimbal == BOOL_L ? IDX_R : IDX_L;
-  auto& mags = b->cmd_.set_mags;
-  auto& phis = b->cmd_.set_phis;
 
   switch (m) {
     case M::Pivot_Init: {
       Serial.println("ModeRunners::Pivot(Init)");
 
       init_time = millis();
+
       init_yaw = b->imu_.GetYaw(true);
       tgt_yaw = c.tgt_yaw(b);
       if (isnan(tgt_yaw)) tgt_yaw = init_yaw;
@@ -49,10 +50,8 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phispeed[didim_idx] = c.speed;
       phis.tgt_phiacclim[didim_idx] = c.acclim;
       phis.tgt_phi[kick_idx] = NaN;
-      phis.tgt_phispeed[kick_idx] = 0.0;
-      phis.tgt_phiacclim[kick_idx] = 0.0;
       phis.damp_thr = 0.05;
-      phis.stop_thr = 0.005;
+      phis.fix_thr = 0.005;
       phis.min_dur = 0;
       phis.max_dur = c.max_dur / 4;
       phis.exit_condition = c.exit_condition;
@@ -83,7 +82,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phiacclim[didim_idx] = c.acclim;
       phis.tgt_phiacclim[kick_idx] = c.acclim;
       phis.damp_thr = 0.05;
-      phis.stop_thr = 0.005;
+      phis.fix_thr = 0.005;
       phis.min_dur = c.min_dur > (millis() - init_time)
                          ? c.min_dur - (millis() - init_time)
                          : 0;
