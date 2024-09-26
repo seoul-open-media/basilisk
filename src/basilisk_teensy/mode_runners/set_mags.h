@@ -3,25 +3,29 @@
 #include "mode_runners.h"
 
 void ModeRunners::SetMags(Basilisk* b) {
+  static uint32_t init_time;
+
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.set_mags;
 
   switch (m) {
     case M::SetMags_Init: {
-      // Serial.println("ModeRunners::SetMags(Init)");
+      Serial.println("ModeRunners::SetMags(Init)");
+
       for (uint8_t id = 0; id < 4; id++) {
         b->mags_.SetStrength(id, c.strengths[id]);
       }
-      c.init_time = millis();
+      init_time = millis();
       m = M::SetMags_Wait;
     } break;
     case M::SetMags_Wait: {
       // Serial.println("ModeRunners::SetMags(Wait)");
+
       if ([&] {
-            if (millis() - c.init_time > c.max_dur) {
+            if (millis() - init_time > c.max_dur) {
               return true;
             }
-            if (millis() - c.init_time < c.min_dur) {
+            if (millis() - init_time < c.min_dur) {
               return false;
             }
             for (const uint8_t f : IDX_LR) {

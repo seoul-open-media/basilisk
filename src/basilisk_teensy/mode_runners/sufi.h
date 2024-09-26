@@ -34,7 +34,7 @@ void ModeRunners::Sufi(Basilisk* b) {
       w.steps = c.steps;
       w.exit_condition = [](Basilisk* b) {
         auto& c = b->cmd_.sufi;
-        return abs(b->imu_.GetYaw(true) - c.dest_yaw) < c.prox_thr;
+        return abs(b->imu_.GetYaw(true) - c.dest_yaw) < c.stop_thr;
       };
     } break;
     default:

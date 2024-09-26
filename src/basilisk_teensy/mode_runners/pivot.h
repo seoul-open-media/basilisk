@@ -3,10 +3,12 @@
 #include "mode_runners.h"
 
 void ModeRunners::Pivot(Basilisk* b) {
-  auto& m = b->cmd_.mode;
-  auto& c = b->cmd_.pivot;
+  static uint32_t init_time;
   static double init_yaw;
   static double tgt_yaw;
+
+  auto& m = b->cmd_.mode;
+  auto& c = b->cmd_.pivot;
 
   const uint8_t didim_idx = c.didimbal == BOOL_L ? IDX_L : IDX_R;
   const uint8_t kick_idx = c.didimbal == BOOL_L ? IDX_R : IDX_L;
@@ -15,10 +17,9 @@ void ModeRunners::Pivot(Basilisk* b) {
 
   switch (m) {
     case M::Pivot_Init: {
-      // Serial.println("ModeRunners::Pivot(Init)");
+      Serial.println("ModeRunners::Pivot(Init)");
 
-      c.init_time = millis();
-
+      init_time = millis();
       init_yaw = b->imu_.GetYaw(true);
       tgt_yaw = c.tgt_yaw(b);
       if (isnan(tgt_yaw)) tgt_yaw = init_yaw;
@@ -50,16 +51,15 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phi[kick_idx] = NaN;
       phis.tgt_phispeed[kick_idx] = 0.0;
       phis.tgt_phiacclim[kick_idx] = 0.0;
-      phis.damp_thr = 0.025;
-      phis.fix_thr = 0.01;
-      phis.fix_cycles_thr = 10;
+      phis.damp_thr = 0.05;
+      phis.stop_thr = 0.005;
       phis.min_dur = 0;
       phis.max_dur = c.max_dur / 4;
       phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = M::Pivot_Kick;
     } break;
     case M::Pivot_Kick: {
-      // Serial.println("ModeRunners::Pivot(Kick)");
+      Serial.println("ModeRunners::Pivot(Kick)");
 
       m = M::SetMags_Init;
       const bool attach_l = c.didimbal == BOOL_L;
@@ -75,23 +75,20 @@ void ModeRunners::Pivot(Basilisk* b) {
       mags.max_dur = 200;
       mags.exit_to_mode = M::SetPhis_Init;
       const auto sgnd_stride = c.stride * (c.didimbal == BOOL_L ? 1.0 : -1.0);
-      const auto tgt_delta_phi_didim =
-          tgt_yaw - b->imu_.GetYaw(true) + sgnd_stride;
-      phis.tgt_phi[didim_idx] =
-          b->s_[didim_idx]->GetReply().abs_position + tgt_delta_phi_didim;
+      phis.tgt_phi[didim_idx] = b->s_[didim_idx]->GetReply().abs_position +
+                                tgt_yaw - b->imu_.GetYaw(true) + sgnd_stride;
       phis.tgt_phi[kick_idx] = -c.bend[kick_idx] + sgnd_stride;
       phis.tgt_phispeed[didim_idx] = c.speed;
       phis.tgt_phispeed[kick_idx] = c.speed;
       phis.tgt_phiacclim[didim_idx] = c.acclim;
       phis.tgt_phiacclim[kick_idx] = c.acclim;
-      phis.damp_thr = tgt_delta_phi_didim < 0.5 ? 0.025 : 0.05;
-      phis.fix_thr = 0.01;
-      phis.fix_cycles_thr = 10;
-      phis.min_dur = c.min_dur > (millis() - c.init_time)
-                         ? c.min_dur - (millis() - c.init_time)
+      phis.damp_thr = 0.05;
+      phis.stop_thr = 0.005;
+      phis.min_dur = c.min_dur > (millis() - init_time)
+                         ? c.min_dur - (millis() - init_time)
                          : 0;
-      phis.max_dur = c.max_dur > (millis() - c.init_time)
-                         ? c.max_dur - (millis() - c.init_time)
+      phis.max_dur = c.max_dur > (millis() - init_time)
+                         ? c.max_dur - (millis() - init_time)
                          : 0;
       phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = c.exit_to_mode;

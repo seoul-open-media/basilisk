@@ -33,7 +33,7 @@ void ModeRunners::WalkToPos(Basilisk* b) {
       w.steps = c.steps;
       w.exit_condition = [](Basilisk* b) {
         const auto& c = b->cmd_.walk_to_pos;
-        return b->lps_.GetPos().dist(c.tgt_pos) < abs(c.prox_thr);
+        return b->lps_.GetPos().dist(c.tgt_pos) < abs(c.dist_thr);
       };
     } break;
     default:

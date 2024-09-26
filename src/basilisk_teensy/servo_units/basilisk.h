@@ -71,9 +71,9 @@ class Basilisk {
       Serial.println("Basilisk: CanFdDriver setup failed");
       return false;
     }
-
     CommandBoth([](Servo* s) {
       s->SetStop();
+      s->SetQuery();
       s->Print();
     });
     Serial.println("Basilisk: Both Servos Stopped, Queried and Printed");
@@ -160,17 +160,17 @@ class Basilisk {
 
       /* SetPhis: Control Servos to achieve target phis.
        *          Future-chain-able.
-       * - Reset fix cycles count,
-       * - then PositionMode-Command Servos continuously with .position
+       * - PositionMode-Command Servos continuously with .position
        *   set to NaN, .velocity and .accel_limit set to computed as follows:
-       *   tgt_rtrvel = tgt_phi == NaN || abs(tgt_delta_phi) < fix_thr ? 0 :
-       *                21 * tgt_phispeed * (tgt_delta_phi >  damp_thr ?  1 :
-       *                                     tgt_delta_phi < -damp_thr ? -1 :
-       *                                     tgt_delta_phi / damp_thr);
-       *   tgt_rtracclim = 21 * tgt_phiacclim;
-       *   Fix cycles count is incremented every cycle where tgt_rtrvel == 0
-       *   and reset elsewhere. Wait until fix cycles count reaches threshold
-       *   for both Servos,
+       *     tgt_rtrvel = tgt_phi == NaN || abs(tgt_delta_phi) < stop_thr ? 0 :
+       *                  21 * tgt_phispeed * (tgt_delta_phi >  damp_thr ?  1 :
+       *                                       tgt_delta_phi < -damp_thr ? -1 :
+       *                                       tgt_delta_phi / damp_thr);
+       *     tgt_rtracclim = 21 * tgt_phiacclim;
+       *   Servo will be Fixed throughout Mode if target was NaN. If not, it
+       *   will be Stopped once at the first cycle where target phi is reached
+       *   enough and not commanded afterwards. Wait until both Servos are
+       *   either being Stopped or Fixed,
        * - then exit to designated Mode.
        * - Phi and duration will be clamped throughout. */
       SetPhis_Init,  // -> SetPhis_Move
@@ -231,43 +231,33 @@ class Basilisk {
     } do_preset;
 
     struct Wait {
-      Mode exit_to_mode;
-      bool (*exit_condition)(Basilisk*);
       uint32_t init_time;
+      bool (*exit_condition)(Basilisk*);
+      Mode exit_to_mode;
     } wait;
 
     struct SetMags {
-      Mode exit_to_mode;
       MagnetStrength strengths[4];
       bool expected_state[2];     // [0]: l, [1]: r
                                   // true: contact, false: detachment
       N64 verif_thr;              // Exit condition priority:
       uint32_t min_dur, max_dur;  // max_dur > min_dur > lego_verification
-
-     private:
-      friend struct ModeRunners;
-      uint32_t init_time;
+      Mode exit_to_mode;
     } set_mags;
 
     struct SetPhis {
-      Mode exit_to_mode;
       Phi tgt_phi[2];             // [0]: l, [1]: r
       PhiSpeed tgt_phispeed[2];   // [0]: l, [1]: r
       PhiAccel tgt_phiacclim[2];  // [0]: l, [1]: r
       PhiThreshold damp_thr;
-      PhiThreshold fix_thr;
-      uint8_t fix_cycles_thr;             // Exit condition priority:
-      uint32_t min_dur, max_dur;          // (max_dur || exit_condition)
-      bool (*exit_condition)(Basilisk*);  // > (min_dur && fixed_enough)
-
-     private:
-      friend struct ModeRunners;
-      uint32_t init_time;
-      uint8_t fix_cycles[2];
+      PhiThreshold stop_thr;
+      uint32_t min_dur, max_dur;          // Exit condition priority:
+      bool (*exit_condition)(Basilisk*);  // (max_dur || exit_condition)
+                                          // > (min_dur && tgts_reached)
+      Mode exit_to_mode;
     } set_phis;
 
     struct Pivot {
-      Mode exit_to_mode;
       LR didimbal;                   // Foot to pivot about.
       double (*tgt_yaw)(Basilisk*);  // Evaluated at Pivot_Init
                                      // and used throughout Pivot.
@@ -285,45 +275,34 @@ class Basilisk {
       bool (*exit_condition)(Basilisk*);  // Passed down to SetPhis.
                                           // Exit condition priority:
                                           // max_dur > exit_condition > min_dur
-
-     private:
-      friend struct ModeRunners;
-      uint32_t init_time;
+      Mode exit_to_mode;
     } pivot;
 
     struct PivSeq {
-      Mode exit_to_mode;
       Pivot (*pivots)(Basilisk*, int);  // exit_to_mode will be
                                         // overwritten by PivSeq.
       uint32_t (*intervals)(Basilisk*, int);
-      int loop_begin_idx;  // Perform 0...(loop_begin_idx - 1) once, then
-      int loop_end_idx;    // perform (loop_begin_idx)...(loop_end_idx - 1) in
-      int steps;           // loop, until steps steps are made in total.
+      int steps;                          // Exit condition priority:
+                                          // exit_condition > steps
       bool (*exit_condition)(Basilisk*);  // This is exit condition
                                           // evaluated every interval
                                           // between Pivots. Exit condition
                                           // while Pivoting should be set
                                           // at Pivot::exit_condition.
-                                          // Exit condition priority:
-                                          // exit_condition > steps
-
-     private:
-      friend struct ModeRunners;
-      int cur_step;
-      int cur_idx;
+      Mode exit_to_mode;
     } pivseq;
 
     struct Walk {
       LR init_didimbal;
-      double (*tgt_yaw[2])(Basilisk*);    // [0]: l, [1]: r (didimbal)
-      double (*stride[2])(Basilisk*);     // [0]: l, [1]: r (didimbal)
-      Phi bend[2];                        // [0]: l, [1]: r (didimbal)
-      PhiSpeed speed[2];                  // [0]: l, [1]: r (didimbal)
-      PhiAccel acclim[2];                 // [0]: l, [1]: r (didimbal)
-      bool (*exit_condition)(Basilisk*);  // Passed down to PivSeq AND Pivot.
-      uint8_t steps;
+      double (*tgt_yaw[2])(Basilisk*);          // [0]: l, [1]: r (didimbal)
+      double (*stride[2])(Basilisk*);           // [0]: l, [1]: r (didimbal)
+      Phi bend[2];                              // [0]: l, [1]: r (didimbal)
+      PhiSpeed speed[2];                        // [0]: l, [1]: r (didimbal)
+      PhiAccel acclim[2];                       // [0]: l, [1]: r (didimbal)
       uint32_t min_stepdur[2], max_stepdur[2];  // [0]: l, [1]: r (didimbal)
       uint32_t interval[2];                     // [0]: l, [1]: r (didimbal)
+      uint8_t steps;                            // Counting both feet.
+      bool (*exit_condition)(Basilisk*);  // Passed down to PivSeq AND Pivot.
     } walk;
 
     struct WalkToDir {
@@ -333,35 +312,35 @@ class Basilisk {
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint8_t steps;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
+      uint8_t steps;
     } walk_to_dir;
 
     struct WalkToPos {
       LR init_didimbal;
       Vec2 tgt_pos;
-      double prox_thr;
+      double dist_thr;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint8_t steps;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
+      uint8_t steps;
     } walk_to_pos;
 
     struct Sufi {
       LR init_didimbal;
       double dest_yaw;
-      double prox_thr;
+      double stop_thr;
       double stride;
       Phi bend[2];
       PhiSpeed speed;
       PhiAccel acclim;
-      uint8_t steps;
       uint32_t min_stepdur, max_stepdur;
       uint32_t interval;
+      uint8_t steps;
     } sufi;
 
     // struct Diamond {

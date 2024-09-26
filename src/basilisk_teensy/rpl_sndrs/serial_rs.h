@@ -4,7 +4,7 @@
 
 void SerialReplySender(Basilisk& b) {
   // Servo Replies
-  b.CommandBoth([](Servo* s) { s->Print(); });
+  // b.CommandBoth([](Servo* s) { s->Print(); });
 
   // Servo outputs
   Serial.print("phi_l:");
@@ -15,10 +15,10 @@ void SerialReplySender(Basilisk& b) {
   Serial.println();
 
   // LPS position
-  // Serial.print("lpsx:");
+  // Serial.print("lpsx=");
   // Serial.print(b.lps_.x_);
-  // Serial.print(",");
-  // Serial.print("lpsy:");
+  // Serial.print(";");
+  // Serial.print("lpsy=");
   // Serial.print(b.lps_.y_);
   // Serial.println();
 
@@ -49,9 +49,9 @@ void SerialReplySender(Basilisk& b) {
   // Serial.print("pitch:");
   // Serial.print(b.imu_.euler_[1], 3);
   // Serial.print(",");
-  Serial.print("yaw:");
-  Serial.print(b.imu_.GetYaw(true), 4);
-  Serial.println();
+  // Serial.print("yaw:");
+  // Serial.print(b.imu_.GetYaw(true), 4);
+  // Serial.println();
 
   // Lego
   // Serial.print("contact_l=");

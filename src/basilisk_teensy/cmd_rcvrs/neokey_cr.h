@@ -67,7 +67,7 @@ class NeokeyCommandReceiver {
         c.pivot.bend[1] = 0.0;
         c.pivot.speed = 0.1;
         c.pivot.acclim = 1.0;
-        c.pivot.min_dur = 0;
+        c.pivot.min_dur = -1;
         c.pivot.max_dur = -1;
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;
@@ -111,17 +111,74 @@ class NeokeyCommandReceiver {
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;
       case 8: {
-        // m = M::WalkToDir;
-        // c.walk_to_dir.init_didimbal = BOOL_L;
-        // c.walk_to_dir.tgt_yaw = 0.0;
-        // c.walk_to_dir.stride = 0.1;
-        // c.walk_to_dir.bend[IDX_L] = 0.0;
-        // c.walk_to_dir.bend[IDX_R] = 0.0;
-        // c.walk_to_dir.speed = 0.1;
-        // c.walk_to_dir.acclim = 1.0;
-        // c.walk_to_dir.min_stepdur = 2000;
-        // c.walk_to_dir.max_stepdur = 8000;
-        // c.walk_to_dir.steps = -1;
+        m = M::WalkToDir;
+        c.walk_to_dir.init_didimbal = BOOL_L;
+        c.walk_to_dir.tgt_yaw = 0.0;
+        c.walk_to_dir.stride = 0.05;
+        c.walk_to_dir.bend[IDX_L] = 0.0;
+        c.walk_to_dir.bend[IDX_R] = 0.0;
+        c.walk_to_dir.speed = 0.1;
+        c.walk_to_dir.acclim = 1.0;
+        c.walk_to_dir.min_stepdur = 1000;
+        c.walk_to_dir.max_stepdur = 10000;
+        c.walk_to_dir.steps = 16;
+      } break;
+      case 9: {
+        m = M::WalkToDir;
+        c.walk_to_dir.init_didimbal = BOOL_L;
+        c.walk_to_dir.tgt_yaw = 0.5;
+        c.walk_to_dir.stride = 0.05;
+        c.walk_to_dir.bend[IDX_L] = 0.0;
+        c.walk_to_dir.bend[IDX_R] = 0.0;
+        c.walk_to_dir.speed = 0.1;
+        c.walk_to_dir.acclim = 1.0;
+        c.walk_to_dir.steps = 8;
+        c.walk_to_dir.min_stepdur = 1000;
+        c.walk_to_dir.max_stepdur = 10000;
+        c.walk_to_dir.interval = 0;
+      } break;
+      case 10: {
+        m = M::Sufi;
+        c.sufi.init_didimbal = BOOL_L;
+        c.sufi.dest_yaw = 0.5;
+        c.sufi.stop_thr = 0.02;
+        c.sufi.stride = 0.05;
+        c.sufi.bend[IDX_L] = 0.0;
+        c.sufi.bend[IDX_R] = 0.0;
+        c.sufi.speed = 0.1;
+        c.sufi.acclim = 1.0;
+        c.sufi.steps = 16;
+        c.sufi.min_stepdur = 2000;
+        c.sufi.max_stepdur = 8000;
+        c.sufi.interval = 200;
+      } break;
+      case 11: {
+        m = M::SetPhis_Init;
+        c.set_phis.tgt_phi[IDX_L] = NaN;
+        c.set_phis.tgt_phi[IDX_R] = 0.0;
+        c.set_phis.tgt_phispeed[IDX_L] = 0.1;
+        c.set_phis.tgt_phispeed[IDX_R] = 0.1;
+        c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
+        c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
+        c.set_phis.damp_thr = 0.05;
+        c.set_phis.stop_thr = 0.01;
+        c.set_phis.min_dur = 2000;
+        c.set_phis.max_dur = 100000;
+        c.set_phis.exit_condition = [](Basilisk*) { return false; };
+      } break;
+      case 12: {
+        m = M::SetPhis_Init;
+        c.set_phis.tgt_phi[IDX_L] = 0.0;
+        c.set_phis.tgt_phi[IDX_R] = NaN;
+        c.set_phis.tgt_phispeed[IDX_L] = 0.1;
+        c.set_phis.tgt_phispeed[IDX_R] = 0.1;
+        c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
+        c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
+        c.set_phis.damp_thr = 0.05;
+        c.set_phis.stop_thr = 0.01;
+        c.set_phis.min_dur = 2000;
+        c.set_phis.max_dur = 100000;
+        c.set_phis.exit_condition = [](Basilisk*) { return false; };
       } break;
 
       // case 4: {  // CatWalk
