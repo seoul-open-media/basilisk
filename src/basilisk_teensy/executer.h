@@ -21,12 +21,15 @@ class Executer {
 
     switch (b_->crmux_) {
       case Basilisk::CRMux::Neokey: {
-        NeokeyCommandReceiver::Parse();
-        NeokeyCommandReceiver::nk_cmd_ = 0;
+        if (NeokeyCommandReceiver::nk_cmd_ != 0) {
+          NeokeyCommandReceiver::Parse();
+          NeokeyCommandReceiver::nk_cmd_ = 0;
+        }
       } break;
       case Basilisk::CRMux::Xbee: {
         if (XbeeCommandReceiver::waiting_parse_) {
           XbeeCommandReceiver::Parse();
+          XbeeCommandReceiver::waiting_parse_ = false;
         }
       } break;
       default:

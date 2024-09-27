@@ -56,7 +56,7 @@ class NeokeyCommandReceiver {
         m = M::Free;
       } break;
       case 3: {
-        b_->cmd_.oneshots |= (1 << 1);
+        c.oneshots |= (1 << 1);  // SetBaseYaw
       } break;
       case 4: {
         m = M::Pivot_Init;
@@ -65,7 +65,7 @@ class NeokeyCommandReceiver {
         c.pivot.stride = 0.125;
         c.pivot.bend[IDX_L] = 0.0;
         c.pivot.bend[IDX_R] = 0.0;
-        c.pivot.speed = 0.1;
+        c.pivot.speed = 0.15;
         c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
         c.pivot.max_dur = -1;
@@ -78,7 +78,7 @@ class NeokeyCommandReceiver {
         c.pivot.stride = 0.125;
         c.pivot.bend[IDX_L] = 0.0;
         c.pivot.bend[IDX_R] = 0.0;
-        c.pivot.speed = 0.1;
+        c.pivot.speed = 0.15;
         c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
         c.pivot.max_dur = -1;
@@ -91,7 +91,7 @@ class NeokeyCommandReceiver {
         c.pivot.stride = -0.125;
         c.pivot.bend[0] = 0.0;
         c.pivot.bend[1] = 0.0;
-        c.pivot.speed = 0.1;
+        c.pivot.speed = 0.15;
         c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
         c.pivot.max_dur = -1;
@@ -104,7 +104,7 @@ class NeokeyCommandReceiver {
         c.pivot.stride = -0.125;
         c.pivot.bend[0] = 0.0;
         c.pivot.bend[1] = 0.0;
-        c.pivot.speed = 0.1;
+        c.pivot.speed = 0.15;
         c.pivot.acclim = 1.0;
         c.pivot.min_dur = 0;
         c.pivot.max_dur = -1;
@@ -117,12 +117,12 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.stride = 0.05;
         c.walk_to_dir.bend[IDX_L] = 0.0;
         c.walk_to_dir.bend[IDX_R] = 0.0;
-        c.walk_to_dir.speed = 0.1;
+        c.walk_to_dir.speed = 0.15;
         c.walk_to_dir.acclim = 1.0;
         c.walk_to_dir.min_stepdur = 1000;
         c.walk_to_dir.max_stepdur = 3000;
         c.walk_to_dir.interval = 0;
-        c.walk_to_dir.steps = 200;
+        c.walk_to_dir.steps = -1;
       } break;
       case 9: {
         m = M::WalkToDir;
@@ -131,12 +131,12 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.stride = 0.05;
         c.walk_to_dir.bend[IDX_L] = 0.0;
         c.walk_to_dir.bend[IDX_R] = 0.0;
-        c.walk_to_dir.speed = 0.1;
+        c.walk_to_dir.speed = 0.15;
         c.walk_to_dir.acclim = 1.0;
         c.walk_to_dir.min_stepdur = 1000;
         c.walk_to_dir.max_stepdur = 3000;
         c.walk_to_dir.interval = 0;
-        c.walk_to_dir.steps = 16;
+        c.walk_to_dir.steps = -1;
       } break;
       case 10: {
         m = M::Sufi;
@@ -146,38 +146,12 @@ class NeokeyCommandReceiver {
         c.sufi.stride = 0.05;
         c.sufi.bend[IDX_L] = 0.0;
         c.sufi.bend[IDX_R] = 0.0;
-        c.sufi.speed = 0.1;
+        c.sufi.speed = 0.15;
         c.sufi.acclim = 1.0;
         c.sufi.min_stepdur = 1000;
         c.sufi.max_stepdur = 3000;
         c.sufi.interval = 0;
         c.sufi.steps = -1;
-      } break;
-      case 11: {
-        m = M::SetPhis_Init;
-        c.set_phis.tgt_phi[IDX_L] = NaN;
-        c.set_phis.tgt_phi[IDX_R] = 0.0;
-        c.set_phis.tgt_phispeed[IDX_L] = 0.1;
-        c.set_phis.tgt_phispeed[IDX_R] = 0.1;
-        c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
-        c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
-        c.set_phis.damp_thr = 0.05;
-        c.set_phis.fix_thr = 0.01;
-        c.set_phis.min_dur = 2000;
-        c.set_phis.max_dur = 100000;
-        c.set_phis.exit_condition = [](Basilisk*) { return false; };
-      } break;
-      case 12: {
-        m = M::SetPhis_Init;
-        c.set_phis.tgt_phi[IDX_L] = 0.0;
-        c.set_phis.tgt_phispeed[IDX_L] = 0.1;
-        c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
-        c.set_phis.tgt_phi[IDX_R] = NaN;
-        c.set_phis.damp_thr = 0.05;
-        c.set_phis.fix_thr = 0.01;
-        c.set_phis.min_dur = 1000;
-        c.set_phis.max_dur = -1;
-        c.set_phis.exit_condition = [](Basilisk*) { return false; };
       } break;
       default: {  // Whatever left keys are assigned Idle Mode.
         m = M::Idle_Init;

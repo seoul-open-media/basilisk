@@ -41,26 +41,27 @@ class XbeeCommandReceiver {
     } else {
       if (XBEE_SERIAL.available() > 0 &&
           static_cast<uint32_t>(XBEE_SERIAL.available()) >= XBEE_PACKET_LEN) {
+        RecvBuf temp_rbuf;
         for (uint8_t i = 0; i < XBEE_PACKET_LEN; i++) {
-          xbee_cmd_.raw_bytes[i] = XBEE_SERIAL.read();
+          temp_rbuf.raw_bytes[i] = XBEE_SERIAL.read();
+        }
+
+        // Filter out Command for different SUID immediately at reception time
+        // to avoid timing mismatch with Executer Beat.
+        if (temp_rbuf.decoded.suid != b_->cfg_.suid &&
+            temp_rbuf.decoded.suid != 0) {
+          waiting_parse_ = false;
+        } else {
+          memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
+          waiting_parse_ = true;
         }
         receiving_ = false;
-        waiting_parse_ = true;
         start = 0;
       }
     }
   }
 
   static void Parse() {
-    if (receiving_ || !waiting_parse_) return;
-
-    waiting_parse_ = false;
-
-    if (xbee_cmd_.decoded.suid != b_->cfg_.suid &&
-        xbee_cmd_.decoded.suid != 0) {
-      return;
-    }
-
     using C = Basilisk::Command;
     using M = C::Mode;
     static auto& x = xbee_cmd_.decoded;
