@@ -160,7 +160,7 @@ class Basilisk {
       SetMags_Wait = 6,  // -> Exit
 
       /* RandomMags: Randomly tap-dance. */
-      RandomMags = 7,
+      RandomMags = 19,
 
       /* SetPhis: Control Servos to achieve target phis.
        *          Future-chain-able.
@@ -176,8 +176,8 @@ class Basilisk {
        *   for both Servos,
        * - then exit to designated Mode.
        * - Phi and duration will be clamped throughout. */
-      SetPhis_Init,  // -> SetPhis_Move
-      SetPhis_Move,  // -> Exit
+      SetPhis_Init = 7,  // -> SetPhis_Move
+      SetPhis_Move = 8,  // -> Exit
 
       /* Pivot: Pivot one foot (kickbal) about the other (didimbal).
        *        The single fundamental element of all Basilisk movement
@@ -191,34 +191,34 @@ class Basilisk {
        * - then attach didimbal, release kickbal and set both phis,
        * - then exit to designated Mode.
        * - Phi and duration will be clamped throughout. */
-      Pivot_Init,  // -> SetMags -> SetPhis -> Pivot_Kick
-      Pivot_Kick,  // -> SetMags -> SetPhis -> Exit
+      Pivot_Init = 9,   // -> SetMags -> SetPhis -> Pivot_Kick
+      Pivot_Kick = 10,  // -> SetMags -> SetPhis -> Exit
 
       /* PivSeq: Perform a series of Pivots with time intervals.
        *         Future-chain-able. */
-      PivSeq_Init,  // -> PivSeq_Step
-      PivSeq_Step,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
+      PivSeq_Init = 11,  // -> PivSeq_Step
+      PivSeq_Step = 12,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
 
       /* Walk: An instance of PivSeq implementing bipedalism. */
-      Walk,  // -> PivSeq -> Idle
+      Walk = 20,  // -> PivSeq -> Idle
 
       /* Walk Variants: Instances of Walk. */
-      WalkToDir,  // -> Walk -> Idle
-      WalkToPos,  // -> Walk -> Idle
-      Sufi,       // -> Walk -> Idle
-
-      PivSpin,
-      Orbit,
-      BounceWalk,
-      RandomWalk,
-
-      Diamond_Init,
-      Diamond_Step,
+      WalkToDir = 21,  // -> Walk -> Idle
+      WalkToPos = 22,  // -> Walk -> Idle
+      Sufi = 23,       // -> Walk -> Idle
+      PivSpin = 24,
+      Orbit = 25,
+      BounceWalk = 26,
+      RandomWalk = 27,
+      GuidedWalk = 28,
+      GuidedWalk_Ghostwrite = 29,
+      Diamond_Init = 30,
+      Diamond_Step = 31,
 
       /* Gee: */
-      Shear_Init,
-      Shear_Move,
-      Gee,
+      Shear_Init = 250,
+      Shear_Move = 251,
+      Gee = 252,
     } mode = Mode::Idle_Init;
 
     struct DoPreset {
@@ -335,7 +335,7 @@ class Basilisk {
 
     struct Sufi {
       LR init_didimbal;
-      double dest_yaw;
+      double dest_yaw;  // NaN means no destination.
       double exit_thr;
       double stride;
       Phi bend[2];
@@ -345,6 +345,19 @@ class Basilisk {
       uint32_t interval;
       uint8_t steps;
     } sufi;
+
+    struct PivSpin {
+      LR didimbal;
+      double dest_yaw;  // NaN means no destination.
+      double exit_thr;
+      double stride;
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccLim acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
+      uint8_t steps;
+    } piv_spin;
 
     // struct Diamond {
     //   friend struct ModeRunners;

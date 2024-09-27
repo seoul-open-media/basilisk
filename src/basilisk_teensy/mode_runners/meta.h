@@ -20,6 +20,7 @@ struct ModeRunners {
   static void WalkToDir(Basilisk*);
   static void WalkToPos(Basilisk*);
   static void Sufi(Basilisk*);
+  static void PivSpin(Basilisk*);
 
   inline static const std::map<M, void (*)(Basilisk*)> mode_runners = {
       {M::DoPreset, &DoPreset},
@@ -40,5 +41,6 @@ struct ModeRunners {
       {M::WalkToDir, &WalkToDir},
       {M::WalkToPos, &WalkToPos},
       {M::Sufi, &Sufi},
+      {M::PivSpin, &PivSpin},
   };
 };

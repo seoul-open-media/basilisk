@@ -30,10 +30,7 @@ void ModeRunners::WalkToDir(Basilisk* b) {
         w.interval[f] = c.interval;
       }
       w.steps = c.steps;
-      w.exit_condition = [](Basilisk* b) {
-        return false;
-        // return !b->lps_.Bound();
-      };
+      w.exit_condition = [](Basilisk* b) { return !b->lps_.Bound(); };
     } break;
     default:
       break;
