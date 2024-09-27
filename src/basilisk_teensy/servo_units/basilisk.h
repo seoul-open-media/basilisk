@@ -265,6 +265,7 @@ class Basilisk {
       // (*.*) oO(Ignore me...)
       double stride;  // Forward this much more from tgt_yaw.
                       // Negative value manifests as walking backwards.
+                      // NaN means do NOT kick.
       Phi bend[2];    // [0]: l, [1]: r
                       // tgt_sig == tgt_yaw + bend
                       // or bend == -tgt_phi (at stride 0)

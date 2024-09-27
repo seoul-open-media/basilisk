@@ -20,12 +20,15 @@ struct Presets {
   static void PivLFr90(Basilisk*);
   static void PivRBk90(Basilisk*);
   static void PivLBk90(Basilisk*);
+  static void BendRIn45(Basilisk*);
+  static void BendROut45(Basilisk*);
 
   inline static const std::map<uint16_t, void (*)(Basilisk*)> presets = {
-      {50000, &Idle},  {1, &RMagRls},         {2, &RMagAtt},
-      {3, &LMagRls},   {4, &LMagAtt},         {5, &PivRFr45},
-      {6, &PivLFr45},  {7, &PivRBk45},        {8, &PivLBk45},
-      {9, &PivRFr90},  {10, &PivLFr90},       {11, &PivRBk90},
-      {12, &PivLBk90}, {23, &RandomMagsWeak}, {24, &RandomMagsStrong},
+      {50000, &Idle},        {1, &RMagRls},           {2, &RMagAtt},
+      {3, &LMagRls},         {4, &LMagAtt},           {5, &PivRFr45},
+      {6, &PivLFr45},        {7, &PivRBk45},          {8, &PivLBk45},
+      {9, &PivRFr90},        {10, &PivLFr90},         {11, &PivRBk90},
+      {12, &PivLBk90},       {13, &BendRIn45},        {14, &BendROut45},
+      {23, &RandomMagsWeak}, {24, &RandomMagsStrong},
   };
 };

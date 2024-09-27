@@ -54,12 +54,18 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.fix_thr = 0.005;
       phis.fixing_cycles_thr = 1;
       phis.min_dur = 0;
-      phis.max_dur = c.max_dur / 4;
+      phis.max_dur = isnan(c.stride) ? c.max_dur : c.max_dur / 4;
       phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = M::Pivot_Kick;
     } break;
     case M::Pivot_Kick: {
       // Serial.println("ModeRunners::Pivot(Kick)");
+
+      // Check if we need to kick.
+      if (isnan(c.stride)) {
+        m = c.exit_to_mode;
+        return;
+      }
 
       m = M::SetMags_Init;
       const bool attach_l = c.didimbal == BOOL_L;
