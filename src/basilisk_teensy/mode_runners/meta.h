@@ -12,6 +12,7 @@ struct ModeRunners {
   static void Wait(Basilisk*);
   static void Free(Basilisk*);
   static void SetMags(Basilisk*);
+  static void RandomMags(Basilisk*);
   static void SetPhis(Basilisk*);
   static void Pivot(Basilisk*);
   static void PivSeq(Basilisk*);
@@ -28,6 +29,7 @@ struct ModeRunners {
       {M::Free, &Free},
       {M::SetMags_Init, &SetMags},
       {M::SetMags_Wait, &SetMags},
+      {M::RandomMags, &RandomMags},
       {M::SetPhis_Init, &SetPhis},
       {M::SetPhis_Move, &SetPhis},
       {M::Pivot_Init, &Pivot},

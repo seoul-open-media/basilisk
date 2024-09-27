@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::SetMags(Basilisk* b) {
   static uint32_t init_time;
@@ -10,7 +10,7 @@ void ModeRunners::SetMags(Basilisk* b) {
 
   switch (m) {
     case M::SetMags_Init: {
-      Serial.println("ModeRunners::SetMags(Init)");
+      // Serial.println("ModeRunners::SetMags(Init)");
 
       for (uint8_t id = 0; id < 4; id++) {
         b->mags_.SetStrength(id, c.strengths[id]);

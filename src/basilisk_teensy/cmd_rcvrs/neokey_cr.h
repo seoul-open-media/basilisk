@@ -122,7 +122,7 @@ class NeokeyCommandReceiver {
         c.walk_to_dir.min_stepdur = 1000;
         c.walk_to_dir.max_stepdur = 3000;
         c.walk_to_dir.interval = 0;
-        c.walk_to_dir.steps = 16;
+        c.walk_to_dir.steps = 200;
       } break;
       case 9: {
         m = M::WalkToDir;
@@ -148,9 +148,9 @@ class NeokeyCommandReceiver {
         c.sufi.bend[IDX_R] = 0.0;
         c.sufi.speed = 0.1;
         c.sufi.acclim = 1.0;
-        c.sufi.min_stepdur = 2000;
-        c.sufi.max_stepdur = 8000;
-        c.sufi.interval = 200;
+        c.sufi.min_stepdur = 1000;
+        c.sufi.max_stepdur = 3000;
+        c.sufi.interval = 0;
         c.sufi.steps = -1;
       } break;
       case 11: {
@@ -170,42 +170,15 @@ class NeokeyCommandReceiver {
       case 12: {
         m = M::SetPhis_Init;
         c.set_phis.tgt_phi[IDX_L] = 0.0;
-        c.set_phis.tgt_phi[IDX_R] = NaN;
         c.set_phis.tgt_phispeed[IDX_L] = 0.1;
-        c.set_phis.tgt_phispeed[IDX_R] = 0.1;
         c.set_phis.tgt_phiacclim[IDX_L] = 1.0;
-        c.set_phis.tgt_phiacclim[IDX_R] = 1.0;
+        c.set_phis.tgt_phi[IDX_R] = NaN;
         c.set_phis.damp_thr = 0.05;
         c.set_phis.fix_thr = 0.01;
-        c.set_phis.min_dur = 2000;
-        c.set_phis.max_dur = 100000;
+        c.set_phis.min_dur = 1000;
+        c.set_phis.max_dur = -1;
         c.set_phis.exit_condition = [](Basilisk*) { return false; };
       } break;
-
-      // case 4: {  // CatWalk
-      //   m = M::Walk_Init;
-      //   c.walk = C::WalkStraight{0.25, 0.0, 0.0, 4, false};
-      // } break;
-      // case 5: {  // BabyWalk
-      //   m = M::Walk_Init;
-      //   c.walk = C::WalkStraight{10.0 / 360.0, 0.0, 0.0, 16, false};
-      // } break;
-      // case 6: {  // EightWalk
-      //   m = M::Walk_Init;
-      //   c.walk = C::WalkStraight{0.125, 0.125, -0.125, 8, false};
-      // } break;
-      // case 7: {  // SquareDiamond
-      //   m = M::Diamond_Init;
-      //   c.diamond = C::Diamond{0.125};
-      // } break;
-      // case 8: {  // LeftGee
-      //   m = M::Gee_Init;
-      //   c.gee = C::Gee{-0.125, 8};
-      // } break;
-      // case 9: {  // RightGee
-      //   m = M::Gee_Init;
-      //   c.gee = C::Gee{-0.125, 8};
-      // } break;
       default: {  // Whatever left keys are assigned Idle Mode.
         m = M::Idle_Init;
       } break;

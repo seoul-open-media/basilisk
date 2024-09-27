@@ -3,6 +3,7 @@
 #include "../servo_units/basilisk.h"
 
 #define XBEE_SERIAL Serial4
+#define XBEE_PACKET_LEN 10  // NOT counting the 4 starting bytes.
 
 class XbeeCommandReceiver {
  public:
@@ -39,8 +40,8 @@ class XbeeCommandReceiver {
       }
     } else {
       if (XBEE_SERIAL.available() > 0 &&
-          static_cast<uint32_t>(XBEE_SERIAL.available()) >= sizeof(xbee_cmd_)) {
-        for (uint8_t i = 0; i < sizeof(xbee_cmd_); i++) {
+          static_cast<uint32_t>(XBEE_SERIAL.available()) >= XBEE_PACKET_LEN) {
+        for (uint8_t i = 0; i < XBEE_PACKET_LEN; i++) {
           xbee_cmd_.raw_bytes[i] = XBEE_SERIAL.read();
         }
         receiving_ = false;
@@ -51,7 +52,10 @@ class XbeeCommandReceiver {
   }
 
   static void Parse() {
-    if (receiving_) return;
+    if (receiving_ || !waiting_parse_) return;
+
+    waiting_parse_ = false;
+
     if (xbee_cmd_.decoded.suid != b_->cfg_.suid &&
         xbee_cmd_.decoded.suid != 0) {
       return;
@@ -64,7 +68,11 @@ class XbeeCommandReceiver {
     static auto& m = c.mode;
 
     c.oneshots = x.oneshots;
-    c.mode = static_cast<M>(x.mode);
+
+    const auto maybe_new_mode = static_cast<M>(x.mode);
+    if (maybe_new_mode == M::DoPreset && x.u.preset.idx == 0) return;
+
+    m = maybe_new_mode;
     switch (m) {
       case M::DoPreset: {
         c.do_preset.idx = x.u.preset.idx;
@@ -85,7 +93,7 @@ class XbeeCommandReceiver {
         } __attribute__((packed)) preset;
       } u;
     } __attribute__((packed)) decoded;
-    uint8_t raw_bytes[sizeof(decoded)];
+    uint8_t raw_bytes[XBEE_PACKET_LEN];
   } xbee_cmd_;
 
   inline static bool receiving_ = false;

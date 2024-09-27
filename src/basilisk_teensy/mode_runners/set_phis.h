@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::SetPhis(Basilisk* b) {
   static uint32_t init_time;
@@ -11,7 +11,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
 
   switch (m) {
     case M::SetPhis_Init: {
-      Serial.println("ModeRunners::SetPhis(Init)");
+      // Serial.println("ModeRunners::SetPhis(Init)");
 
       init_time = millis();
       for (uint8_t f : IDX_LR) fixing_cycles[f] = 0;
@@ -59,7 +59,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
                        * Therefore, damping is achieved if p > 0. */
                       signedpow(
                           constrain(tgt_delta_outpos / c.damp_thr, -1.0, 1.0),
-                          0.85);
+                          0.6);
                   tgt_rtracclim = b->gr_ * c.tgt_phiacclim[f];
                   fixing_cycles[f] = 0;
                 }

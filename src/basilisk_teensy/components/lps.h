@@ -82,7 +82,13 @@ class Lps {
     const auto c = dists_sm_[2].get();
 
     x_ = (sq(a) - sq(b) + sq(cfg_.c)) / (2 * cfg_.c);
-    y_ = cfg_.y_c - sqrt(sq(c) - sq(x_ - cfg_.x_c));
+
+    const auto temp = sq(c) - sq(x_ - cfg_.x_c);
+    if (temp >= 0) {
+      y_ = cfg_.y_c - sqrt(temp);
+    } else {
+      y_ = cfg_.y_c;
+    }
 
     last_xy_update_ = millis();
   }

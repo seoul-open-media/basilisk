@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::WalkToDir(Basilisk* b) {
   auto& m = b->cmd_.mode;
@@ -9,7 +9,7 @@ void ModeRunners::WalkToDir(Basilisk* b) {
 
   switch (m) {
     case M::WalkToDir: {
-      Serial.println("ModeRunners::WalkToDir");
+      // Serial.println("ModeRunners::WalkToDir");
 
       m = M::Walk;
       w.init_didimbal = c.init_didimbal;
@@ -30,7 +30,10 @@ void ModeRunners::WalkToDir(Basilisk* b) {
         w.interval[f] = c.interval;
       }
       w.steps = c.steps;
-      w.exit_condition = [](Basilisk* b) { return !b->lps_.Bound(); };
+      w.exit_condition = [](Basilisk* b) {
+        return false;
+        // return !b->lps_.Bound();
+      };
     } break;
     default:
       break;

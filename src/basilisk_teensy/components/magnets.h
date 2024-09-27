@@ -38,7 +38,11 @@ class Magnets {
   // electromagnets are being passed current for over 3 seconds.
   void Run() {
     for (uint8_t id = 0; id < 4; id++) {
-      if (attaching_[id]) last_attach_time_[id] = millis();
+      if (attaching_[id]) {
+        last_attach_time_[id] = millis();
+      } else {
+        last_release_time_[id] = millis();
+      }
       time_since_last_attach_[id] = millis() - last_attach_time_[id];
       heavenfall_warning_[id] = (time_since_last_attach_[id] > 3000);
     }
@@ -65,6 +69,7 @@ class Magnets {
   const uint8_t pins_[4];
   bool attaching_[4] = {false, false, false, false};
   uint32_t last_attach_time_[4] = {0, 0, 0, 0};
+  uint32_t last_release_time_[4] = {0, 0, 0, 0};
   uint32_t time_since_last_attach_[4] = {0, 0, 0, 0};
   bool heavenfall_warning_[4] = {false, false, false, false};
   LegoBlocks* lego_;

@@ -14,9 +14,9 @@ struct Basilisk::Configuration cfg {
   .lps{.c = 900.0,
        .x_c = 450.0,
        .y_c = 450.0,
-       .minx = 50.0,
-       .maxx = 850.0,
-       .miny = 50.0,
+       .minx = 100.0,
+       .maxx = 800.0,
+       .miny = 100.0,
        .maxy = 400.0},
   .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
       .mags {
@@ -55,5 +55,5 @@ void loop() {
   if (executer_beat.Hit()) exec.Run();
 
   static Beat serial_plotter_rs_beat{250};
-  // if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
+  if (serial_plotter_rs_beat.Hit()) SerialReplySender(b);
 }

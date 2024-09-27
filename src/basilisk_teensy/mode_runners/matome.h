@@ -5,6 +5,7 @@
 #include "idle.h"
 #include "pivot.h"
 #include "pivseq.h"
+#include "random_mags.h"
 #include "set_mags.h"
 #include "set_phis.h"
 #include "sufi.h"

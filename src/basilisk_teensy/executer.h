@@ -2,8 +2,8 @@
 
 #include "cmd_rcvrs/neokey_cr.h"
 #include "cmd_rcvrs/xbee_cr.h"
-#include "mode_runners/mode_runners_matome.h"
-#include "oneshots/oneshots_matome.h"
+#include "mode_runners/matome.h"
+#include "oneshots/matome.h"
 
 class Executer {
  public:
@@ -25,8 +25,9 @@ class Executer {
         NeokeyCommandReceiver::nk_cmd_ = 0;
       } break;
       case Basilisk::CRMux::Xbee: {
-        XbeeCommandReceiver::Parse();
-        XbeeCommandReceiver::waiting_parse_ = false;
+        if (XbeeCommandReceiver::waiting_parse_) {
+          XbeeCommandReceiver::Parse();
+        }
       } break;
       default:
         break;

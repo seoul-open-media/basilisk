@@ -127,19 +127,17 @@ class Basilisk {
       // A child Mode cannot be future-chained after its parent Mode.
       // No loop should be formed in a future-chain.
 
-      DoPreset,
-
       /* Idle: Kill everything. Relax.
        * - Stop both Servos, attach all magnets,
        * - then do nothing. */
-      Idle_Init,  // -> Idle_Nop
-      Idle_Nop,   // .
+      Idle_Init = 0,  // -> Idle_Nop
+      Idle_Nop = 1,   // .
 
       /* Wait: Wait for some condition to be met.
        *       Future-chain-able.
        * - Loop until given condition is met,
        * - then exit to designated Mode. */
-      Wait,  // -> Exit
+      Wait = 2,  // -> Exit
 
       /* Free: Stop and release magnets so you can lift it up from the ground.
        *       Magnets will be reactivated when 3 seconds has passed. Only for
@@ -147,7 +145,10 @@ class Basilisk {
        * - Stop both Servos, release all magnets,
        * - then wait 3 seconds,
        * - then exit to Idle Mode. */
-      Free,  // -> Wait -> Idle
+      Free = 3,  // -> Wait -> Idle
+
+      /* DoPreset: Do a preset. */
+      DoPreset = 4,
 
       /* SetMags: Control magnets.
        *          Future-chain-able.
@@ -155,8 +156,11 @@ class Basilisk {
        * - then wait for contact/detachment verification,
        * - then exit to designated Mode.
        * - Duration will be clamped. */
-      SetMags_Init,  // -> SetMags_Wait
-      SetMags_Wait,  // -> Exit
+      SetMags_Init = 5,  // -> SetMags_Wait
+      SetMags_Wait = 6,  // -> Exit
+
+      /* RandomMags: Randomly tap-dance. */
+      RandomMags = 7,
 
       /* SetPhis: Control Servos to achieve target phis.
        *          Future-chain-able.
@@ -235,6 +239,10 @@ class Basilisk {
       uint32_t min_dur, max_dur;  // max_dur > min_dur > lego_verification
       Mode exit_to_mode;
     } set_mags;
+
+    struct RandomMags {
+      uint32_t min_phase_dur, max_phase_dur;
+    } random_mags;
 
     struct SetPhis {
       Phi tgt_phi[2];  // [0]: l, [1]: r

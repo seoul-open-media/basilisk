@@ -1,3 +1,4 @@
 #pragma once
 
-#include "foo.h"
+#include "mags.h"
+#include "pivots.h"

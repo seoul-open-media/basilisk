@@ -1,5 +1,5 @@
 #pragma once
 
-#include "oneshots.h"
+#include "meta.h"
 
 void BasiliskOneshots::SetBaseYaw(Basilisk* b) { b->imu_.SetBaseYaw(); }

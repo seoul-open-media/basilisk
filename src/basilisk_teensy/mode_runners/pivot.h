@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::Pivot(Basilisk* b) {
   static uint32_t init_time;
@@ -17,7 +17,7 @@ void ModeRunners::Pivot(Basilisk* b) {
 
   switch (m) {
     case M::Pivot_Init: {
-      Serial.println("ModeRunners::Pivot(Init)");
+      // Serial.println("ModeRunners::Pivot(Init)");
 
       init_time = millis();
 
@@ -52,13 +52,14 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phi[kick_idx] = NaN;
       phis.damp_thr = 0.05;
       phis.fix_thr = 0.005;
+      phis.fixing_cycles_thr = 1;
       phis.min_dur = 0;
       phis.max_dur = c.max_dur / 4;
       phis.exit_condition = c.exit_condition;
       phis.exit_to_mode = M::Pivot_Kick;
     } break;
     case M::Pivot_Kick: {
-      Serial.println("ModeRunners::Pivot(Kick)");
+      // Serial.println("ModeRunners::Pivot(Kick)");
 
       m = M::SetMags_Init;
       const bool attach_l = c.didimbal == BOOL_L;
@@ -83,6 +84,7 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.tgt_phiacclim[kick_idx] = c.acclim;
       phis.damp_thr = 0.05;
       phis.fix_thr = 0.005;
+      phis.fixing_cycles_thr = 1;
       phis.min_dur = c.min_dur > (millis() - init_time)
                          ? c.min_dur - (millis() - init_time)
                          : 0;

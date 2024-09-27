@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../presets/matome.h"
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::DoPreset(Basilisk* b) {
   auto& m = b->cmd_.mode;
@@ -11,11 +11,11 @@ void ModeRunners::DoPreset(Basilisk* b) {
     case M::DoPreset: {
       // Serial.println("ModeRunners::DoPreset");
 
-      auto* maybe_preset =
-          SafeAt(Presets::presets, static_cast<Presets::Name>(c.idx));
+      auto* maybe_preset = SafeAt(Presets::presets, c.idx);
       if (maybe_preset) {
         (*maybe_preset)(b);
       } else {
+        Serial.println("Unregistered preset index");
         m = M::Idle_Init;
       }
     } break;
