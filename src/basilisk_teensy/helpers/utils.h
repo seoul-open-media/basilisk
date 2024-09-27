@@ -81,11 +81,20 @@ struct Vec2 {
 
   Vec2(const double& arg) : x{cos(arg)}, y{sin(arg)} {}
 
-  double mag() const { return sqrt(sq(x) + sq(y)); }
+  bool isnan() const { return ::isnan(x) || ::isnan(y); }
 
-  double arg() const { return atan2(y, x) / TWO_PI; }
+  double mag() const {
+    if (isnan()) return NaN;
+    return sqrt(sq(x) + sq(y));
+  }
+
+  double arg() const {
+    if (isnan()) return NaN;
+    return atan2(y, x) / TWO_PI;
+  }
 
   double dist(const Vec2& other) const {
+    if (isnan() || other.isnan()) return NaN;
     return sqrt(sq(x - other.x) + sq(y - other.y));
   }
 
@@ -127,13 +136,9 @@ struct Vec2 {
 
   Vec2 normalize() const {
     const auto m = mag();
-    if (m == 0.0) return Vec2(0.0, 0.0);
+    if (m == 0.0 || ::isnan(m)) return Vec2{1.0, 0.0};
     return *this / m;
   }
-
-  double dot(const Vec2& other) const { return x * other.x + y * other.y; }
-
-  double operator*(const Vec2& other) const { return this->dot(other); }
 
   double argsub(const Vec2& other) const { return arg() - other.arg(); }
 

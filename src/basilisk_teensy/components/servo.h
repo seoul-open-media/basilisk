@@ -45,7 +45,7 @@ class Servo : public Moteus {
   void Print() {
     const auto rpl = GetReply();
     Serial.print(id_);
-    Serial.print(F(" : t "));
+    Serial.print(F(" -> t "));
     Serial.print(millis());
     Serial.print(F(" / mod "));
     Serial.print(static_cast<int>(rpl.mode));
