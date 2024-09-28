@@ -3,8 +3,8 @@
 #X obj 57 47 declare -path bytify;
 #X obj 57 167 bytify;
 #X listbox 57 197 97 0 0 0 - - - 0;
-#X obj 57 137 pack s f f s f f f s f;
-#X msg 57 107 U8 100 123 U16 60000 F32 1 123.456 -987.654, f 96;
+#X msg 57 107 U8 100 123 U16 25644 F32 1 123.456 -987.654, f 96;
+#X obj 57 137 pack s f f s f s f f f;
 #X connect 1 0 2 0;
-#X connect 3 0 1 0;
-#X connect 4 0 3 0;
+#X connect 3 0 4 0;
+#X connect 4 0 1 0;
