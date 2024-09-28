@@ -61,14 +61,15 @@ class NeokeyCommandReceiver {
       case 4: {
         m = M::PivSpin;
         c.piv_spin.didimbal = BOOL_L;
-        c.piv_spin.dest_yaw = 0.0;
+        c.piv_spin.dest_yaw = NaN;
         c.piv_spin.exit_thr = NaN;
-        c.piv_spin.stride = 0.1;
+        c.piv_spin.stride = -0.1;
         c.piv_spin.bend[IDX_L] = 0.0;
         c.piv_spin.bend[IDX_R] = 0.0;
+        c.piv_spin.speed = 0.1;
         c.piv_spin.acclim = 1.0;
-        c.piv_spin.min_stepdur = 1000;
-        c.piv_spin.max_stepdur = 3000;
+        c.piv_spin.min_stepdur = 0;
+        c.piv_spin.max_stepdur = -1;
         c.piv_spin.interval = 0;
         c.piv_spin.steps = -1;
       } break;

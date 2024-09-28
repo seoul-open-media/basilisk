@@ -65,6 +65,17 @@ void ModeRunners::SetPhis(Basilisk* b) {
                 }
               }
 
+              Serial.print(f == IDX_L ? "l_" : "r_");
+              Serial.print("c.tgt_phi[f] ");
+              Serial.print(c.tgt_phi[f]);
+              Serial.print(" cur_outpos ");
+              Serial.print(s->GetReply().abs_position);
+              Serial.print(" tgt_rtrvel ");
+              Serial.print(tgt_rtrvel);
+              Serial.print(" tgt_rtracclim ");
+              Serial.print(tgt_rtracclim);
+              Serial.println();
+
               s->SetPosition([&] {
                 auto pm_cmd = *b->pm_cmd_template_;
                 pm_cmd.position = NaN;
