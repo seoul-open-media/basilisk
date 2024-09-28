@@ -1,7 +1,7 @@
 #include "cmd_rcvrs/neokey_cr.h"
 #include "cmd_rcvrs/xbee_cr.h"
-#include "components/specifics/neokey3x4_i2c0.h"
 #include "components/specifics/neokey1x4_i2c0.h"
+#include "components/specifics/neokey3x4_i2c0.h"
 #include "executer.h"
 #include "helpers/imports.h"
 #include "helpers/utils.h"

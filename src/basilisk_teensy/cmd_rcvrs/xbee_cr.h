@@ -3,7 +3,7 @@
 #include "../servo_units/basilisk.h"
 
 #define XBEE_SERIAL Serial4
-#define XBEE_PACKET_LEN 10  // NOT counting the 4 starting bytes.
+#define XBEE_PACKET_LEN 46  // NOT counting the 4 starting bytes.
 
 class XbeeCommandReceiver {
  public:
@@ -68,7 +68,10 @@ class XbeeCommandReceiver {
     static auto& c = b_->cmd_;
     static auto& m = c.mode;
 
-    c.oneshots = x.oneshots;
+    if (x.oneshots) {
+      c.oneshots = x.oneshots;
+      return;
+    }
 
     const auto maybe_new_mode = static_cast<M>(x.mode);
     if (maybe_new_mode == M::DoPreset && x.u.preset.idx == 0) return;
