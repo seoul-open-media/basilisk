@@ -199,6 +199,9 @@ class Basilisk {
       PivSeq_Init = 11,  // -> PivSeq_Step
       PivSeq_Step = 12,  // -> Pivot -> PivSeq_Step(++step) ~> Exit
 
+      /* Walk: An instance of PivSeq implementing unipedalism. */
+      PivSpin = 13,  // -> PivSeq -> Idle
+
       /* Walk: An instance of PivSeq implementing bipedalism. */
       Walk = 20,  // -> PivSeq -> Idle
 
@@ -206,14 +209,12 @@ class Basilisk {
       WalkToDir = 21,  // -> Walk -> Idle
       WalkToPos = 22,  // -> Walk -> Idle
       Sufi = 23,       // -> Walk -> Idle
-      PivSpin = 24,
-      Orbit = 25,
-      BounceWalk = 26,
-      RandomWalk = 27,
-      GuidedWalk = 28,
-      GuidedWalk_Ghostwrite = 29,
-      Diamond_Init = 30,
-      Diamond_Step = 31,
+      Orbit = 24,
+      RandomWalk = 25,
+      GuidedWalk = 26,
+      GuidedWalk_Ghostwrite = 27,
+      BounceWalk = 28,
+      Diamond = 29,
 
       /* Gee: */
       Shear_Init = 250,
@@ -358,6 +359,11 @@ class Basilisk {
       uint32_t interval;
       uint8_t steps;
     } piv_spin;
+
+    struct Orbit {
+      Vec2 center;
+      double tick;
+    } orbit;
 
     // struct Diamond {
     //   friend struct ModeRunners;

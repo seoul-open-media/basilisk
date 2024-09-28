@@ -1,6 +1,7 @@
 #include "cmd_rcvrs/neokey_cr.h"
 #include "cmd_rcvrs/xbee_cr.h"
 #include "components/specifics/neokey3x4_i2c0.h"
+#include "components/specifics/neokey1x4_i2c0.h"
 #include "executer.h"
 #include "helpers/imports.h"
 #include "helpers/utils.h"
@@ -11,13 +12,13 @@
 struct Basilisk::Configuration cfg {
   .suid = 1,  //
       .servo{.id_l = 1, .id_r = 2, .bus = 1},
-  .lps{.c = 900.0,
-       .x_c = 450.0,
-       .y_c = 450.0,
-       .minx = 100.0,
-       .maxx = 800.0,
-       .miny = 100.0,
-       .maxy = 400.0},
+  .lps{.c = 300.0,
+       .x_c = 150.0,
+       .y_c = 300.0,
+       .minx = 50.0,
+       .maxx = 250.0,
+       .miny = 50.0,
+       .maxy = 250.0},
   .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
       .mags {
     .pin_la = 3, .pin_lt = 4, .pin_ra = 5, .pin_rt = 6, .run_interval = 100
@@ -30,7 +31,7 @@ Executer exec{&b};
 
 // CommandReceivers.
 XbeeCommandReceiver xb_cr;
-Neokey nk = specifics::neokey3x4_i2c0;
+Neokey nk = specifics::neokey1x4_i2c0;
 NeokeyCommandReceiver nk_cr{nk};
 
 void setup() {
@@ -55,5 +56,5 @@ void loop() {
   if (exec_beat.Hit()) exec.Run();
 
   static Beat serial_rs_beat{250};
-  if (serial_rs_beat.Hit()) SerialReplySender(b);
+  // if (serial_rs_beat.Hit()) SerialReplySender(b);
 }

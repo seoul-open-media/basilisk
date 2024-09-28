@@ -9,7 +9,7 @@ void ModeRunners::PivSpin(Basilisk* b) {
 
   switch (m) {
     case M::PivSpin: {
-      // Serial.println("ModeRunners::PivSpin");
+      Serial.println("ModeRunners::PivSpin");
 
       m = M::PivSeq_Init;
       ps.pivots = [](Basilisk* b, int idx) {

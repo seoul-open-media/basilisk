@@ -16,11 +16,12 @@ struct ModeRunners {
   static void SetPhis(Basilisk*);
   static void Pivot(Basilisk*);
   static void PivSeq(Basilisk*);
+  static void PivSpin(Basilisk*);
   static void Walk(Basilisk*);
   static void WalkToDir(Basilisk*);
   static void WalkToPos(Basilisk*);
   static void Sufi(Basilisk*);
-  static void PivSpin(Basilisk*);
+  static void Orbit(Basilisk*);
 
   inline static const std::map<M, void (*)(Basilisk*)> mode_runners = {
       {M::DoPreset, &DoPreset},
@@ -37,10 +38,11 @@ struct ModeRunners {
       {M::Pivot_Kick, &Pivot},
       {M::PivSeq_Init, &PivSeq},
       {M::PivSeq_Step, &PivSeq},
+      {M::PivSpin, &PivSpin},
       {M::Walk, &Walk},
       {M::WalkToDir, &WalkToDir},
       {M::WalkToPos, &WalkToPos},
       {M::Sufi, &Sufi},
-      {M::PivSpin, &PivSpin},
+      {M::Orbit, &Orbit},
   };
 };

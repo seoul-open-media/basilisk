@@ -3,6 +3,7 @@
 #include "do_preset.h"
 #include "free.h"
 #include "idle.h"
+#include "orbit.h"
 #include "piv_spin.h"
 #include "pivot.h"
 #include "pivseq.h"

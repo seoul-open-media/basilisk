@@ -4,7 +4,7 @@
 
 void SerialReplySender(Basilisk& b) {
   // Servo Replies
-  b.CommandBoth([](Servo* s) { s->Print(); });
+  // b.CommandBoth([](Servo* s) { s->Print(); });
 
   // Servo outputs
   Serial.print("phi_l:");
@@ -15,12 +15,12 @@ void SerialReplySender(Basilisk& b) {
   Serial.println();
 
   // LPS position
-  // Serial.print("lpsx=");
-  // Serial.print(b.lps_.x_);
-  // Serial.print(";");
-  // Serial.print("lpsy=");
-  // Serial.print(b.lps_.y_);
-  // Serial.println();
+  Serial.print("lpsx=");
+  Serial.print(b.lps_.x_);
+  Serial.print(";");
+  Serial.print("lpsy=");
+  Serial.print(b.lps_.y_);
+  Serial.println();
 
   // LPS debug
   // Serial.print("b.lps_.dists_raw_[0]:");
