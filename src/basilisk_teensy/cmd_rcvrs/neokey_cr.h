@@ -58,21 +58,21 @@ class NeokeyCommandReceiver {
       case 3: {
         c.oneshots |= (1 << 1);  // SetBaseYaw
       } break;
-      case 4: {
-        m = M::PivSpin;
-        c.piv_spin.didimbal = BOOL_L;
-        c.piv_spin.dest_yaw = NaN;
-        c.piv_spin.exit_thr = NaN;
-        c.piv_spin.stride = -0.1;
-        c.piv_spin.bend[IDX_L] = 0.0;
-        c.piv_spin.bend[IDX_R] = 0.0;
-        c.piv_spin.speed = 0.1;
-        c.piv_spin.acclim = 1.0;
-        c.piv_spin.min_stepdur = 0;
-        c.piv_spin.max_stepdur = -1;
-        c.piv_spin.interval = 0;
-        c.piv_spin.steps = -1;
-      } break;
+      // case 4: {
+      //   m = M::PivSpin;
+      //   c.piv_spin.didimbal = BOOL_L;
+      //   c.piv_spin.dest_yaw = NaN;
+      //   c.piv_spin.exit_thr = NaN;
+      //   c.piv_spin.stride = -0.1;
+      //   c.piv_spin.bend[IDX_L] = 0.0;
+      //   c.piv_spin.bend[IDX_R] = 0.0;
+      //   c.piv_spin.speed = 0.1;
+      //   c.piv_spin.acclim = 1.0;
+      //   c.piv_spin.min_stepdur = 0;
+      //   c.piv_spin.max_stepdur = -1;
+      //   c.piv_spin.interval = 0;
+      //   c.piv_spin.steps = -1;
+      // } break;
       // case 4: {
       //   m = M::Pivot_Init;
       //   c.pivot.didimbal = BOOL_L;
@@ -153,21 +153,21 @@ class NeokeyCommandReceiver {
       //   c.walk_to_dir.interval = 0;
       //   c.walk_to_dir.steps = -1;
       // } break;
-      // case 4: {
-      //   m = M::Sufi;
-      //   c.sufi.init_didimbal = BOOL_L;
-      //   c.sufi.dest_yaw = NaN;
-      //   c.sufi.exit_thr = 0.01;
-      //   c.sufi.stride = 0.075;
-      //   c.sufi.bend[IDX_L] = 0.0;
-      //   c.sufi.bend[IDX_R] = 0.0;
-      //   c.sufi.speed = 0.1;
-      //   c.sufi.acclim = 1.0;
-      //   c.sufi.min_stepdur = 1000;
-      //   c.sufi.max_stepdur = 3000;
-      //   c.sufi.interval = 0;
-      //   c.sufi.steps = -1;
-      // } break;
+      case 4: {
+        m = M::Sufi;
+        c.sufi.init_didimbal = BOOL_L;
+        c.sufi.dest_yaw = NaN;
+        c.sufi.exit_thr = NaN;
+        c.sufi.stride = 0.1;
+        c.sufi.bend[IDX_L] = 0.0;
+        c.sufi.bend[IDX_R] = 0.0;
+        c.sufi.speed = 0.1;
+        c.sufi.acclim = 1.0;
+        c.sufi.min_stepdur = 1000;
+        c.sufi.max_stepdur = 3000;
+        c.sufi.interval = 0;
+        c.sufi.steps = -1;
+      } break;
       default: {  // Whatever left keys are assigned Idle Mode.
         m = M::Idle_Init;
       } break;

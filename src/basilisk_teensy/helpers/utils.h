@@ -210,7 +210,7 @@ class PhiSpeed : public clamped<double> {
 
  private:
   double lb() const override { return 0.0; }
-  double ub() const override { return 0.25; }
+  double ub() const override { return 0.5; }
 };
 
 class PhiAccLim : public clamped<double> {

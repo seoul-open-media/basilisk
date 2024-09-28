@@ -132,7 +132,7 @@ void Presets::BendRIn45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = 0.0;  // Ignored anyway.
   c.bend[IDX_R] = 0.125;
-  c.speed = 0.15;
+  c.speed = 0.5;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -147,7 +147,37 @@ void Presets::BendROut45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = 0.0;  // Ignored anyway.
   c.bend[IDX_R] = -0.125;
-  c.speed = 0.15;
+  c.speed = 0.5;
+  c.acclim = 1.0;
+  c.min_dur = 0;
+  c.max_dur = 5000;
+  c.exit_condition = nullptr;
+}
+
+void Presets::BendLIn45(Basilisk* b) {
+  b->cmd_.mode = M::Pivot_Init;
+  auto& c = b->cmd_.pivot;
+  c.didimbal = BOOL_L;
+  c.tgt_yaw = [](Basilisk*) { return NaN; };
+  c.stride = NaN;
+  c.bend[IDX_L] = -0.125;
+  c.bend[IDX_R] = 0.0;  // Ignored anyway.
+  c.speed = 0.5;
+  c.acclim = 1.0;
+  c.min_dur = 0;
+  c.max_dur = 5000;
+  c.exit_condition = nullptr;
+}
+
+void Presets::BendLOut45(Basilisk* b) {
+  b->cmd_.mode = M::Pivot_Init;
+  auto& c = b->cmd_.pivot;
+  c.didimbal = BOOL_L;
+  c.tgt_yaw = [](Basilisk*) { return NaN; };
+  c.stride = NaN;
+  c.bend[IDX_L] = 0.125;
+  c.bend[IDX_R] = 0.0;  // Ignored anyway.
+  c.speed = 0.5;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;

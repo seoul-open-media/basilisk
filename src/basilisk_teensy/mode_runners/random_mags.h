@@ -14,7 +14,7 @@ void ModeRunners::RandomMags(Basilisk* b) {
 
       for (uint8_t id = 0; id < 4; id++) {
         if (dur[id] == 0) {
-          randomSeed(b->cfg_.suid * b->l_.GetReply().torque * 1000);
+          randomSeed(b->cfg_.suid * b->l_.GetReply().motor_temperature * 1000);
           dur[id] = random(c.min_phase_dur, c.max_phase_dur);
         } else {
           const uint32_t last_switch_time =
