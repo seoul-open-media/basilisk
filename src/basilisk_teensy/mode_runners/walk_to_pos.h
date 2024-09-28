@@ -9,8 +9,6 @@ void ModeRunners::WalkToPos(Basilisk* b) {
 
   switch (m) {
     case M::WalkToPos: {
-      // Serial.println("ModeRunners::WalkToPos");
-
       m = M::Walk;
       w.init_didimbal = c.init_didimbal;
       for (uint8_t f : IDX_LR) {

@@ -11,15 +11,11 @@ void ModeRunners::SetPhis(Basilisk* b) {
 
   switch (m) {
     case M::SetPhis_Init: {
-      // Serial.println("ModeRunners::SetPhis(Init)");
-
       init_time = millis();
       for (uint8_t f : IDX_LR) fixing_cycles[f] = 0;
       m = M::SetPhis_Move;
     } break;
     case M::SetPhis_Move: {
-      // Serial.println("ModeRunners::SetPhis(Move)");
-
       if ([&] {
             if (millis() - init_time > c.max_dur ||
                 (c.exit_condition && c.exit_condition(b))) {
@@ -64,7 +60,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
                   fixing_cycles[f] = 0;
                 }
               }
-
+#if I_WANT_DEBUG
               Serial.print(f == IDX_L ? "l_" : "r_");
               Serial.print("c.tgt_phi[f] ");
               Serial.print(c.tgt_phi[f]);
@@ -75,7 +71,7 @@ void ModeRunners::SetPhis(Basilisk* b) {
               Serial.print(" tgt_rtracclim ");
               Serial.print(tgt_rtracclim);
               Serial.println();
-
+#endif
               s->SetPosition([&] {
                 auto pm_cmd = *b->pm_cmd_template_;
                 pm_cmd.position = NaN;

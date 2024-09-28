@@ -9,8 +9,6 @@ void ModeRunners::Orbit(Basilisk* b) {
 
   switch (m) {
     case M::Orbit: {
-      // Serial.println("ModeRunners::Orbit");
-
       m = M::Walk;
       // w.init_didimbal = c.init_didimbal;
       // for (uint8_t f : IDX_LR) {

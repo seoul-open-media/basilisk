@@ -10,16 +10,10 @@ void ModeRunners::PivSeq(Basilisk* b) {
 
   switch (m) {
     case M::PivSeq_Init: {
-      Serial.println("ModeRunners::PivSeq(Init)");
-
       cur_step = 0;
       m = M::PivSeq_Step;
     } break;
     case M::PivSeq_Step: {
-      Serial.print("ModeRunners::PivSeq(Step: ");
-      Serial.print(cur_step);
-      Serial.println(")");
-
       if (c.exit_condition(b) || cur_step >= c.steps) {
         m = c.exit_to_mode;
         return;

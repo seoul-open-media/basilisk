@@ -9,8 +9,6 @@ void ModeRunners::DoPreset(Basilisk* b) {
 
   switch (m) {
     case M::DoPreset: {
-      // Serial.println("ModeRunners::DoPreset");
-
       auto* maybe_preset = SafeAt(Presets::presets, c.idx);
       if (maybe_preset) {
         (*maybe_preset)(b);

@@ -17,8 +17,6 @@ void ModeRunners::Pivot(Basilisk* b) {
 
   switch (m) {
     case M::Pivot_Init: {
-      Serial.println("ModeRunners::Pivot(Init)");
-
       init_time = millis();
 
       init_yaw = b->imu_.GetYaw(true);
@@ -27,7 +25,6 @@ void ModeRunners::Pivot(Basilisk* b) {
 
       // Check if we need to set didimbal.
       if (c.bend[didim_idx].isnan()) {
-        Serial.println("Skip didim");
         m = M::Pivot_Kick;
         return;
       }
@@ -60,11 +57,8 @@ void ModeRunners::Pivot(Basilisk* b) {
       phis.exit_to_mode = M::Pivot_Kick;
     } break;
     case M::Pivot_Kick: {
-      Serial.println("ModeRunners::Pivot(Kick)");
-
       // Check if we need to kick.
       if (isnan(c.stride)) {
-        Serial.println("Skip kick");
         m = c.exit_to_mode;
         return;
       }

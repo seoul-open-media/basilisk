@@ -9,8 +9,6 @@ void ModeRunners::Sufi(Basilisk* b) {
 
   switch (m) {
     case M::Sufi: {
-      // Serial.println("ModeRunners::Sufi");
-
       m = M::Walk;
       w.init_didimbal = c.init_didimbal;
       for (uint8_t f : IDX_LR) {

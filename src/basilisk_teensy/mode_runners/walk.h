@@ -9,8 +9,6 @@ void ModeRunners::Walk(Basilisk* b) {
 
   switch (m) {
     case M::Walk: {
-      // Serial.println("ModeRunners::Walk");
-
       m = M::PivSeq_Init;
       ps.pivots = [](Basilisk* b, int idx) {
         auto& c = b->cmd_.walk;

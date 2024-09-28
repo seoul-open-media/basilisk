@@ -10,8 +10,6 @@ void ModeRunners::RandomMags(Basilisk* b) {
 
   switch (m) {
     case M::RandomMags: {
-      // Serial.println("ModeRunners::RandomMags");
-
       for (uint8_t id = 0; id < 4; id++) {
         if (dur[id] == 0) {
           randomSeed(b->cfg_.suid * 100 + id * millis());

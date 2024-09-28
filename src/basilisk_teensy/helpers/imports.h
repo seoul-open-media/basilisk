@@ -8,6 +8,7 @@
 
 #include <vector>
 
+#include "do_you_want_debug.h"
 #include "utils.h"
 
 using namespace mjbots::moteus;
