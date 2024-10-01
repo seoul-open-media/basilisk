@@ -1,0 +1,145 @@
+{
+  "len": 24,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 0.75,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 1.5,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 2.25,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        2
+      ]
+    },
+    {
+      "time": 3.75,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        2
+      ]
+    },
+    {
+      "time": 4.5,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+        1,
+        2
+      ]
+    },
+    {
+      "time": 5.25,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+        1,
+        2
+      ]
+    },
+    {
+      "time": 6,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+
+        3
+      ]
+    },
+    {
+      "time": 6.75,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+
+        3
+      ]
+    },
+    {
+      "time": 7.59,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+
+        3
+      ]
+    },
+    {
+      "time": 8.25,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+
+        3
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+   
+        9
+      ]
+    },
+    {
+      "time": 10.75,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+    
+        9
+      ]
+    },
+    {
+      "time": 11.5,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+ 
+        9
+      ]
+    },
+    {
+      "time": 12.25,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+       
+        9
+      ]
+    }
+  ]
+}

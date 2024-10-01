@@ -1,0 +1,55 @@
+{
+  "len": 18,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 6,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        7
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        7
+      ]
+    },
+    {
+      "time": 12,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        11,
+        12
+      ]
+    },
+    {
+      "time": 15,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        11,
+        12
+      ]
+    }
+  ]
+}

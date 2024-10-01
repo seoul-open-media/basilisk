@@ -70,6 +70,11 @@ class XbeeCommandReceiver {
 
     if (x.oneshots) {
       c.oneshots = x.oneshots;
+
+      if (x.oneshots & (1 << 1)) {
+        c.set_base_yaw.offset = static_cast<double>(x.u.set_base_yaw.offset);
+      }
+
       return;
     }
 
@@ -92,6 +97,9 @@ class XbeeCommandReceiver {
       uint8_t oneshots;
       uint8_t mode;
       union {
+        struct {
+          float offset;
+        } __attribute__((packed)) set_base_yaw;
         struct {
           uint16_t idx;
         } __attribute__((packed)) preset;

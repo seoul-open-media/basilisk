@@ -1,0 +1,11 @@
+{
+    "what": "Mode_Pivot",
+    "didimbal": "0",
+    "tgt_yaw": "nan",
+    "stride": "0.125",
+    "bend_L": "0",
+    "bend_R": "0",
+    "speed": "0.15",
+    "min_dur": "0",
+    "max_dur": "65535"
+}

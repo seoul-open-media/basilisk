@@ -1,0 +1,37 @@
+{
+  "len": 30,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 4.5,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Free",
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 7.5,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Idle",
+      "suids": [
+        8
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ void Presets::PivRFr45(Basilisk* b) {
   c.stride = 0.125;
   c.bend[IDX_L] = NaN;
   c.bend[IDX_R] = 0.0;
-  c.speed = 0.1;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 3000;
@@ -27,7 +27,7 @@ void Presets::PivLFr45(Basilisk* b) {
   c.stride = 0.125;
   c.bend[IDX_L] = 0.0;
   c.bend[IDX_R] = NaN;
-  c.speed = 0.1;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 3000;
@@ -42,7 +42,7 @@ void Presets::PivRBk45(Basilisk* b) {
   c.stride = -0.125;
   c.bend[IDX_L] = NaN;
   c.bend[IDX_R] = 0.0;
-  c.speed = 0.1;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 3000;
@@ -57,7 +57,7 @@ void Presets::PivLBk45(Basilisk* b) {
   c.stride = -0.125;
   c.bend[IDX_L] = 0.0;
   c.bend[IDX_R] = NaN;
-  c.speed = 0.1;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 3000;
@@ -72,7 +72,7 @@ void Presets::PivRFr90(Basilisk* b) {
   c.stride = 0.25;
   c.bend[IDX_L] = NaN;
   c.bend[IDX_R] = 0.0;
-  c.speed = 0.2;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -87,7 +87,7 @@ void Presets::PivLFr90(Basilisk* b) {
   c.stride = 0.25;
   c.bend[IDX_L] = 0.0;
   c.bend[IDX_R] = NaN;
-  c.speed = 0.2;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -102,7 +102,7 @@ void Presets::PivRBk90(Basilisk* b) {
   c.stride = -0.25;
   c.bend[IDX_L] = NaN;
   c.bend[IDX_R] = 0.0;
-  c.speed = 0.2;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -117,7 +117,7 @@ void Presets::PivLBk90(Basilisk* b) {
   c.stride = -0.25;
   c.bend[IDX_L] = 0.0;
   c.bend[IDX_R] = NaN;
-  c.speed = 0.2;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -132,7 +132,7 @@ void Presets::BendRIn45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = 0.0;  // Ignored anyway.
   c.bend[IDX_R] = 0.125;
-  c.speed = 0.5;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -147,7 +147,7 @@ void Presets::BendROut45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = 0.0;  // Ignored anyway.
   c.bend[IDX_R] = -0.125;
-  c.speed = 0.5;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -162,7 +162,7 @@ void Presets::BendLIn45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = -0.125;
   c.bend[IDX_R] = 0.0;  // Ignored anyway.
-  c.speed = 0.5;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;
@@ -177,7 +177,7 @@ void Presets::BendLOut45(Basilisk* b) {
   c.stride = NaN;
   c.bend[IDX_L] = 0.125;
   c.bend[IDX_R] = 0.0;  // Ignored anyway.
-  c.speed = 0.5;
+  c.speed = 0.15;
   c.acclim = 1.0;
   c.min_dur = 0;
   c.max_dur = 5000;

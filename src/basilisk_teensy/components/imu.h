@@ -77,7 +77,9 @@ class Imu {
     }
   }
 
-  void SetBaseYaw() { base_yaw_ = GetYaw(false); }
+  void SetBaseYaw(const double& offset = 0.0) {
+    base_yaw_ = GetYaw(false) - offset;
+  }
 
   double euler_[3];  // [0]: roll, [1]: pitch, [2]: yaw
   int yaw_revs_ = 0;

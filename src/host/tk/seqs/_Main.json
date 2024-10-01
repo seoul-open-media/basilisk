@@ -1,0 +1,17 @@
+{
+  "len": 5,
+  "seq": [
+    {
+      "time": 2,
+      "node": "Act1",
+      "is_seq": true,
+      "loop": 1
+    },
+    {
+      "time": 4,
+      "node": "Act2",
+      "is_seq": true,
+      "loop": 1
+    }
+  ]
+}

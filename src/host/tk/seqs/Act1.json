@@ -1,0 +1,83 @@
+{
+  "len": 40,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Free",
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 1,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Idle",
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 2,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Free",
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Idle",
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 5,
+      "type": "Preset",
+      "idx": 24,
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 7,
+      "type": "Preset",
+      "idx": 14,
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 8,
+      "type": "Preset",
+      "idx": 13,
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 15,
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 10,
+      "type": "Preset",
+      "idx": 16,
+      "suids": [
+        0
+      ]
+    },
+    {
+      "time": 19,
+      "type": "Sequence",
+      "name": "Act1_Loop1",
+      "loop": 4
+    }
+  ]
+}

@@ -122,6 +122,14 @@ class Basilisk {
   struct Command {
     uint8_t oneshots;  // bit 0: CRMuxXbee
                        // bit 1: SetBaseYaw
+                       // bit 2: Inspire
+
+    struct SetBaseYaw {
+      double offset;
+    } set_base_yaw;
+
+    struct Inspire {
+    } inspire;
 
     enum class Mode : uint8_t {
       // A child Mode cannot be future-chained after its parent Mode.
@@ -210,11 +218,9 @@ class Basilisk {
       WalkToPos = 22,  // -> Walk -> Idle
       Sufi = 23,       // -> Walk -> Idle
       Orbit = 24,
-      RandomWalk = 25,
-      GuidedWalk = 26,
-      GuidedWalk_Ghostwrite = 27,
-      BounceWalk = 28,
-      Diamond = 29,
+      Diamond = 25,
+      RandomWalk = 26,
+      GhostWalk = 27,
 
       /* Gee: */
       Shear_Init = 250,

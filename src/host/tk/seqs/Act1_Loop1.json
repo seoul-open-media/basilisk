@@ -1,0 +1,17 @@
+{
+  "len": 30,
+  "seq": [
+    {
+      "time": 0,
+      "node": "_TheOnlyOne_Free"
+    },
+    {
+      "time": 0,
+      "node": "_TheOnlyOne_Idle"
+    },
+    {
+      "time": 10,
+      "node": "DoPreset_0024"
+    }
+  ]
+}

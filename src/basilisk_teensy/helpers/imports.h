@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "do_you_want_debug.h"
+#include "teensyid.h"
 #include "utils.h"
 
 using namespace mjbots::moteus;
