@@ -1,0 +1,474 @@
+{
+  "len": 20,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S45_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 5,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S45_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 8,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 10,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S45_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 12,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 14,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S45_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 16,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V075",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 18,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S45_V05_BN",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 20,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 22,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S45_V05_BN",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 24,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 26,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S45_V05_BN",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 28,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 30,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S45_V05_BN",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 32,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "time": 34,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 36,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 38,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 40,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 42,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 44,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 46,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 48,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },    {
+      "time": 50,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 52,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 54,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 56,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },    {
+      "time": 58,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 60,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_Sm45_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 62,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 64,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    }, 
+    
+    
+    
+    
+    
+    
+    
+    {
+      "time": 66,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S45_V05_BRm45",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 68,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05_BL45RN",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 70,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DL_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "time": 72,
+      "type": "Command_Blip",
+      "name": "Pivot_HA_DR_S0_V05",
+      "suids": [
+        9,
+        10,
+        11,
+        12,
+        13
+      ]
+    }
+  ]
+}

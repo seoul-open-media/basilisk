@@ -28,8 +28,16 @@
 
 class Lps {
  public:
-  Lps(const double& c, const double& x_c, const double& y_c)
-      : cfg_{.c = c, .x_c = x_c, .y_c = y_c} {}
+  Lps(const double& c, const double& x_c, const double& y_c,  //
+      const double& minx, const double& maxx,                 //
+      const double& miny, const double& maxy)
+      : cfg_{.c = c,
+             .x_c = x_c,
+             .y_c = y_c,
+             .minx = minx,
+             .maxx = maxx,
+             .miny = miny,
+             .maxy = maxy} {}
 
   // Must be called before use.
   bool Setup() {
@@ -60,11 +68,37 @@ class Lps {
         }
         latency_ = LPS_SERIAL.read();
         if (!error_.matome) SetXY();
+        last_raw_update_ = millis();
       } else {
-        while (LPS_SERIAL.available()) LPS_SERIAL.read();
+        for (int i = 0; i < 4; i++) LPS_SERIAL.read();
       }
-      last_raw_update_ = millis();
     }
+  }
+
+ private:
+  void SetXY() {
+    const auto a = dists_sm_[0].get();
+    const auto b = dists_sm_[1].get();
+    const auto c = dists_sm_[2].get();
+
+    x_ = (sq(a) - sq(b) + sq(cfg_.c)) / (2 * cfg_.c);
+
+    const auto temp = sq(c) - sq(x_ - cfg_.x_c);
+    if (temp >= 0) {
+      y_ = cfg_.y_c - sqrt(temp);
+    } else {
+      y_ = cfg_.y_c;
+    }
+
+    last_xy_update_ = millis();
+  }
+
+ public:
+  Vec2 GetPos() { return Vec2{x_, y_}; }
+
+  bool Bound() {
+    return cfg_.minx < x_ && x_ < cfg_.maxx &&  //
+           cfg_.miny < y_ && y_ < cfg_.maxy;
   }
 
   uint8_t dists_raw_[3] = {0, 0, 0};
@@ -78,18 +112,7 @@ class Lps {
   double x_ = 0.0, y_ = 0.0;
   uint32_t last_xy_update_ = 0;
   const struct {
-    const double c, x_c, y_c;
+    double c, x_c, y_c;
+    double minx, maxx, miny, maxy;
   } cfg_;
-
- private:
-  void SetXY() {
-    const auto a = dists_sm_[0].get();
-    const auto b = dists_sm_[1].get();
-    const auto c = dists_sm_[2].get();
-
-    x_ = (sq(a) - sq(b) + sq(cfg_.c)) / (2 * cfg_.c);
-    y_ = cfg_.y_c - sqrt(sq(c) - sq(x_ - cfg_.x_c));
-
-    last_xy_update_ = millis();
-  }
 };

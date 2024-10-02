@@ -1,47 +1,44 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::SetMags(Basilisk* b) {
+  static uint32_t init_time;
+
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.set_mags;
 
   switch (m) {
-    case M::SetMags: {
-      Serial.println("ModeRunners::SetMags");
-
+    case M::SetMags_Init: {
       for (uint8_t id = 0; id < 4; id++) {
         b->mags_.SetStrength(id, c.strengths[id]);
       }
-
-      b->cmd_.wait.exit_to_mode = c.exit_to_mode;
-      b->cmd_.wait.exit_condition = [](Basilisk* b) {
-        if (millis() - b->cmd_.wait.init_time <
-            b->cmd_.set_mags.min_wait_time) {
-          return false;
-        }
-        if (millis() - b->cmd_.wait.init_time >
-            b->cmd_.set_mags.max_wait_time) {
-          return true;
-        }
-
-        for (uint8_t lr = 0; lr < 2; lr++) {
-          if (b->cmd_.set_mags.expected_contact[lr]) {
-            if (!b->lego_.state_[lr].ConsecutiveContact(
-                    b->cmd_.set_mags.consec_verif[lr])) {
+      init_time = millis();
+      m = M::SetMags_Wait;
+    } break;
+    case M::SetMags_Wait: {
+      if ([&] {
+            if (millis() - init_time > c.max_dur) {
+              return true;
+            }
+            if (millis() - init_time < c.min_dur) {
               return false;
             }
-          } else {
-            if (!b->lego_.state_[lr].ConsecutiveDetachment(
-                    b->cmd_.set_mags.consec_verif[lr])) {
-              return false;
+            for (const uint8_t f : IDX_LR) {
+              if (c.expected_state[f]) {
+                if (!b->lego_.state_[f].ConsecutiveContact(c.verif_thr)) {
+                  return false;
+                }
+              } else {
+                if (!b->lego_.state_[f].ConsecutiveDetachment(c.verif_thr)) {
+                  return false;
+                }
+              }
             }
-          }
-        }
-        return true;
+            return true;
+          }()) {
+        m = c.exit_to_mode;
       };
-      b->cmd_.wait.init_time = millis();
-      m = M::Wait;
     } break;
     default:
       break;

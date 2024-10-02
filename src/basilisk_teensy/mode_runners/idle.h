@@ -1,25 +1,18 @@
 #pragma once
 
-#include "mode_runners.h"
+#include "meta.h"
 
 void ModeRunners::Idle(Basilisk* b) {
   auto& m = b->cmd_.mode;
 
-  static bool nop_init = false;
-
   switch (m) {
     case M::Idle_Init: {
-      Serial.println("ModeRunners::Idle(Init)");
       b->CommandBoth([](Servo* s) { s->SetStop(); });
-      b->mags_.FixAll();
+      b->mags_.AttachAll();
       m = M::Idle_Nop;
-      nop_init = true;
     } break;
     case M::Idle_Nop: {
-      if (nop_init) {
-        Serial.println("ModeRunners::Idle(Nop)");
-        nop_init = false;
-      }
+      // Rest in peace.
     } break;
     default:
       break;

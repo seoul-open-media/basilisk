@@ -1,0 +1,157 @@
+{
+  "len": 30,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 3,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1
+      ]
+    },
+    {
+      "time": 6,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        7
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        7
+      ]
+    },
+    {
+      "time": 12,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        11,
+        12
+      ]
+    },
+    {
+      "time": 15,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        11,
+        12
+      ]
+    },
+    {
+      "time": 17,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 19,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 22,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 23,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 24,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 25,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 26,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 27,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 28,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 29,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    }
+  ]
+}

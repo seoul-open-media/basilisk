@@ -1,0 +1,21 @@
+{
+  "len": 10,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 23,
+      "suids": [
+        1, 3, 5, 7, 9
+      ]
+    },
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 24,
+      "suids": [
+        0
+      ]
+    }
+  ]
+}

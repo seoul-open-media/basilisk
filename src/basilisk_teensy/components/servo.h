@@ -27,7 +27,8 @@ class Servo : public Moteus {
   // aux2 position uncoiled.
   QRpl GetReply() {
     auto rpl = last_result().values;
-    if (rpl.abs_position > 0.25) rpl.abs_position -= 1.0;
+    // Convert aux2 encoder reading in [0, 1] to phi in [-0.5, 0.5]
+    if (rpl.abs_position > 0.5) rpl.abs_position -= 1.0;
     return rpl;
   }
 
@@ -44,7 +45,7 @@ class Servo : public Moteus {
   void Print() {
     const auto rpl = GetReply();
     Serial.print(id_);
-    Serial.print(F(" : t "));
+    Serial.print(F(" -> t "));
     Serial.print(millis());
     Serial.print(F(" / mod "));
     Serial.print(static_cast<int>(rpl.mode));

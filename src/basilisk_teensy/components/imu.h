@@ -7,7 +7,7 @@
 /* Angle unit of incoming data from the EBIMU board is 'degrees' between
  * -180.0 and 180.0, but the rest of the program assumes 'revolutions'
  * as angle unit for compatibility with moteus servomotor controllers.
- * The field `double euler_[3]` saves angles in revolutions,
+ * The field `double euler_[2]` saves angles in revolutions,
  * between -0.5 and 0.5, and the field `yaw_revs_` tracks full revolutions
  * in yaw axis so we can compute 'uncoiled' value for yaw.
  * All yaw values and returns are uncoiled except `euler_[2]`. */
@@ -53,6 +53,8 @@ class Imu {
           for (int i = 0; i < 3; i++) {
             euler_[i] = atof(temp[i]) / 360.0;
           }
+          euler_[2] *= -1.0;  // Translate to vertical up = +z
+                              // right hand system.
           const auto delta_yaw_coiled = euler_[2] - prev_yaw_coiled;
           if (delta_yaw_coiled > 0.5) {
             yaw_revs_--;
@@ -68,16 +70,18 @@ class Imu {
   }
 
   double GetYaw(bool rel) {  // false: Absolute, true: RelToBase
-    if (!rel) {
-      return euler_[2] + yaw_revs_;
-    } else {
+    if (rel) {
       return euler_[2] + yaw_revs_ - base_yaw_;
+    } else {
+      return euler_[2] + yaw_revs_;
     }
   }
 
-  void SetBaseYaw() { base_yaw_ = GetYaw(false); }
+  void SetBaseYaw(const double& offset = 0.0) {
+    base_yaw_ = GetYaw(false) - offset;
+  }
 
-  double euler_[3] = {0.0, 0.0, 0.0};  // [0]: roll, [1]: pitch, [2]: yaw
+  double euler_[3];  // [0]: roll, [1]: pitch, [2]: yaw
   int yaw_revs_ = 0;
   double base_yaw_ = 0.0;
   uint32_t last_updated_time_;

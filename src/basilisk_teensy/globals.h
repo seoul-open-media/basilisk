@@ -21,11 +21,11 @@ const PmCmd pm_cmd_template{.position = NaN,
                             .feedforward_torque = 0.0,
                             .kp_scale = 1.0,
                             .kd_scale = 1.0,
-                            .maximum_torque = 4.0,
+                            .maximum_torque = 32.0,
                             .stop_position = NaN,  // Do NOT use!
                             .watchdog_timeout = NaN,
-                            .velocity_limit = 16.0,
-                            .accel_limit = 16.0,
+                            .velocity_limit = 32.0,
+                            .accel_limit = 32.0,
                             .fixed_voltage_override = NaN};
 
 const QFmt q_fmt{[] {

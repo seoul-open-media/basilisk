@@ -1,0 +1,11 @@
+{
+  "len": 4,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Sequence",
+      "node": 1,
+      "loop": 4
+    }
+  ]
+}

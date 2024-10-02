@@ -1,0 +1,69 @@
+{
+  "len": 16,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 2,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 4,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 6,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 6.75,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 7.5,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 8.25,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+        8
+      ]
+    }
+  ]
+}

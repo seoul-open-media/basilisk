@@ -1,0 +1,31 @@
+{
+  "len": 11,
+  "seq": [
+    {
+      "time": 0,
+      "type": "Preset",
+      "idx": 23,
+      "suids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 7,
+      "type": "Command_Blip",
+      "name": "_TheOnlyOne_Idle",
+      "suids": [
+        0
+      ]
+    }
+  ]
+}
