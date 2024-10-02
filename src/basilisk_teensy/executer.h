@@ -37,8 +37,8 @@ class Executer {
     }
 
 #if I_WANT_DEBUG
-    Serial.print("Mode ");
-    Serial.println(static_cast<uint8_t>(b_->cmd_.mode));
+    // Serial.print("Mode ");
+    // Serial.println(static_cast<uint8_t>(b_->cmd_.mode));
 #endif
 
     auto* maybe_mode_runner = SafeAt(ModeRunners::mode_runners, b_->cmd_.mode);

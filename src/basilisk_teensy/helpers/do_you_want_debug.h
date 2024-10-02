@@ -1,3 +1,3 @@
 #pragma once
 
-#define I_WANT_DEBUG (0)
+#define I_WANT_DEBUG (1)

@@ -1,9 +1,9 @@
 {
     "what": "Mode_Pivot",
     "bend_L": "0",
-    "bend_R": "0",
+    "bend_R": "nan",
     "didimbal": "0",
-    "speed": "0.1",
-    "stride": "0",
+    "speed": "0.03",
+    "stride": "0.125",
     "tgt_yaw": "-0.25"
 }

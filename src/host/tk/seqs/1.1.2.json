@@ -1,68 +1,68 @@
 {
-  "len": 30,
+  "len": 16,
   "seq": [
     {
       "time": 0,
       "type": "Preset",
       "idx": 1,
       "suids": [
-        11
-      ]
-    },
-    {
-      "time": 1,
-      "type": "Preset",
-      "idx": 2,
-      "suids": [
-        11
+        8
       ]
     },
     {
       "time": 2,
       "type": "Preset",
-      "idx": 1,
-      "suids": [
-        11
-      ]
-    },
-    {
-      "time": 3,
-      "type": "Preset",
       "idx": 2,
       "suids": [
-        11
+        8
       ]
     },
     {
       "time": 4,
       "type": "Preset",
-      "idx": 1,
+      "idx": 3,
       "suids": [
-        11
-      ]
-    },
-    {
-      "time": 5,
-      "type": "Preset",
-      "idx": 2,
-      "suids": [
-        11
+        8
       ]
     },
     {
       "time": 6,
       "type": "Preset",
-      "idx": 1,
+      "idx": 4,
       "suids": [
-        11
+        8
       ]
     },
     {
-      "time": 7,
+      "time": 6.75,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 7.5,
       "type": "Preset",
       "idx": 2,
       "suids": [
-        11
+        8
+      ]
+    },
+    {
+      "time": 8.25,
+      "type": "Preset",
+      "idx": 3,
+      "suids": [
+        8
+      ]
+    },
+    {
+      "time": 9,
+      "type": "Preset",
+      "idx": 4,
+      "suids": [
+        8
       ]
     }
   ]

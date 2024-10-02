@@ -1,136 +1,156 @@
 {
-  "len": 13,
+  "len": 30,
   "seq": [
     {
       "time": 0,
       "type": "Preset",
-      "idx": 3,
+      "idx": 1,
       "suids": [
         1
       ]
     },
     {
-      "time": 2,
+      "time": 3,
       "type": "Preset",
-      "idx": 4,
+      "idx": 2,
       "suids": [
         1
-      ]
-    },
-    {
-      "time": 4,
-      "type": "Preset",
-      "idx": 3,
-      "suids": [
-        7
       ]
     },
     {
       "time": 6,
       "type": "Preset",
-      "idx": 4,
+      "idx": 1,
       "suids": [
         7
       ]
     },
     {
-      "time": 8,
-      "type": "Preset",
-      "idx": 3,
-      "suids": [
-        4,
-        5,
-        6
-      ]
-    },
-    {
       "time": 9,
       "type": "Preset",
-      "idx": 3,
+      "idx": 2,
       "suids": [
-        2,
-        3
+        7
       ]
     },
     {
-      "time": 10,
+      "time": 12,
       "type": "Preset",
-      "idx": 4,
+      "idx": 1,
       "suids": [
-        4,
-        5,
-        6
-      ]
-    },
-    {
-      "time": 11,
-      "type": "Preset",
-      "idx": 4,
-      "suids": [
-        2,
-        3
-      ]
-    },
-    {
-      "time": 13,
-      "type": "Preset",
-      "idx": 3,
-      "suids": [
-        9,
-        12,
-        13
-      ]
-    },
-    {
-      "time": 14,
-      "type": "Preset",
-      "idx": 3,
-      "suids": [
-        10,
-        11
+        11,
+        12
       ]
     },
     {
       "time": 15,
       "type": "Preset",
-      "idx": 4,
+      "idx": 2,
       "suids": [
-        10,
-        11
-      ]
-    },
-    {
-      "time": 16,
-      "type": "Preset",
-      "idx": 4,
-      "suids": [
-        9,
-        12,
-        13
+        11,
+        12
       ]
     },
     {
       "time": 17,
       "type": "Preset",
-      "idx": 3,
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 19,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 22,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 23,
+      "type": "Preset",
+      "idx": 1,
       "suids": [
         9,
-        10,
-        11,
-        12,
         13
       ]
     },
     {
-      "time": 18,
+      "time": 24,
       "type": "Preset",
-      "idx": 4,
+      "idx": 2,
       "suids": [
         9,
-        10,
-        11,
-        12,
         13
+      ]
+    },
+    {
+      "time": 25,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 26,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        1,
+        7,
+        11,
+        12
+      ]
+    },
+    {
+      "time": 27,
+      "type": "Preset",
+      "idx": 1,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 28,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        9,
+        13
+      ]
+    },
+    {
+      "time": 29,
+      "type": "Preset",
+      "idx": 2,
+      "suids": [
+        1,
+        7,
+        11,
+        12
       ]
     }
   ]

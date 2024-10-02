@@ -3,7 +3,7 @@
 #include "../servo_units/basilisk.h"
 
 #define XBEE_SERIAL Serial4
-#define XBEE_PACKET_LEN 46  // NOT counting the 4 starting bytes.
+#define XBEE_PACKET_LEN 36  // NOT counting the 4 starting bytes.
 
 class XbeeCommandReceiver {
  public:
@@ -46,14 +46,22 @@ class XbeeCommandReceiver {
           temp_rbuf.raw_bytes[i] = XBEE_SERIAL.read();
         }
 
+        Serial.println(temp_rbuf.decoded.suid);
+
         // Filter out Command for different SUID immediately at reception time
         // to avoid timing mismatch with Executer Beat.
-        if (temp_rbuf.decoded.suid != b_->cfg_.suid &&
-            temp_rbuf.decoded.suid != 0) {
+        if (!(temp_rbuf.decoded.suid & (1 << (b_->cfg_.suid - 1)))) {
           waiting_parse_ = false;
         } else {
           memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
           waiting_parse_ = true;
+
+          Serial.print(b_->cfg_.suid);
+          Serial.print(": Got mine, mode : ");
+          Serial.print(xbee_cmd_.decoded.mode);
+          Serial.print(":, preset idx : ");
+          Serial.print(xbee_cmd_.decoded.u.preset.idx);
+          Serial.println();
         }
         receiving_ = false;
         start = 0;
@@ -86,6 +94,21 @@ class XbeeCommandReceiver {
       case M::DoPreset: {
         c.do_preset.idx = x.u.preset.idx;
       } break;
+      case M::Pivot_Init: {
+        c.pivot.bend[IDX_L] = static_cast<double>(x.u.pivot.bend_l);
+        c.pivot.bend[IDX_R] = static_cast<double>(x.u.pivot.bend_r);
+        c.pivot.didimbal = static_cast<bool>(x.u.pivot.didimbal);
+        c.pivot.speed = static_cast<double>(x.u.pivot.speed);
+        c.pivot.stride = static_cast<double>(x.u.pivot.stride);
+        c.pivot.tgt_yaw = [](Basilisk*) {
+          return static_cast<double>(x.u.pivot.tgt_yaw);
+        };
+        c.pivot.min_dur = 0;
+        c.pivot.max_dur = 6000;
+        c.pivot.exit_condition = nullptr;
+        c.pivot.acclim = 1.0;
+        c.pivot.exit_to_mode = M::Idle_Init;
+      } break;
       default:
         break;
     }
@@ -93,7 +116,7 @@ class XbeeCommandReceiver {
 
   inline static union RecvBuf {
     struct Decoded {
-      uint8_t suid;
+      uint16_t suid;
       uint8_t oneshots;
       uint8_t mode;
       union {
@@ -103,6 +126,14 @@ class XbeeCommandReceiver {
         struct {
           uint16_t idx;
         } __attribute__((packed)) preset;
+        struct {
+          float bend_l;
+          float bend_r;
+          uint8_t didimbal;
+          float speed;
+          float stride;
+          float tgt_yaw;
+        } __attribute__((packed)) pivot;
       } u;
     } __attribute__((packed)) decoded;
     uint8_t raw_bytes[XBEE_PACKET_LEN];

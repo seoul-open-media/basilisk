@@ -82,7 +82,7 @@ class NeokeyCommandReceiver {
         c.pivot.bend[IDX_R] = -0.125;
         c.pivot.speed = 0.15;
         c.pivot.acclim = 1.0;
-        c.pivot.min_dur = 0;
+        c.pivot.min_dur = 4000;
         c.pivot.max_dur = -1;
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;

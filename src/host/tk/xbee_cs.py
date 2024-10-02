@@ -1,7 +1,10 @@
 import serial
 import serial.tools.list_ports
-import json
+import time
 import struct
+import threading
+from queue import Queue
+import json
 
 
 mode_to_num = {
@@ -36,6 +39,7 @@ keys_uint8 = [
 ]
 keys_uint16 = [
     "idx",
+    "duration",
     "min_dur",
     "max_dur",
     "min_phase_dur",
@@ -70,6 +74,14 @@ class XbeeCommandSender:
                 print(f"Error: Failed initializing serial port: {e}")
         else:
             print("Serial port will not be used")
+
+        self.cmd_queue = Queue()
+
+        self.running = True
+        self.thread = threading.Thread(target=self._send)
+        self.thread.daemon = True  # Ensures thread exits when the main program does
+        self.thread.start()
+
         print("Key order preview:")
         print("---BEGIN---")
         preview_key_order()
@@ -98,7 +110,7 @@ class XbeeCommandSender:
                     raise ValueError(f"Cannot numerize value: {val}")
         return val
 
-    def send(self, cmd, suids):  # cmd = Command path or Preset index
+    def queue_cmd(self, cmd, suids):  # cmd = Command path or Preset index
         if isinstance(cmd, str):
             with open(cmd, 'r') as f:
                 data = json.load(f)
@@ -119,36 +131,52 @@ class XbeeCommandSender:
             mode = None
             oneshot = data["what"][8:]
 
-        for suid in suids:
-            cmd_bytes = bytearray(50)
-            cmd_bytes[:7] = [255, 255, 255, 255, suid,
-                             oneshot_to_num[oneshot], mode_to_num[mode]]
+        suid_bits = 0
+        if 0 in suids:
+            suid_bits = (1 << 13) - 1
+        else:
+            for suid in suids:
+                suid_bits |= (1 << (suid - 1))
 
-            byte_index = 7
-            for key in sorted(data.keys()):  # Just sort alphabetically
-                if key != "what":
-                    val = self.numerize(data[key])
+        cmd_bytes = bytearray(40)
+        cmd_bytes[:8] = [255, 255, 255, 255, suid_bits & 0xFF, suid_bits >> 8,
+                         oneshot_to_num[oneshot], mode_to_num[mode]]
 
-                    if key in keys_uint8:
-                        packed_value = struct.pack('<B', val)
-                    elif key in keys_uint16:
-                        packed_value = struct.pack('<H', val)
-                    elif key in keys_float32:
-                        packed_value = struct.pack('<f', val)
-                    else:
-                        continue
+        byte_index = 8
+        for key in sorted(data.keys()):  # Just sort alphabetically
+            if key != "what":
+                val = self.numerize(data[key])
 
-                    if byte_index + len(packed_value) > 50:
-                        raise ValueError(
-                            f"Command bytes exceeds 50 for SUID {suid}")
+                if key in keys_uint8:
+                    packed_value = struct.pack('<B', val)
+                elif key in keys_uint16:
+                    packed_value = struct.pack('<H', val)
+                elif key in keys_float32:
+                    packed_value = struct.pack('<f', val)
+                else:
+                    continue
 
-                    cmd_bytes[byte_index:byte_index +
-                              len(packed_value)] = packed_value
-                    byte_index += len(packed_value)
+                if byte_index + len(packed_value) > 40:
+                    raise ValueError(
+                        f"Command bytes exceeds 40 for SUID {suid}")
 
-            self.port.write(cmd_bytes)
-            print("Xbee Command sent:")
-            print(list(cmd_bytes))
+                cmd_bytes[byte_index:byte_index +
+                          len(packed_value)] = packed_value
+                byte_index += len(packed_value)
+
+        self.cmd_queue.put(cmd_bytes)
+
+        print("Xbee Command queued:")
+        print(list(cmd_bytes))
+
+    def _send(self):
+        while True:
+            if not self.cmd_queue.empty():
+                cmd_bytes = self.cmd_queue.get()
+                self.port.write(cmd_bytes)
+                print("Xbee Command sent:")
+                print(list(cmd_bytes))
+            time.sleep(0.001)
 
 
 xb_cs = XbeeCommandSender()

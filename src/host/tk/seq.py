@@ -22,10 +22,13 @@ class Sequence:
             self.data["seq"].sort(key=lambda x: x["time"])
 
     def start(self):
-        print(f"Starting sequence: {self.filepath}")
         if not self.data.get("seq"):
             print("No sequence to play")
             return
+
+        if self.playing:
+            self.stop()
+        print(f"Starting sequence: {self.filepath}")
 
         self.playing = True
         self.thread = threading.Thread(target=self._play)
@@ -36,20 +39,22 @@ class Sequence:
         cur_node_idx = 0
         nodes = self.data["seq"]
         timlen = self.data["len"]
-        while self.playing and cur_node_idx < len(nodes):
+        while self.playing:
             if time.time() - start_time > timlen:
                 self.playing = False
                 return
 
-            node = nodes[cur_node_idx]
-            node_start_time = node["time"]
-            current_time = time.time() - start_time
+            if cur_node_idx < len(nodes):
+                node = nodes[cur_node_idx]
+                node_start_time = node["time"]
+                current_time = time.time() - start_time
 
-            if current_time >= node_start_time:
-                self.emit(node)
-                cur_node_idx += 1
-            else:
-                time.sleep(0.01)
+                if current_time >= node_start_time:
+                    self.emit(node)
+                    cur_node_idx += 1
+
+            time.sleep(0.01)
+        print(f"Sequence complete: {self.filepath}")
 
     def stop(self):
         print(f"Stopping sequence: {self.filepath}")
@@ -63,18 +68,24 @@ class Sequence:
     def emit(self, node):
         node_type = node["type"]
         if node_type == "Preset":
-            xb_cs.send(node["idx"], node["suids"])
+            xb_cs.queue_cmd(node["idx"], node["suids"])
         elif node_type == "Command_Blip":
             cmd_path = os.path.join(
                 os.path.dirname(__file__),
                 "cmds",
                 node["name"] + ".json"
             )
-            xb_cs.send(cmd_path, node["suids"])
+            xb_cs.queue_cmd(cmd_path, node["suids"])
         elif node_type == "Command_AndWait":
             pass
         elif node_type == "Sequence":
-            pass
+            loop = 1
+            try:
+                loop = node["loop"]
+            except:
+                pass
+            for i in range(loop):
+                pass
 
     ######################################################
     # See you later

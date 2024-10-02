@@ -117,7 +117,7 @@ class Basilisk {
   //////////////////////////////
   // Basilisk Command struct: //
 
-  enum class CRMux : bool { Xbee, Neokey } crmux_ = CRMux::Neokey;
+  enum class CRMux : bool { Xbee, Neokey } crmux_ = CRMux::Xbee;
 
   struct Command {
     uint8_t oneshots;  // bit 0: CRMuxXbee

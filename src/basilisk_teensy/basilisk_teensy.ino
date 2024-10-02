@@ -9,21 +9,30 @@
 #include "servo_units/basilisk.h"
 
 // Basilisk configuration.
-struct Basilisk::Configuration cfg {
-  .suid = 13,  //
-      .servo{.id_l = 1, .id_r = 2, .bus = 1},
-  .lps{.c = 900.0,
-       .x_c = 450.0,
-       .y_c = 450.0,
-       .minx = 50.0,
-       .maxx = 850.0,
-       .miny = 50.0,
-       .maxy = 400.0},
-  .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
-      .mags {
-    .pin_la = 3, .pin_lt = 4, .pin_ra = 5, .pin_rt = 6, .run_interval = 100
-  }
-};
+Basilisk::Configuration cfg{
+    .suid =
+        [] {
+          uint8_t suid = 0;
+          const auto teensyid = GetTeensyId();
+          if (teensyid_to_suid.find(teensyid) != teensyid_to_suid.end()) {
+            suid = teensyid_to_suid.at(teensyid);
+          }
+          return suid;
+        }(),  //
+    .servo{.id_l = 1, .id_r = 2, .bus = 1},
+    .lps{.c = 900.0,
+         .x_c = 450.0,
+         .y_c = 450.0,
+         .minx = 50.0,
+         .maxx = 850.0,
+         .miny = 50.0,
+         .maxy = 400.0},
+    .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
+    .mags{.pin_la = 3,
+          .pin_lt = 4,
+          .pin_ra = 5,
+          .pin_rt = 6,
+          .run_interval = 100}};
 
 // Basilisk and its executer.
 Basilisk b{cfg};
@@ -38,15 +47,9 @@ void setup() {
   Serial.begin(9600);
   delay(250);
 
-  auto teensyid = GetTeensyId();
-  uint8_t suid = 0;
-  if (teensyid_to_suid.find(teensyid) != teensyid_to_suid.end()) {
-    suid = teensyid_to_suid.at(teensyid);
-  }
-
-  Serial.print("suid ");
-  Serial.print(suid);
-  Serial.println();
+  Serial.print("Basilisk SUID set to ");
+  Serial.println(b.cfg_.suid);
+  delay(1000);
 
   b.Setup();
   xb_cr.Setup(&b);
@@ -65,6 +68,6 @@ void loop() {
   static Beat exec_beat{10};
   if (exec_beat.Hit()) exec.Run();
 
-  // static Beat serial_rs_beat{250};
-  // if (serial_rs_beat.Hit()) SerialReplySender(b);
+  static Beat serial_rs_beat{250};
+  if (serial_rs_beat.Hit()) SerialReplySender(b);
 }

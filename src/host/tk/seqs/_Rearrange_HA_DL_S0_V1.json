@@ -4,16 +4,11 @@
     {
       "time": 0,
       "type": "Command_Blip",
-      "name": "Pivot_H-A_D-R_S-0_V-2",
+      "name": "Pivot_HA_DL_S0_V1",
       "suids": [
         1,
         2,
         3,
-        9,
-        10,
-        11,
-        12,
-        13,
         4,
         5,
         6,
