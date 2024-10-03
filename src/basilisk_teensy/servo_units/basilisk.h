@@ -239,7 +239,7 @@ class Basilisk {
     } wait;
 
     struct SetMags {
-      MagnetStrength strengths[4];
+      MagStren strengths[4];
       bool expected_state[2];     // [0]: l, [1]: r
                                   // true: contact, false: detachment
       N64 verif_thr;              // Exit condition priority:

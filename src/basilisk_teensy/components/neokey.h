@@ -48,7 +48,7 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
         const uint8_t nk_idx = row * _cols + col;
         auto& nk = _neokeys[nk_idx];
 
-        // "Not sure why we have to do it twice."
+        // "Not sure why we have to do it twice." -- Adafruit
         nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
         auto buttons = nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
         buttons ^= NEOKEY_1X4_BUTTONMASK;

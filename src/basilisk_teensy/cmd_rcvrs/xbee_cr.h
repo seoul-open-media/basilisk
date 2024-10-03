@@ -20,6 +20,7 @@ class XbeeCommandReceiver {
       Serial.println("XbeeCommandReceiver: XBEE_SERIAL(Serial4) begin failed");
       return false;
     }
+
     Serial.println("XbeeCommandReceiver: Setup complete");
     return true;
   }
@@ -54,12 +55,18 @@ class XbeeCommandReceiver {
           memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
           waiting_parse_ = true;
 
+#if I_WANT_DEBUG
+          Serial.print("SUID ");
           Serial.print(b_->cfg_.suid);
-          Serial.print(": Got mine, mode : ");
+          Serial.print(" received Xbee Command, Mode ");
           Serial.print(xbee_cmd_.decoded.mode);
-          Serial.print(":, preset idx : ");
-          Serial.print(xbee_cmd_.decoded.u.preset.idx);
+          if (xbee_cmd_.decoded.mode ==
+              static_cast<uint8_t>(Basilisk::Command::Mode::DoPreset)) {
+            Serial.print(", Preset index ");
+            Serial.print(xbee_cmd_.decoded.u.preset.idx);
+          }
           Serial.println();
+#endif
         }
         receiving_ = false;
         start = 0;
@@ -81,11 +88,15 @@ class XbeeCommandReceiver {
         c.set_base_yaw.offset = static_cast<double>(x.u.set_base_yaw.offset);
       }
 
-      return;
+      return;  // Oneshot- and Mode- Commands are NOT processed from
+               // a single Command since there are Oneshots that
+               // require additional values.
     }
 
     const auto maybe_new_mode = static_cast<M>(x.mode);
-    if (maybe_new_mode == M::DoPreset && x.u.preset.idx == 0) return;
+    if (maybe_new_mode == M::DoPreset && x.u.preset.idx == 0)
+      return;  // Do not even switch Mode.  Previous DoPreset Command
+               // execution's future-chaining can be happening now.
 
     m = maybe_new_mode;
     switch (m) {
@@ -107,8 +118,12 @@ class XbeeCommandReceiver {
         c.pivot.acclim = 1.0;
         c.pivot.exit_to_mode = M::Idle_Init;
       } break;
-      default:
-        break;
+      default: {
+        Serial.print("XbeeCommandReceiver: Mode ");
+        Serial.print(x.mode);
+        Serial.print(" is NOT registered");
+        Serial.println();
+      } break;
     }
   }
 

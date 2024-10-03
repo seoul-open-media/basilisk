@@ -1,5 +1,4 @@
 ## Todo
 - Auto-moonwalk
-- WalkGuided
-- Proper minmax clamp for Phi
-- Numerical debug: NaN problem when using Vec2
+- GhostWalk -> Use global variable
+- XbeeReplySender

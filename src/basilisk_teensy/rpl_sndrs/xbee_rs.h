@@ -3,7 +3,7 @@
 #include "../servo_units/basilisk.h"
 
 #define XBEE_SERIAL Serial4
-#define XBEE_PACKET_LEN 36  // NOT counting the 4 starting bytes.
+#define XBEE_PACKET_LEN 46  // NOT counting the 4 starting bytes.
 
 class XbeeReplySender {
   void Send(uint8_t* src) {}

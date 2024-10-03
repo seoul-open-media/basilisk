@@ -3,7 +3,7 @@
 #include "../helpers/imports.h"
 #include "lego_blocks.h"
 
-enum class MagnetStrength : uint8_t {
+enum class MagStren : uint8_t {
   Max = 0,
   Strong = 63,
   Medium = 127,
@@ -11,8 +11,8 @@ enum class MagnetStrength : uint8_t {
   Min = 255
 };
 
-MagnetStrength Bool2MS(const bool& attach) {
-  return attach ? MagnetStrength::Max : MagnetStrength::Min;
+MagStren Bool2MS(const bool& attach) {
+  return attach ? MagStren::Max : MagStren::Min;
 }
 
 // Part | LeftAnkle | LeftToe | RightAnkle | RightToe
@@ -30,6 +30,12 @@ class Magnets {
   bool Setup() {
     for (const auto& pin : pins_) pinMode(pin, OUTPUT);
     AttachAll();
+
+    if (!lego_) {
+      Serial.println("Magnets: Failed to set reference to Lego component");
+      return false;
+    }
+
     Serial.println("Magnets: Setup complete");
     return true;
   }
@@ -48,21 +54,21 @@ class Magnets {
     }
   }
 
-  void SetStrength(const uint8_t& id, const MagnetStrength& strength) {
+  void SetStrength(const uint8_t& id, const MagStren& strength) {
     analogWrite(pins_[id], static_cast<int>(strength));
-    attaching_[id] = (strength == MagnetStrength::Max);
+    attaching_[id] = (strength == MagStren::Max);
     lego_->Reset();
   }
 
   void AttachAll() {
     for (uint8_t id = 0; id < 4; id++) {
-      SetStrength(id, MagnetStrength::Max);
+      SetStrength(id, MagStren::Max);
     }
   }
 
   void ReleaseAll() {
     for (uint8_t id = 0; id < 4; id++) {
-      SetStrength(id, MagnetStrength::Min);
+      SetStrength(id, MagStren::Min);
     }
   }
 

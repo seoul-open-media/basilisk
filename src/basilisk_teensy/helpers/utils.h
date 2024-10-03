@@ -29,14 +29,11 @@ double signedpow(const double& base, const float& exponent) {
   return base >= 0 ? y : -y;
 }
 
-template <typename K, typename V>  // Assumes that V is a pointer type.
-V SafeAt(const std::map<K, V>& map, const K& key) {
+template <typename K, typename V>
+V* SafeAt(const std::map<K, V*>& map, const K& key) {
   auto it = map.find(key);
-  if (it == map.end()) {
-    return nullptr;
-  } else {
-    return it->second;
-  }
+  if (it == map.end()) return nullptr;
+  return it->second;
 }
 
 double nearest_pmn(const double& tgt, double var) {
@@ -99,15 +96,15 @@ struct Vec2 {
   }
 
   Vec2 operator+(const Vec2& other) const {
-    return Vec2(x + other.x, y + other.y);
+    return Vec2{x + other.x, y + other.y};
   }
 
   Vec2 operator-(const Vec2& other) const {
-    return Vec2(x - other.x, y - other.y);
+    return Vec2{x - other.x, y - other.y};
   }
 
   Vec2 operator*(const double& scalar) const {
-    return Vec2(x * scalar, y * scalar);
+    return Vec2{x * scalar, y * scalar};
   }
 
   friend Vec2 operator*(const double& scalar, const Vec2& vec) {
@@ -116,7 +113,7 @@ struct Vec2 {
 
   Vec2 operator/(const double& scalar) const {
     if (scalar == 0.0) return Vec2{NaN, NaN};
-    return Vec2(x / scalar, y / scalar);
+    return Vec2{x / scalar, y / scalar};
   }
 
   void add(const Vec2& other) {
@@ -162,7 +159,7 @@ T clamp(const T& val, const T& lb, const T& ub) {
 template <typename T>
 class clamped {
  public:
-  clamped() { val_ = 0; }
+  clamped() : val_{T{0}} {}
 
   clamped(const clamped& other) { val_ = other.val_; }
 
@@ -222,7 +219,7 @@ class PhiAccLim : public clamped<double> {
   using clamped::operator=;
 
  private:
-  double lb() const override { return 0.1; }
+  double lb() const override { return 0.5; }
   double ub() const override { return 4.0; }
 };
 

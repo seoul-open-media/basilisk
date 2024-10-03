@@ -4,6 +4,18 @@
 
 namespace globals {
 
+namespace stdval {
+
+namespace speed {
+PhiSpeed normal = 0.1;
+}  // namespace speed
+
+namespace acclim {
+PhiAccLim normal = 2.0;
+}
+
+}  // namespace stdval
+
 const PmFmt pm_fmt{.position = kFloat,
                    .velocity = kFloat,
                    .feedforward_torque = kIgnore,

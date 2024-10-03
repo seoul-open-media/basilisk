@@ -20,6 +20,7 @@ class Imu {
       Serial.println("IMU: IMU_SERIAL(Serial2) begin failed");
       return false;
     }
+
     Serial.println("IMU: Setup complete");
     return true;
   }

@@ -75,11 +75,4 @@ void SerialReplySender(Basilisk& b) {
   // Serial.print("time_since_last_attach[3]=");
   // Serial.print(b.mags_.time_since_last_attach_[3]);
   // Serial.println();
-
-  Serial.print("dest_yaw:");
-  Serial.print(b.cmd_.piv_spin.dest_yaw, 4);
-  Serial.print(",");
-  Serial.print("stride:");
-  Serial.print(b.cmd_.piv_spin.stride, 4);
-  Serial.println();
 }

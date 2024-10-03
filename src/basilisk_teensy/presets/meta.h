@@ -30,6 +30,7 @@ struct Presets {
   static void RandomMagsWeak(Basilisk*);
   static void RandomMagsStrong(Basilisk*);
 
+  // PresetPivot nogadas are deprecated.
   static void PivRFr45(Basilisk*);
   static void PivLFr45(Basilisk*);
   static void PivRBk45(Basilisk*);
@@ -58,6 +59,7 @@ struct Presets {
       {23, &RandomMagsWeak},
       {24, &RandomMagsStrong},
 
+      // PresetPivot nogadas are deprecated.
       {5, &PivRFr45},
       {6, &PivLFr45},
       {7, &PivRBk45},
