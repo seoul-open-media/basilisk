@@ -22,6 +22,7 @@ struct ModeRunners {
   static void WalkToPos(Basilisk*);
   static void Sufi(Basilisk*);
   static void Orbit(Basilisk*);
+  static void Diamond(Basilisk*);
 
   inline static const std::map<M, void (*)(Basilisk*)> mode_runners = {
       {M::DoPreset, &DoPreset},
@@ -44,5 +45,6 @@ struct ModeRunners {
       {M::WalkToPos, &WalkToPos},
       {M::Sufi, &Sufi},
       {M::Orbit, &Orbit},
+      {M::Diamond, &Diamond},
   };
 };

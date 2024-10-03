@@ -374,30 +374,16 @@ class Basilisk {
       double tick;
     } orbit;
 
-    // struct Diamond {
-    //   friend struct ModeRunners;
-    //   Diamond() {}
-    //   Diamond(const double& _stride) : stride{_stride} {}
-    //   // Half of top-bottom angle of the diamond.
-    //   double stride = 0.125;
-    //  private:
-    //   uint8_t current_step = 0;
-    //   // phi_l and phi_r for Step 0, 1, 2, 3.
-    //   double tgt_phi(uint8_t step) {
-    //     switch (step) {
-    //       case 0:
-    //         return stride;
-    //       case 1:
-    //         return -0.5 - stride;
-    //       case 2:
-    //         return -0.5 + stride;
-    //       case 3:
-    //         return -stride;
-    //       default:
-    //         return stride;
-    //     }
-    //   }
-    // } diamond;
+    struct Diamond {
+      LR init_didimbal;
+      double init_stride;
+      PhiSpeed speed;
+      PhiAccLim acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
+      uint8_t steps;
+    } diamond;
+
     // class Gee {
     //   friend struct ModeRunners;
     //  public:

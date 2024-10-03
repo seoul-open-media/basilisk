@@ -3,7 +3,7 @@
 #include "../presets/matome.h"
 #include "meta.h"
 
-namespace preset {
+namespace do_preset {
 
 namespace pivot {
 double tgt_yaw;
@@ -14,7 +14,7 @@ namespace piv_spin {
 PhiSpeed speed = globals::stdval::speed::normal;
 }  // namespace piv_spin
 
-}  // namespace preset
+}  // namespace do_preset
 
 void ModeRunners::DoPreset(Basilisk* b) {
   auto& m = b->cmd_.mode;
@@ -32,9 +32,9 @@ void ModeRunners::DoPreset(Basilisk* b) {
         m = M::Pivot_Init;
         auto& c = b->cmd_.pivot;
         c.didimbal = digits[3] == 1 ? BOOL_L : BOOL_R;
-        preset::pivot::tgt_yaw = (digits[2] - 3) * 0.125;
+        do_preset::pivot::tgt_yaw = (digits[2] - 3) * 0.125;
         c.tgt_yaw = [](Basilisk* b) {
-          return nearest_pmn(b->imu_.GetYaw(true), preset::pivot::tgt_yaw);
+          return nearest_pmn(b->imu_.GetYaw(true), do_preset::pivot::tgt_yaw);
         };
         c.stride = 0.0;
         c.bend[IDX_L] = digits[1] == 1   ? 0.0
@@ -49,7 +49,7 @@ void ModeRunners::DoPreset(Basilisk* b) {
                         : digits[0] == 4 ? -0.25
                         : digits[0] == 5 ? 0.25
                                          : 0.0;
-        c.speed = preset::pivot::speed;
+        c.speed = do_preset::pivot::speed;
         c.acclim = globals::stdval::acclim::normal;
         c.min_dur = 0;
         c.max_dur = globals::stdval::maxdur::safe;
@@ -82,7 +82,7 @@ void ModeRunners::DoPreset(Basilisk* b) {
           }
         }
         for (uint8_t f : IDX_LR) c.bend[f] = 0.0;
-        c.speed = preset::piv_spin::speed;
+        c.speed = do_preset::piv_spin::speed;
         c.acclim = globals::stdval::acclim::normal;
         c.min_stepdur = 0;
         c.max_stepdur = globals::stdval::maxdur::safe;
@@ -121,7 +121,7 @@ void ModeRunners::DoPreset(Basilisk* b) {
           }
         }
         for (uint8_t f : IDX_LR) c.bend[f] = 0.0;
-        c.speed = preset::piv_spin::speed;
+        c.speed = do_preset::piv_spin::speed;
         c.acclim = globals::stdval::acclim::normal;
         c.min_stepdur = 0;
         c.max_stepdur = globals::stdval::maxdur::safe;
@@ -137,7 +137,7 @@ void ModeRunners::DoPreset(Basilisk* b) {
       if (maybe_preset) {
         (*maybe_preset)(b);
       } else {
-        Serial.println("Unregistered preset index");
+        Serial.println("Unregistered Preset index");
         m = M::Idle_Init;
       }
     } break;
