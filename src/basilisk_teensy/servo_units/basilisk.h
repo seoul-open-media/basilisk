@@ -13,18 +13,8 @@ struct ModeRunners;
 
 class Basilisk {
  public:
-  /////////////////
-  // Components: //
-
-  Servo l_, r_;
-  Servo* s_[2] = {nullptr, nullptr};
-  Lps lps_;          // Run every loop().
-  Imu imu_;          // Run every loop().
-  LegoBlocks lego_;  // Run in regular interval.
-  Magnets mags_;     // Run in regular interval.
-
-  ///////////////////////////////////
-  // Configurations & constructor: //
+  //////////////////////
+  // Configurations : //
 
   struct Configuration {
     uint8_t suid;  // 1 <= ID of this Basilisk <= 13
@@ -49,12 +39,25 @@ class Basilisk {
   const double gr_ = 21.0;  // delta_rotor = delta_output * gear_ratio
   const PmCmd* const pm_cmd_template_;
 
+  /////////////////
+  // Components: //
+
+  Servo l_, r_;
+  Servo* s_[2] = {nullptr, nullptr};
+  Lps lps_;          // Run every loop().
+  Imu imu_;          // Run every loop().
+  LegoBlocks lego_;  // Run in regular interval.
+  Magnets mags_;     // Run in regular interval.
+
+  //////////////////
+  // Constructor: //
+
   Basilisk(const Configuration& cfg)
       : cfg_{cfg},
+        pm_cmd_template_{&globals::pm_cmd_template},
         l_{cfg.servo.id_l, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         r_{cfg.servo.id_r, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         s_{&l_, &r_},
-        pm_cmd_template_{&globals::pm_cmd_template},
         lps_{cfg.lps.c,    cfg.lps.x_c,  cfg.lps.y_c,  //
              cfg.lps.minx, cfg.lps.maxx, cfg.lps.miny, cfg.lps.maxy},
         imu_{},

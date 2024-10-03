@@ -14,6 +14,10 @@ namespace acclim {
 PhiAccLim normal = 2.0;
 }
 
+namespace maxdur {
+uint32_t safe = 3000;
+}
+
 }  // namespace stdval
 
 const PmFmt pm_fmt{.position = kFloat,

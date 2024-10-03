@@ -84,6 +84,7 @@ void Sufi(Basilisk* b) {
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.sufi;
 
+  m = M::Sufi;
   c.init_didimbal = BOOL_L;
   c.dest_yaw = NaN;
   c.exit_thr = NaN;
