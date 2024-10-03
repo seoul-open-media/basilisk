@@ -58,34 +58,34 @@ class NeokeyCommandReceiver {
       case 3: {
         c.oneshots |= (1 << 1);  // SetBaseYaw
       } break;
-      // case 4: {
-      //   m = M::PivSpin;
-      //   c.piv_spin.didimbal = BOOL_L;
-      //   c.piv_spin.dest_yaw = NaN;
-      //   c.piv_spin.exit_thr = NaN;
-      //   c.piv_spin.stride = -0.1;
-      //   c.piv_spin.bend[IDX_L] = 0.0;
-      //   c.piv_spin.bend[IDX_R] = 0.0;
-      //   c.piv_spin.speed = 0.1;
-      //   c.piv_spin.acclim = 1.0;
-      //   c.piv_spin.min_stepdur = 0;
-      //   c.piv_spin.max_stepdur = -1;
-      //   c.piv_spin.interval = 0;
-      //   c.piv_spin.steps = -1;
-      // } break;
       case 4: {
-        m = M::Pivot_Init;
-        c.pivot.didimbal = BOOL_L;
-        c.pivot.tgt_yaw = [](Basilisk*) { return NaN; };
-        c.pivot.stride = 0.125;
-        c.pivot.bend[IDX_L] = 0.0;
-        c.pivot.bend[IDX_R] = -0.125;
-        c.pivot.speed = 0.15;
-        c.pivot.acclim = 1.0;
-        c.pivot.min_dur = 4000;
-        c.pivot.max_dur = -1;
-        c.pivot.exit_to_mode = M::Idle_Init;
+        m = M::PivSpin;
+        c.piv_spin.didimbal = BOOL_L;
+        c.piv_spin.dest_yaw = NaN;
+        c.piv_spin.exit_thr = NaN;
+        c.piv_spin.stride = -0.1;
+        c.piv_spin.bend[IDX_L] = 0.0;
+        c.piv_spin.bend[IDX_R] = 0.0;
+        c.piv_spin.speed = 0.1;
+        c.piv_spin.acclim = 1.0;
+        c.piv_spin.min_stepdur = 0;
+        c.piv_spin.max_stepdur = -1;
+        c.piv_spin.interval = 0;
+        c.piv_spin.steps = -1;
       } break;
+      // case 4: {
+      //   m = M::Pivot_Init;
+      //   c.pivot.didimbal = BOOL_L;
+      //   c.pivot.tgt_yaw = [](Basilisk*) { return NaN; };
+      //   c.pivot.stride = 0.125;
+      //   c.pivot.bend[IDX_L] = 0.0;
+      //   c.pivot.bend[IDX_R] = -0.125;
+      //   c.pivot.speed = 0.15;
+      //   c.pivot.acclim = 1.0;
+      //   c.pivot.min_dur = 4000;
+      //   c.pivot.max_dur = -1;
+      //   c.pivot.exit_to_mode = M::Idle_Init;
+      // } break;
         // case 4: {
         //   m = M::Pivot_Init;
         //   c.pivot.didimbal = BOOL_R;

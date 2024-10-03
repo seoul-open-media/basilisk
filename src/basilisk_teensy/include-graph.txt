@@ -1,4 +1,4 @@
                            ↗ presets ↘
 component.h's → basilisk.h → mode_runners.h → executer.h → basilisk.ino
-                           ↘ cmd_rcvrs.h →→→→→→→→→→→→→→→→↗
-                           ↘ rpl_sndrs.h →→→→→→→→→→→→→→→→↗
+                           ↘ cmd_rcvrs.h ↗               ↗
+                           ↘ rpl_sndrs.h →→→→→→→→→→→→→→→↗

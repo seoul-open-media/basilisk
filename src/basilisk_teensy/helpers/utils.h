@@ -223,7 +223,7 @@ class PhiAccLim : public clamped<double> {
 
  private:
   double lb() const override { return 0.1; }
-  double ub() const override { return 2.0; }
+  double ub() const override { return 4.0; }
 };
 
 class PhiThr : public clamped<double> {

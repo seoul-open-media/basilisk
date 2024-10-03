@@ -1,5 +1,5 @@
 {
-  "len": 20,
+  "len": 100,
   "seq": [
     {
       "time": 0,
@@ -320,7 +320,8 @@
         12,
         13
       ]
-    },    {
+    },
+    {
       "time": 50,
       "type": "Command_Blip",
       "name": "Pivot_HA_DL_Sm45_V05",
@@ -367,7 +368,8 @@
         12,
         13
       ]
-    },    {
+    },
+    {
       "time": 58,
       "type": "Command_Blip",
       "name": "Pivot_HA_DL_Sm45_V05",
@@ -414,14 +416,7 @@
         12,
         13
       ]
-    }, 
-    
-    
-    
-    
-    
-    
-    
+    },
     {
       "time": 66,
       "type": "Command_Blip",
@@ -449,7 +444,7 @@
     {
       "time": 70,
       "type": "Command_Blip",
-      "name": "Pivot_HA_DL_S0_V05",
+      "name": "Pivot_HA_DR_Sm45_V05",
       "suids": [
         9,
         10,
@@ -461,7 +456,7 @@
     {
       "time": 72,
       "type": "Command_Blip",
-      "name": "Pivot_HA_DR_S0_V05",
+      "name": "Pivot_HA_DL_S0_V05",
       "suids": [
         9,
         10,

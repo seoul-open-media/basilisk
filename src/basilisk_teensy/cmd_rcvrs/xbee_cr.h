@@ -3,7 +3,7 @@
 #include "../servo_units/basilisk.h"
 
 #define XBEE_SERIAL Serial4
-#define XBEE_PACKET_LEN 36  // NOT counting the 4 starting bytes.
+#define XBEE_PACKET_LEN 46  // NOT counting the 4 starting bytes.
 
 class XbeeCommandReceiver {
  public:
@@ -45,8 +45,6 @@ class XbeeCommandReceiver {
         for (uint8_t i = 0; i < XBEE_PACKET_LEN; i++) {
           temp_rbuf.raw_bytes[i] = XBEE_SERIAL.read();
         }
-
-        Serial.println(temp_rbuf.decoded.suid);
 
         // Filter out Command for different SUID immediately at reception time
         // to avoid timing mismatch with Executer Beat.

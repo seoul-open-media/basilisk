@@ -138,7 +138,7 @@ class XbeeCommandSender:
             for suid in suids:
                 suid_bits |= (1 << (suid - 1))
 
-        cmd_bytes = bytearray(40)
+        cmd_bytes = bytearray(50)
         cmd_bytes[:8] = [255, 255, 255, 255, suid_bits & 0xFF, suid_bits >> 8,
                          oneshot_to_num[oneshot], mode_to_num[mode]]
 
@@ -156,9 +156,9 @@ class XbeeCommandSender:
                 else:
                     continue
 
-                if byte_index + len(packed_value) > 40:
+                if byte_index + len(packed_value) > 50:
                     raise ValueError(
-                        f"Command bytes exceeds 40 for SUID {suid}")
+                        f"Command bytes exceeds 50 for SUID {suid}")
 
                 cmd_bytes[byte_index:byte_index +
                           len(packed_value)] = packed_value
