@@ -50,7 +50,7 @@ class Magnets {
         last_release_time_[id] = millis();
       }
       time_since_last_attach_[id] = millis() - last_attach_time_[id];
-      heavenfall_warning_[id] = (time_since_last_attach_[id] > 3000);
+      heavenfall_warning_[id] = (time_since_last_attach_[id] > 5000);
     }
   }
 

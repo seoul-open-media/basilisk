@@ -171,7 +171,8 @@ class Basilisk {
       SetMags_Wait = 6,  // -> Exit
 
       /* RandomMags: Randomly tap-dance. */
-      RandomMags = 19,
+      RandomMags_Init = 19,
+      RandomMags_Do = 18,
 
       /* SetPhis: Control Servos to achieve target phis.
        *          Future-chain-able.
@@ -252,6 +253,7 @@ class Basilisk {
 
     struct RandomMags {
       uint32_t min_phase_dur, max_phase_dur;
+      uint32_t dur;
     } random_mags;
 
     struct SetPhis {

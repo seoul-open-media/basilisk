@@ -3,13 +3,23 @@
 #include "meta.h"
 
 void ModeRunners::RandomMags(Basilisk* b) {
+  static uint32_t init_time;
   static uint32_t dur[4] = {0, 0, 0, 0};
 
   auto& m = b->cmd_.mode;
   auto& c = b->cmd_.random_mags;
 
   switch (m) {
-    case M::RandomMags: {
+    case M::RandomMags_Init: {
+      init_time = millis();
+      m = M::RandomMags_Do;
+    } break;
+    case M::RandomMags_Do: {
+      if (millis() - init_time > b->cmd_.random_mags.dur) {
+        m = M::Idle_Init;
+        return;
+      }
+
       for (uint8_t id = 0; id < 4; id++) {
         if (dur[id] == 0) {
           randomSeed(b->cfg_.suid * 100 + id * millis());

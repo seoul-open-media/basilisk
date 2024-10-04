@@ -20,6 +20,13 @@ class Executer {
 
     BasiliskOneshots::Shoot(b_);
 
+    for (uint8_t id = 0; id < 4; id++) {
+      if (b_->mags_.heavenfall_warning_[id]) {
+        b_->cmd_.mode = Basilisk::Command::Mode::Idle_Init;
+        return;
+      }
+    }
+
     b_->CommandBoth([](Servo* s) { s->SetQuery(); });
 
     switch (b_->crmux_) {
@@ -40,8 +47,8 @@ class Executer {
     }
 
 #if I_WANT_DEBUG
-    // Serial.print("Mode ");
-    // Serial.println(static_cast<uint8_t>(b_->cmd_.mode));
+      // Serial.print("Mode ");
+      // Serial.println(static_cast<uint8_t>(b_->cmd_.mode));
 #endif
 
     auto* maybe_mode_runner = SafeAt(ModeRunners::mode_runners, b_->cmd_.mode);

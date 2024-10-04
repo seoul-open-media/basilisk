@@ -55,7 +55,7 @@ class XbeeCommandReceiver {
           memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
           waiting_parse_ = true;
 
-#if I_WANT_DEBUG
+// #if I_WANT_DEBUG
           Serial.print("SUID ");
           Serial.print(b_->cfg_.suid);
           Serial.print(" received Xbee Command, Mode ");
@@ -66,7 +66,18 @@ class XbeeCommandReceiver {
             Serial.print(xbee_cmd_.decoded.u.preset.idx);
           }
           Serial.println();
-#endif
+// for (size_t i = 0; i < XBEE_PACKET_LEN; i++) {
+//   Serial.print(xbee_cmd_.raw_bytes[i]);
+//   Serial.print(", ");
+// }
+// Serial.println();
+// for (uint8_t i = 0; i < 13; i++) {
+//   Serial.print(xbee_cmd_.decoded.u.preset_packed.idx[i]);
+//   Serial.print(", ");
+// }
+// Serial.println();
+// Serial.println(b_->cfg_.suid);
+// #endif
         }
         receiving_ = false;
         start = 0;
