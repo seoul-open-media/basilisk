@@ -11,6 +11,7 @@
 #include "random_mags.h"
 #include "set_mags.h"
 #include "set_phis.h"
+#include "shear.h"
 #include "sufi.h"
 #include "wait.h"
 #include "walk.h"

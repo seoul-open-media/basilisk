@@ -101,7 +101,8 @@ class XbeeCommandReceiver {
     m = maybe_new_mode;
     switch (m) {
       case M::DoPreset: {
-        c.do_preset.idx = x.u.preset.idx;
+        // c.do_preset.idx = x.u.preset.idx;
+        c.do_preset.idx = x.u.preset_packed.idx[b_->cfg_.suid - 1];
       } break;
       case M::Pivot_Init: {
         c.pivot.bend[IDX_L] = static_cast<double>(x.u.pivot.bend_l);
@@ -139,6 +140,9 @@ class XbeeCommandReceiver {
         struct {
           uint16_t idx;
         } __attribute__((packed)) preset;
+        struct {
+          uint16_t idx[13];  // The Goguma version of DoPreset protocol.
+        } __attribute__((packed)) preset_packed;
         struct {
           float bend_l;
           float bend_r;

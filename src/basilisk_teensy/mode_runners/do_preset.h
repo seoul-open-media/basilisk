@@ -23,6 +23,20 @@ void ModeRunners::DoPreset(Basilisk* b) {
   switch (m) {
     case M::DoPreset: {
       if (1000 <= idx && idx <= 2999) {  // PPP Pivot range
+                                         // Decimal ABCD
+                                         // A = didim = 1 ~ 2
+                                         //       == 1 -> L
+                                         //       == 2 -> R
+                                         // B = tgt_yaw = 1 ~ 8
+                                         //       == 1 ~ 8 -> S, SE, E, NE, ...
+                                         // C = bend_l = 1 ~ 6
+                                         //       == 1 -> Straight
+                                         //       == 2 -> Palja
+                                         //       == 3 -> Morasou
+                                         //       == 4 -> Outward
+                                         //       == 5 -> Awkward
+                                         // D = bend_r
+                                         //       == Same as C
         uint8_t digits[4];
         for (uint8_t i = 0; i < 4; i++) {
           digits[i] = idx % 10;
@@ -60,6 +74,16 @@ void ModeRunners::DoPreset(Basilisk* b) {
       }
 
       if (3100 <= idx && idx <= 3299) {  // PPP PivSpin range
+                                         // Decimal 3ABC
+                                         // A = didim = 1 ~ 2
+                                         //       == 1 -> L
+                                         //       == 2 -> R
+                                         // B = dest_yaw = 0 ~ 8
+                                         //       == 1 ~ 8 -> S, SE, E, NE, ...
+                                         //       == 0     -> NaN
+                                         // C = stride = 0 ~ 9
+                                         //       == 1 ~ 9 -> * 10 deg
+                                         //       == 0     -> 45 deg
         uint8_t digits[3];
         for (uint8_t i = 0; i < 3; i++) {
           digits[i] = idx % 10;
@@ -92,14 +116,14 @@ void ModeRunners::DoPreset(Basilisk* b) {
         return;
       }
 
-      if (3300 <= idx && 3399 <= idx) {  // PPP Sufi range
-                                         // 33AB
-                                         // A = dest_yaw
-                                         //       == 0   -> NaN
-                                         //       == 1~8 -> NSEW
-                                         // B = stride
-                                         //       == 0   -> 45 deg
-                                         //       == 1~9 -> * 10 deg
+      if (3300 <= idx && idx <= 3399) {  // PPP Sufi range
+                                         // Decimal 33AB
+                                         // A = dest_yaw = 0 ~ 8
+                                         //       == 0     -> NaN
+                                         //       == 1 ~ 8 -> S, SE, E, NE, ...
+                                         // B = stride = 0 ~ 9
+                                         //       == 0     -> 45 deg
+                                         //       == 1 ~ 9 -> * 10 deg
         uint8_t digits[2];
         for (uint8_t i = 0; i < 2; i++) {
           digits[i] = idx % 10;
@@ -131,7 +155,75 @@ void ModeRunners::DoPreset(Basilisk* b) {
         return;
       }
 
-      // TODO: PPP for WalkToPos, etc.
+      if (4000 <= idx && idx <= 4999) {  // PPP WalkToDir range
+                                         // Decimal 4ABC
+                                         // A = tgt_yaw = 0 ~ 8
+                                         //       == 0     -> NaN
+                                         //       == 1 ~ 8 -> NSEW
+                                         // B = stride = 0 ~ 9
+                                         //       == 0     -> 45 deg
+                                         //       == 1 ~ 9 -> * 10 deg
+                                         // C = steps
+                                         //       == 0     -> 10
+                                         //       == 1 ~ 9 -> =
+        uint8_t digits[3];
+        for (uint8_t i = 0; i < 3; i++) {
+          digits[i] = idx % 10;
+          idx /= 10;
+        }
+
+        m = M::WalkToDir;
+        auto& c = b->cmd_.walk_to_dir;
+        c.init_didimbal = BOOL_L;
+        c.tgt_yaw = digits[2] == 0 ? NaN
+                                   : nearest_pmn(b->imu_.GetYaw(true),
+                                                 (digits[2] - 3) * 0.125);
+        c.stride = digits[1] == 0 ? 0.125 : digits[1] / 36.0;
+        if (abs(c.tgt_yaw - b->imu_.GetYaw(true)) > 0.25) {
+          c.tgt_yaw = nearest_pmn(b->imu_.GetYaw(true), c.tgt_yaw + 0.5);
+          c.stride *= -1.0;
+        }
+        for (uint8_t f : IDX_LR) c.bend[f] = 0.0;
+        c.speed = globals::stdval::speed::normal;
+        c.min_stepdur = 0;
+        c.max_stepdur = globals::stdval::maxdur::safe;
+        c.steps = digits[0] == 0 ? 10 : digits[0];
+
+        return;
+      }
+
+      if (10000 <= idx && idx <= 19999) {  // PPP WalkToPos range
+                                           // Decimal 1ABCD
+                                           // (AB) = tgt_pos_x
+                                           //          == (AB) * 10cm
+                                           // (CD) = tgt_pos_y
+                                           //          == (CD) * 10cm
+        uint8_t digits[4];
+        for (uint8_t i = 0; i < 4; i++) {
+          digits[i] = idx % 10;
+          idx /= 10;
+        }
+
+        m = M::WalkToPos;
+        auto& c = b->cmd_.walk_to_pos;
+        c.init_didimbal = BOOL_L;
+        double x = (10 * digits[3] + digits[2]) * 10.0;
+        double y = (10 * digits[1] + digits[0]) * 10.0;
+        c.tgt_pos = Vec2{x, y};
+        c.dist_thr = 25;
+        c.stride = 0.125;
+        for (uint8_t f : IDX_LR) c.bend[f] = 0.0;
+        c.speed = globals::stdval::speed::normal;
+        c.acclim = globals::stdval::acclim::normal;
+        c.min_stepdur = 0;
+        c.max_stepdur = globals::stdval::maxdur::safe;
+        c.interval = 0;
+        c.steps = -1;
+
+        return;
+      }
+
+      // TODO: PPP for other Modes.
 
       auto* maybe_preset = SafeAt(Presets::presets, idx);
       if (maybe_preset) {

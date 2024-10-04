@@ -320,7 +320,7 @@ class Basilisk {
 
     struct WalkToDir {
       LR init_didimbal;
-      double tgt_yaw;
+      double tgt_yaw;  // NaN means yaw at WalkToDir initialization.
       double stride;
       Phi bend[2];
       PhiSpeed speed;
@@ -384,22 +384,33 @@ class Basilisk {
       uint8_t steps;
     } diamond;
 
-    // class Gee {
-    //   friend struct ModeRunners;
-    //  public:
-    //   Gee() {}
-    //   Gee(const double& _stride, const uint8_t& _steps)
-    //       : stride{_stride}, steps{_steps} {}
-    //   // Delta sigma between zero pose and shear pose.
-    //   // Negative value manifests as moving left, and positive right.
-    //   double stride = 0.125;
-    //   // Total steps counting both ankle shears and toe shears.
-    //   uint8_t steps = 8;
-    //   // false = attach ankle, true = attach toe.
-    //   bool phase = false;
-    //  private:
-    //   uint8_t current_step = 0;
-    // } gee;
+    struct GhostWalk {
+    } ghost_walk;
+
+    struct Shear {
+      AnkToe fix_which;
+      Phi tgt_phi;
+    };
+
+    struct Gee {
+      friend struct ModeRunners;
+
+     public:
+      Gee() {}
+      Gee(const double& _stride, const uint8_t& _steps)
+          : stride{_stride}, steps{_steps} {}
+
+      // Delta sigma between zero pose and shear pose.
+      // Negative value manifests as moving left, and positive right.
+      double stride = 0.125;
+      // Total steps counting both ankle shears and toe shears.
+      uint8_t steps = 8;
+      // false = attach ankle, true = attach toe.
+      bool phase = false;
+
+     private:
+      uint8_t current_step = 0;
+    } gee;
   } cmd_;
 
   struct Reply {
