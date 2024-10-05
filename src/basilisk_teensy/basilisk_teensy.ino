@@ -68,6 +68,6 @@ void loop() {
   static Beat exec_beat{10};
   if (exec_beat.Hit()) exec.Run();
 
-  static Beat serial_rs_beat{250};
-  if (serial_rs_beat.Hit()) SerialReplySender(b);
+  // static Beat serial_rs_beat{250};
+  // if (serial_rs_beat.Hit()) SerialReplySender(b);
 }

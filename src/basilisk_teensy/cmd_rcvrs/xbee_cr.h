@@ -55,29 +55,25 @@ class XbeeCommandReceiver {
           memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
           waiting_parse_ = true;
 
-// #if I_WANT_DEBUG
+          // #if I_WANT_DEBUG
           Serial.print("SUID ");
           Serial.print(b_->cfg_.suid);
           Serial.print(" received Xbee Command, Mode ");
           Serial.print(xbee_cmd_.decoded.mode);
-          if (xbee_cmd_.decoded.mode ==
-              static_cast<uint8_t>(Basilisk::Command::Mode::DoPreset)) {
-            Serial.print(", Preset index ");
-            Serial.print(xbee_cmd_.decoded.u.preset.idx);
+          Serial.println();
+          for (size_t i = 0; i < XBEE_PACKET_LEN; i++) {
+            Serial.print(xbee_cmd_.raw_bytes[i]);
+            Serial.print(", ");
           }
           Serial.println();
-// for (size_t i = 0; i < XBEE_PACKET_LEN; i++) {
-//   Serial.print(xbee_cmd_.raw_bytes[i]);
-//   Serial.print(", ");
-// }
-// Serial.println();
-// for (uint8_t i = 0; i < 13; i++) {
-//   Serial.print(xbee_cmd_.decoded.u.preset_packed.idx[i]);
-//   Serial.print(", ");
-// }
-// Serial.println();
-// Serial.println(b_->cfg_.suid);
-// #endif
+          for (uint8_t i = 0; i < 13; i++) {
+            Serial.print(xbee_cmd_.decoded.u.do_preset.idx[i]);
+            Serial.print(", ");
+          }
+          Serial.println();
+          Serial.print(xbee_cmd_.decoded.u.do_preset.idx[b_->cfg_.suid]);
+          Serial.println();
+          // #endif
         }
         receiving_ = false;
         start = 0;
@@ -105,15 +101,18 @@ class XbeeCommandReceiver {
     }
 
     const auto maybe_new_mode = static_cast<M>(x.mode);
-    if (maybe_new_mode == M::DoPreset && x.u.preset.idx == 0)
+    if (maybe_new_mode == M::DoPreset && x.u.do_preset.idx == 0)
       return;  // Do not even switch Mode.  Previous DoPreset Command
                // execution's future-chaining can be happening now.
 
     m = maybe_new_mode;
     switch (m) {
       case M::DoPreset: {
-        // c.do_preset.idx = x.u.preset.idx;
-        c.do_preset.idx = x.u.preset_packed.idx[b_->cfg_.suid - 1];
+        c.do_preset.idx = x.u.do_preset.idx[b_->cfg_.suid - 1];
+
+        Serial.print("Preset index ");
+        Serial.print(c.do_preset.idx);
+        Serial.println();
       } break;
       case M::Pivot_Init: {
         c.pivot.bend[IDX_L] = static_cast<double>(x.u.pivot.bend_l);
@@ -149,11 +148,8 @@ class XbeeCommandReceiver {
           float offset;
         } __attribute__((packed)) set_base_yaw;
         struct {
-          uint16_t idx;
-        } __attribute__((packed)) preset;
-        struct {
           uint16_t idx[13];  // The Goguma version of DoPreset protocol.
-        } __attribute__((packed)) preset_packed;
+        } __attribute__((packed)) do_preset;
         struct {
           float bend_l;
           float bend_r;
