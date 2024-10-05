@@ -3,24 +3,28 @@
 #include "meta.h"
 
 void Presets::RMagRls(Basilisk* b) {
+  b->CommandBoth([](Servo* s) { s->SetStop(); });
   b->cmd_.mode = M::Idle_Nop;
   b->mags_.SetStrength(2, MagStren::Min);
   b->mags_.SetStrength(3, MagStren::Min);
 }
 
 void Presets::RMagAtt(Basilisk* b) {
+  b->CommandBoth([](Servo* s) { s->SetStop(); });
   b->cmd_.mode = M::Idle_Nop;
   b->mags_.SetStrength(2, MagStren::Max);
   b->mags_.SetStrength(3, MagStren::Max);
 }
 
 void Presets::LMagRls(Basilisk* b) {
+  b->CommandBoth([](Servo* s) { s->SetStop(); });
   b->cmd_.mode = M::Idle_Nop;
   b->mags_.SetStrength(0, MagStren::Min);
   b->mags_.SetStrength(1, MagStren::Min);
 }
 
 void Presets::LMagAtt(Basilisk* b) {
+  b->CommandBoth([](Servo* s) { s->SetStop(); });
   b->cmd_.mode = M::Idle_Nop;
   b->mags_.SetStrength(0, MagStren::Max);
   b->mags_.SetStrength(1, MagStren::Max);

@@ -10,6 +10,7 @@ void ModeRunners::SetMags(Basilisk* b) {
 
   switch (m) {
     case M::SetMags_Init: {
+      b->CommandBoth([](Servo* s) { s->SetStop(); });
       for (uint8_t id = 0; id < 4; id++) {
         b->mags_.SetStrength(id, c.strengths[id]);
       }
