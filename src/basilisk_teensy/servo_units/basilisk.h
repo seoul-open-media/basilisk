@@ -126,6 +126,7 @@ class Basilisk {
     uint8_t oneshots;  // bit 0: CRMuxXbee
                        // bit 1: SetBaseYaw
                        // bit 2: Inspire
+                       // bit 7: ReplyNow
 
     struct SetBaseYaw {
       double offset;
@@ -224,7 +225,6 @@ class Basilisk {
       Orbit = 24,
       Diamond = 25,
       RandomWalk = 26,
-      GhostWalk = 27,
 
       /* Gee: */
       Shear_Init = 250,
@@ -307,6 +307,19 @@ class Basilisk {
       Mode exit_to_mode;
     } pivseq;
 
+    struct PivSpin {
+      LR didimbal;
+      double dest_yaw;  // NaN means no destination.
+      double exit_thr;
+      double stride;
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccLim acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
+      uint8_t steps;
+    } piv_spin;
+
     struct Walk {
       LR init_didimbal;
       double (*tgt_yaw[2])(Basilisk*);          // [0]: l, [1]: r (didimbal)
@@ -358,19 +371,6 @@ class Basilisk {
       uint8_t steps;
     } sufi;
 
-    struct PivSpin {
-      LR didimbal;
-      double dest_yaw;  // NaN means no destination.
-      double exit_thr;
-      double stride;
-      Phi bend[2];
-      PhiSpeed speed;
-      PhiAccLim acclim;
-      uint32_t min_stepdur, max_stepdur;
-      uint32_t interval;
-      uint8_t steps;
-    } piv_spin;
-
     struct Orbit {
       Vec2 center;
       double tick;
@@ -385,9 +385,6 @@ class Basilisk {
       uint32_t interval;
       uint8_t steps;
     } diamond;
-
-    struct GhostWalk {
-    } ghost_walk;
 
     struct Shear {
       AnkToe fix_which;

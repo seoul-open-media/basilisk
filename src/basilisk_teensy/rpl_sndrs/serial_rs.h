@@ -32,7 +32,6 @@ void SerialReplySender(Basilisk& b) {
   // Serial.print("b.lps_.dists_raw_[2]:");
   // Serial.print(b.lps_.dists_raw_[2]);
   // Serial.println();
-
   // Serial.print("b.lps_.error_.bytes[0]:");
   // Serial.print(b.lps_.error_.bytes[0]);
   // Serial.print(",");
