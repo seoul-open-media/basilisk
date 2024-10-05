@@ -5,6 +5,7 @@
 #include "executer.h"
 #include "helpers/imports.h"
 #include "helpers/utils.h"
+#include "rpl_sndrs/led_rs.h"
 #include "rpl_sndrs/serial_rs.h"
 #include "servo_units/basilisk.h"
 
@@ -49,12 +50,12 @@ void setup() {
 
   Serial.print("Basilisk SUID set to ");
   Serial.println(b.cfg_.suid);
-  delay(1000);
+  delay(250);
 
   b.Setup();
   xb_cr.Setup(&b);
   nk_cr.Setup(&b);
-  delay(2000);
+  delay(250);
 }
 
 void loop() {
@@ -68,6 +69,9 @@ void loop() {
   static Beat exec_beat{10};
   if (exec_beat.Hit()) exec.Run();
 
-  // static Beat serial_rs_beat{250};
-  // if (serial_rs_beat.Hit()) SerialReplySender(b);
+  static Beat led_rs_beat{100};
+  if (led_rs_beat.Hit()) LedReplySender(nk);
+
+  static Beat serial_rs_beat{500};
+  if (serial_rs_beat.Hit()) SerialReplySender(b);
 }
