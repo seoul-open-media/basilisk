@@ -230,7 +230,17 @@ void ModeRunners::DoPreset(Basilisk* b) {
         (*maybe_preset)(b);
       } else {
         Serial.println("Unregistered Preset index");
-        m = M::Idle_Init;
+        m = M::SetMags_Init;
+        for (uint8_t i = 0; i < 4; i++) {
+          b->cmd_.set_mags.strengths[i] = MagStren::Min;
+        }
+        for (uint8_t i = 0; i < 2; i++) {
+          b->cmd_.set_mags.expected_state[i] = BOOL_RELEASE;
+        }
+        b->cmd_.set_mags.verif_thr = 1;
+        b->cmd_.set_mags.min_dur = 0;
+        b->cmd_.set_mags.max_dur = 100;
+        b->cmd_.set_mags.exit_to_mode = M::Idle_Init;
       }
     } break;
     default:
