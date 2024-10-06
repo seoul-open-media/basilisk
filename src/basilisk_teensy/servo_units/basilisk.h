@@ -13,18 +13,8 @@ struct ModeRunners;
 
 class Basilisk {
  public:
-  /////////////////
-  // Components: //
-
-  Servo l_, r_;
-  Servo* s_[2] = {nullptr, nullptr};
-  Lps lps_;          // Run every loop().
-  Imu imu_;          // Run every loop().
-  LegoBlocks lego_;  // Run in regular interval.
-  Magnets mags_;     // Run in regular interval.
-
-  ///////////////////////////////////
-  // Configurations & constructor: //
+  //////////////////////
+  // Configurations : //
 
   struct Configuration {
     uint8_t suid;  // 1 <= ID of this Basilisk <= 13
@@ -49,12 +39,25 @@ class Basilisk {
   const double gr_ = 21.0;  // delta_rotor = delta_output * gear_ratio
   const PmCmd* const pm_cmd_template_;
 
+  /////////////////
+  // Components: //
+
+  Servo l_, r_;
+  Servo* s_[2] = {nullptr, nullptr};
+  Lps lps_;          // Run every loop().
+  Imu imu_;          // Run every loop().
+  LegoBlocks lego_;  // Run in regular interval.
+  Magnets mags_;     // Run in regular interval.
+
+  //////////////////
+  // Constructor: //
+
   Basilisk(const Configuration& cfg)
       : cfg_{cfg},
+        pm_cmd_template_{&globals::pm_cmd_template},
         l_{cfg.servo.id_l, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         r_{cfg.servo.id_r, cfg.servo.bus, &globals::pm_fmt, &globals::q_fmt},
         s_{&l_, &r_},
-        pm_cmd_template_{&globals::pm_cmd_template},
         lps_{cfg.lps.c,    cfg.lps.x_c,  cfg.lps.y_c,  //
              cfg.lps.minx, cfg.lps.maxx, cfg.lps.miny, cfg.lps.maxy},
         imu_{},
@@ -123,6 +126,7 @@ class Basilisk {
     uint8_t oneshots;  // bit 0: CRMuxXbee
                        // bit 1: SetBaseYaw
                        // bit 2: Inspire
+                       // bit 7: ReplyNow
 
     struct SetBaseYaw {
       double offset;
@@ -168,7 +172,8 @@ class Basilisk {
       SetMags_Wait = 6,  // -> Exit
 
       /* RandomMags: Randomly tap-dance. */
-      RandomMags = 19,
+      RandomMags_Init = 19,
+      RandomMags_Do = 18,
 
       /* SetPhis: Control Servos to achieve target phis.
        *          Future-chain-able.
@@ -220,7 +225,6 @@ class Basilisk {
       Orbit = 24,
       Diamond = 25,
       RandomWalk = 26,
-      GhostWalk = 27,
 
       /* Gee: */
       Shear_Init = 250,
@@ -239,7 +243,7 @@ class Basilisk {
     } wait;
 
     struct SetMags {
-      MagnetStrength strengths[4];
+      MagStren strengths[4];
       bool expected_state[2];     // [0]: l, [1]: r
                                   // true: contact, false: detachment
       N64 verif_thr;              // Exit condition priority:
@@ -249,6 +253,7 @@ class Basilisk {
 
     struct RandomMags {
       uint32_t min_phase_dur, max_phase_dur;
+      uint32_t dur;
     } random_mags;
 
     struct SetPhis {
@@ -302,6 +307,19 @@ class Basilisk {
       Mode exit_to_mode;
     } pivseq;
 
+    struct PivSpin {
+      LR didimbal;
+      double dest_yaw;  // NaN means no destination.
+      double exit_thr;
+      double stride;
+      Phi bend[2];
+      PhiSpeed speed;
+      PhiAccLim acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
+      uint8_t steps;
+    } piv_spin;
+
     struct Walk {
       LR init_didimbal;
       double (*tgt_yaw[2])(Basilisk*);          // [0]: l, [1]: r (didimbal)
@@ -317,7 +335,7 @@ class Basilisk {
 
     struct WalkToDir {
       LR init_didimbal;
-      double tgt_yaw;
+      double tgt_yaw;  // NaN means yaw at WalkToDir initialization.
       double stride;
       Phi bend[2];
       PhiSpeed speed;
@@ -353,64 +371,45 @@ class Basilisk {
       uint8_t steps;
     } sufi;
 
-    struct PivSpin {
-      LR didimbal;
-      double dest_yaw;  // NaN means no destination.
-      double exit_thr;
-      double stride;
-      Phi bend[2];
-      PhiSpeed speed;
-      PhiAccLim acclim;
-      uint32_t min_stepdur, max_stepdur;
-      uint32_t interval;
-      uint8_t steps;
-    } piv_spin;
-
     struct Orbit {
       Vec2 center;
       double tick;
     } orbit;
 
-    // struct Diamond {
-    //   friend struct ModeRunners;
-    //   Diamond() {}
-    //   Diamond(const double& _stride) : stride{_stride} {}
-    //   // Half of top-bottom angle of the diamond.
-    //   double stride = 0.125;
-    //  private:
-    //   uint8_t current_step = 0;
-    //   // phi_l and phi_r for Step 0, 1, 2, 3.
-    //   double tgt_phi(uint8_t step) {
-    //     switch (step) {
-    //       case 0:
-    //         return stride;
-    //       case 1:
-    //         return -0.5 - stride;
-    //       case 2:
-    //         return -0.5 + stride;
-    //       case 3:
-    //         return -stride;
-    //       default:
-    //         return stride;
-    //     }
-    //   }
-    // } diamond;
-    // class Gee {
-    //   friend struct ModeRunners;
-    //  public:
-    //   Gee() {}
-    //   Gee(const double& _stride, const uint8_t& _steps)
-    //       : stride{_stride}, steps{_steps} {}
-    //   // Delta sigma between zero pose and shear pose.
-    //   // Negative value manifests as moving left, and positive right.
-    //   double stride = 0.125;
-    //   // Total steps counting both ankle shears and toe shears.
-    //   uint8_t steps = 8;
-    //   // false = attach ankle, true = attach toe.
-    //   bool phase = false;
-    //  private:
-    //   uint8_t current_step = 0;
-    // } gee;
+    struct Diamond {
+      LR init_didimbal;
+      double init_stride;
+      PhiSpeed speed;
+      PhiAccLim acclim;
+      uint32_t min_stepdur, max_stepdur;
+      uint32_t interval;
+      uint8_t steps;
+    } diamond;
+
+    struct Shear {
+      AnkToe fix_which;
+      Phi tgt_phi;
+    };
+
+    struct Gee {
+      friend struct ModeRunners;
+
+     public:
+      Gee() {}
+      Gee(const double& _stride, const uint8_t& _steps)
+          : stride{_stride}, steps{_steps} {}
+
+      // Delta sigma between zero pose and shear pose.
+      // Negative value manifests as moving left, and positive right.
+      double stride = 0.125;
+      // Total steps counting both ankle shears and toe shears.
+      uint8_t steps = 8;
+      // false = attach ankle, true = attach toe.
+      bool phase = false;
+
+     private:
+      uint8_t current_step = 0;
+    } gee;
   } cmd_;
 
   struct Reply {

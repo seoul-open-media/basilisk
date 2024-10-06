@@ -22,6 +22,8 @@ struct ModeRunners {
   static void WalkToPos(Basilisk*);
   static void Sufi(Basilisk*);
   static void Orbit(Basilisk*);
+  static void Diamond(Basilisk*);
+  static void Shear(Basilisk*);
 
   inline static const std::map<M, void (*)(Basilisk*)> mode_runners = {
       {M::DoPreset, &DoPreset},
@@ -31,7 +33,8 @@ struct ModeRunners {
       {M::Free, &Free},
       {M::SetMags_Init, &SetMags},
       {M::SetMags_Wait, &SetMags},
-      {M::RandomMags, &RandomMags},
+      {M::RandomMags_Init, &RandomMags},
+      {M::RandomMags_Do, &RandomMags},
       {M::SetPhis_Init, &SetPhis},
       {M::SetPhis_Move, &SetPhis},
       {M::Pivot_Init, &Pivot},
@@ -44,5 +47,8 @@ struct ModeRunners {
       {M::WalkToPos, &WalkToPos},
       {M::Sufi, &Sufi},
       {M::Orbit, &Orbit},
+      {M::Diamond, &Diamond},
+      {M::Shear_Init, &Shear},
+      {M::Shear_Move, &Shear},
   };
 };

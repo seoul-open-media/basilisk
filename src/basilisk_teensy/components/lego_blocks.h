@@ -16,6 +16,7 @@ class LegoBlocks {
   // Must be called before use.
   bool Setup() {
     for (const auto& pin : pins_) pinMode(pin, INPUT);
+
     Serial.println("LegoBlocks: Setup complete");
     return true;
   }

@@ -1,3 +1,5 @@
+// PresetPivot nogadas are deprecated.
+
 #pragma once
 
 #include "meta.h"

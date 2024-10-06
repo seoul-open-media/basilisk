@@ -90,7 +90,7 @@ class CommandEditor(tk.Toplevel):
             self.filename_vlbl.config(text=os.path.basename(self.filepath))
 
     def send(self):
-        xb_cs.queue_cmd(self.filepath, [3])
+        xb_cs.queue_cmd(self.filepath, [0])
 
     def close(self):
         self.master.open_filenames.remove(os.path.basename(self.filepath))

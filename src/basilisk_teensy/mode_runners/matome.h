@@ -1,5 +1,6 @@
 #pragma once
 
+#include "diamond.h"
 #include "do_preset.h"
 #include "free.h"
 #include "idle.h"
@@ -10,6 +11,7 @@
 #include "random_mags.h"
 #include "set_mags.h"
 #include "set_phis.h"
+#include "shear.h"
 #include "sufi.h"
 #include "wait.h"
 #include "walk.h"

@@ -5,6 +5,7 @@
 #include "executer.h"
 #include "helpers/imports.h"
 #include "helpers/utils.h"
+#include "rpl_sndrs/led_rs.h"
 #include "rpl_sndrs/serial_rs.h"
 #include "servo_units/basilisk.h"
 
@@ -12,7 +13,7 @@
 Basilisk::Configuration cfg{
     .suid =
         [] {
-          uint8_t suid = 0;
+          uint8_t suid = 8;  // 8th Basilisk Teensy replaced to a new one.
           const auto teensyid = GetTeensyId();
           if (teensyid_to_suid.find(teensyid) != teensyid_to_suid.end()) {
             suid = teensyid_to_suid.at(teensyid);
@@ -20,13 +21,13 @@ Basilisk::Configuration cfg{
           return suid;
         }(),  //
     .servo{.id_l = 1, .id_r = 2, .bus = 1},
-    .lps{.c = 900.0,
-         .x_c = 450.0,
-         .y_c = 450.0,
+    .lps{.c = 300.0,
+         .x_c = 150.0,
+         .y_c = 370.0,
          .minx = 50.0,
-         .maxx = 850.0,
+         .maxx = 250.0,
          .miny = 50.0,
-         .maxy = 400.0},
+         .maxy = 250.0},
     .lego{.pin_l = 23, .pin_r = 29, .run_interval = 20},  //
     .mags{.pin_la = 3,
           .pin_lt = 4,
@@ -49,12 +50,15 @@ void setup() {
 
   Serial.print("Basilisk SUID set to ");
   Serial.println(b.cfg_.suid);
-  delay(1000);
+  delay(250);
 
-  b.Setup();
+  if (!b.Setup()) {
+    nk.setPixelColor(0, 0xF00000);
+    while (1);
+  }
   xb_cr.Setup(&b);
   nk_cr.Setup(&b);
-  delay(2000);
+  delay(250);
 }
 
 void loop() {
@@ -68,6 +72,9 @@ void loop() {
   static Beat exec_beat{10};
   if (exec_beat.Hit()) exec.Run();
 
-  static Beat serial_rs_beat{250};
+  static Beat led_rs_beat{100};
+  if (led_rs_beat.Hit()) LedReplySender(nk);
+
+  static Beat serial_rs_beat{500};
   if (serial_rs_beat.Hit()) SerialReplySender(b);
 }

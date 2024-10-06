@@ -7,18 +7,18 @@ class Servo : public Moteus {
  public:
   Servo(const int& id, uint8_t bus,  //
         const PmFmt* const pm_fmt, const QFmt* const q_fmt)
-      : id_{id},
-        Moteus{canfd_drivers[bus - 1],
+      : Moteus{canfd_drivers[bus - 1],
                [&]() {
                  Options options;
                  options.id = id;
-                 options.default_query =
-                     false;  // Query right before Command,
-                             // not along with Command.
-                             // Make sure to pass format_override
-                             // argument whenever Querying.
+                 options.default_query = false;  // Query right before,
+                                                 // not along with Command.
+                                                 // Instead make sure to
+                                                 // pass format_override
+                                                 // argument whenever Querying.
                  return options;
                }()},
+        id_{id},
         pm_fmt_{pm_fmt},
         q_fmt_{q_fmt} {}
 

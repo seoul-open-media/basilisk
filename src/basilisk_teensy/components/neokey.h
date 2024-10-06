@@ -10,7 +10,7 @@
 //   2 2          [6]{K K K K} [7]{K K K K} [8]{K K K K}
 
 // A wrapper class of Adafruit_MultiNeoKey1x4, callback handling done right.
-class Neokey : private Adafruit_MultiNeoKey1x4 {
+class Neokey : public Adafruit_MultiNeoKey1x4 {
  public:
   Neokey(Adafruit_NeoKey_1x4* neokeys, uint8_t rows, uint8_t cols)
       : Adafruit_MultiNeoKey1x4{neokeys, rows, cols} {
@@ -48,7 +48,7 @@ class Neokey : private Adafruit_MultiNeoKey1x4 {
         const uint8_t nk_idx = row * _cols + col;
         auto& nk = _neokeys[nk_idx];
 
-        // "Not sure why we have to do it twice."
+        // "Not sure why we have to do it twice." -- Adafruit
         nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
         auto buttons = nk.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
         buttons ^= NEOKEY_1X4_BUTTONMASK;
