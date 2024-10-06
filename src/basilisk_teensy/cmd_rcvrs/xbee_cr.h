@@ -6,6 +6,9 @@
 #define XBEE_PACKET_LEN 46  // NOT counting the 4 starting bytes.
 
 class XbeeCommandReceiver {
+  using C = Basilisk::Command;
+  using M = C::Mode;
+
  public:
   bool Setup(Basilisk* b) {
     if (!b) {
@@ -27,6 +30,9 @@ class XbeeCommandReceiver {
 
   void Run() {
     static uint8_t start = 0;
+    static RecvBuf temp_rbuf;
+    static uint8_t buf_idx;
+    static uint32_t start_time_us;
 
     if (!receiving_) {
       if (XBEE_SERIAL.available() > 0) {
@@ -37,53 +43,79 @@ class XbeeCommandReceiver {
           start = 0;
         }
 
-        if (start >= 4) receiving_ = true;
-      }
-    } else {
-      if (XBEE_SERIAL.available() > 0 &&
-          static_cast<uint32_t>(XBEE_SERIAL.available()) >= XBEE_PACKET_LEN) {
-        RecvBuf temp_rbuf;
-        for (uint8_t i = 0; i < XBEE_PACKET_LEN; i++) {
-          temp_rbuf.raw_bytes[i] = XBEE_SERIAL.read();
-        }
+        if (start < 4) return;
 
-        // Filter out Command for different SUID immediately at reception time
-        // to avoid timing mismatch with Executer Beat.
-        if (!(temp_rbuf.decoded.suid & (1 << (b_->cfg_.suid - 1)))) {
-          waiting_parse_ = false;
-        } else {
-          memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
-          waiting_parse_ = true;
-
-          // #if I_WANT_DEBUG
-          Serial.print("SUID ");
-          Serial.print(b_->cfg_.suid);
-          Serial.print(" received Xbee Command, Mode ");
-          Serial.print(xbee_cmd_.decoded.mode);
-          Serial.println();
-          for (size_t i = 0; i < XBEE_PACKET_LEN; i++) {
-            Serial.print(xbee_cmd_.raw_bytes[i]);
-            Serial.print(", ");
-          }
-          Serial.println();
-          for (uint8_t i = 0; i < 13; i++) {
-            Serial.print(xbee_cmd_.decoded.u.do_preset.idx[i]);
-            Serial.print(", ");
-          }
-          Serial.println();
-          Serial.print(xbee_cmd_.decoded.u.do_preset.idx[b_->cfg_.suid]);
-          Serial.println();
-          // #endif
-        }
-        receiving_ = false;
-        start = 0;
+        receiving_ = true;
+        buf_idx = 0;
+        start_time_us = micros();
       }
     }
+
+    if (micros() > start_time_us + 2000) {
+      receiving_ = false;
+      start = 0;
+      return;
+    }
+
+    while (XBEE_SERIAL.available() > 0) {
+      if (buf_idx < XBEE_PACKET_LEN) {
+        temp_rbuf.raw_bytes[buf_idx] = XBEE_SERIAL.read();
+        buf_idx++;
+      } else {
+        break;
+      }
+    }
+
+    if (buf_idx < XBEE_PACKET_LEN) return;
+
+    /* Print for debug */ {
+      Serial.print("AheID ");
+      Serial.print(b_->cfg_.suid);
+      Serial.print(" received full XbeeCommand within 2ms since start bytes");
+      Serial.println();
+
+      Serial.print("Command bytes -> ");
+      for (size_t i = 0; i < XBEE_PACKET_LEN; i++) {
+        Serial.print(temp_rbuf.raw_bytes[i]);
+        Serial.print(", ");
+      }
+      Serial.println();
+
+      Serial.print("Mode -> ");
+      Serial.print(temp_rbuf.decoded.mode);
+      Serial.println();
+
+      if (temp_rbuf.decoded.mode == static_cast<uint8_t>(M::DoPreset)) {
+        Serial.print("Preset indices for all Ahes -> ");
+        for (uint8_t i = 0; i < 13; i++) {
+          Serial.print(temp_rbuf.decoded.u.do_preset.idx[i]);
+          Serial.print(", ");
+        }
+        Serial.println();
+
+        Serial.print("My Preset index -> ");
+        Serial.print(temp_rbuf.decoded.u.do_preset.idx[b_->cfg_.suid]);
+        Serial.println();
+      }
+
+      Serial.print("Is this Command for me? ");
+      Serial.print((temp_rbuf.decoded.suid & (1 << (b_->cfg_.suid - 1)))
+                       ? "True"
+                       : "False");
+    }
+
+    if (!(temp_rbuf.decoded.suid & (1 << (b_->cfg_.suid - 1)))) {
+      waiting_parse_ = false;
+    } else {
+      memcpy(xbee_cmd_.raw_bytes, temp_rbuf.raw_bytes, XBEE_PACKET_LEN);
+      waiting_parse_ = true;
+    }
+
+    receiving_ = false;
+    start = 0;
   }
 
   static void Parse() {
-    using C = Basilisk::Command;
-    using M = C::Mode;
     static auto& x = xbee_cmd_.decoded;
     static auto& c = b_->cmd_;
     static auto& m = c.mode;
