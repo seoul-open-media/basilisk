@@ -52,21 +52,20 @@ class XbeeCommandReceiver {
     }
 
     if (micros() > start_time_us + 2000) {
+      XBEE_SERIAL.clear();
       receiving_ = false;
       start = 0;
       return;
     }
 
-    while (XBEE_SERIAL.available() > 0) {
-      if (buf_idx < XBEE_PACKET_LEN) {
-        temp_rbuf.raw_bytes[buf_idx] = XBEE_SERIAL.read();
-        buf_idx++;
-      } else {
-        break;
-      }
+    while (XBEE_SERIAL.available() > 0 && buf_idx < XBEE_PACKET_LEN) {
+      temp_rbuf.raw_bytes[buf_idx] = XBEE_SERIAL.read();
+      buf_idx++;
     }
 
     if (buf_idx < XBEE_PACKET_LEN) return;
+
+    // Received full byte array within 2ms since start bytes reception.
 
     /* Print for debug */ {
       Serial.print("AheID ");
@@ -111,6 +110,7 @@ class XbeeCommandReceiver {
       waiting_parse_ = true;
     }
 
+    XBEE_SERIAL.clear();
     receiving_ = false;
     start = 0;
   }
